@@ -16,7 +16,7 @@ type AddPlayerState = {
 export default function AddPlayerForm({ groupId, groupSlug }: AddPlayerFormProps) {
   const [state, formAction] = useActionState<AddPlayerState, FormData>(
     addPlayer,
-    null
+    {}
   );
   const formRef = useRef<HTMLFormElement | null>(null);
 

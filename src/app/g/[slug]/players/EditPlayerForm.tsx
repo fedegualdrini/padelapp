@@ -23,7 +23,7 @@ export default function EditPlayerForm({
 }: EditPlayerFormProps) {
   const [state, formAction] = useActionState<UpdatePlayerState, FormData>(
     updatePlayer,
-    null
+    {}
   );
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(initialName);
