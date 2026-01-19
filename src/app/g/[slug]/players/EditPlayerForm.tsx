@@ -46,7 +46,7 @@ export default function EditPlayerForm({
     <div className="mt-1">
       <div className="flex items-center justify-between gap-3">
         <p className="text-base font-semibold text-[var(--ink)]">{name}</p>
-        {!isEditing && (
+        {!isEditing ? (
           <button
             type="button"
             onClick={() => setIsEditing(true)}
@@ -54,20 +54,20 @@ export default function EditPlayerForm({
           >
             Editar
           </button>
-        )}
+        ) : null}
       </div>
 
-      {isEditing && (
+      {isEditing ? (
         <form action={formAction} className="mt-3 grid gap-2">
           <input type="hidden" name="player_id" value={playerId} />
           <input type="hidden" name="group_id" value={groupId} />
           <input type="hidden" name="group_slug" value={groupSlug} />
 
-          {state?.error && (
+          {state?.error ? (
             <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-400">
               {state.error}
             </div>
-          )}
+          ) : null}
 
           <div className="flex flex-wrap items-center gap-2">
             <input
@@ -93,7 +93,7 @@ export default function EditPlayerForm({
             </button>
           </div>
         </form>
-      )}
+      ) : null}
     </div>
   );
 }

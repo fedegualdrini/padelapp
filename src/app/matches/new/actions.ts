@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -196,7 +197,9 @@ export async function createMatch(
     return { error: "No se pudieron guardar los marcadores." };
   }
 
-  await supabaseServer.rpc("refresh_stats_views");
+  after(() => {
+    void supabaseServer.rpc("refresh_stats_views");
+  });
 
   redirect(`/g/${groupSlug}/matches/${match.id}`);
 }

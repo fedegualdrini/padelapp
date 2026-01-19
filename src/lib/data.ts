@@ -1,6 +1,8 @@
+import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Group = { id: string; name: string; slug: string };
+type PlayerRow = { id: string; name: string; status: string };
 
 type MatchRow = {
   id: string;
@@ -49,7 +51,7 @@ export async function getGroups() {
   return data as Group[];
 }
 
-export async function getGroupBySlug(slug: string) {
+export const getGroupBySlug = cache(async (slug: string) => {
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
     .from("groups")
@@ -62,7 +64,7 @@ export async function getGroupBySlug(slug: string) {
   }
 
   return data as Group;
-}
+});
 
 export async function getGroupByMatchId(matchId: string) {
   const supabaseServer = await getSupabaseServerClient();
@@ -294,26 +296,26 @@ export async function getMatchEloDeltas(matchId: string) {
 
   const teamIds = teams.map((team) => team.id);
 
-  const { data: matchPlayers, error: playersError } = await supabaseServer
-    .from("match_team_players")
-    .select(
-      `
-        player_id,
-        players ( name )
-      `
-    )
-    .in("match_team_id", teamIds);
+  const [
+    { data: matchPlayers, error: playersError },
+    { data: matchRatings, error: ratingsError },
+  ] = await Promise.all([
+    supabaseServer
+      .from("match_team_players")
+      .select(
+        `
+          player_id,
+          players ( name )
+        `
+      )
+      .in("match_team_id", teamIds),
+    supabaseServer
+      .from("elo_ratings")
+      .select("player_id, rating")
+      .eq("as_of_match_id", matchId),
+  ]);
 
-  if (playersError || !matchPlayers) {
-    return [];
-  }
-
-  const { data: matchRatings, error: ratingsError } = await supabaseServer
-    .from("elo_ratings")
-    .select("player_id, rating")
-    .eq("as_of_match_id", matchId);
-
-  if (ratingsError || !matchRatings) {
+  if (playersError || !matchPlayers || ratingsError || !matchRatings) {
     return [];
   }
 
@@ -425,7 +427,7 @@ export async function getMatchEditData(groupId: string, id: string) {
   };
 }
 
-export async function getPlayers(groupId: string) {
+export const getPlayers = cache(async (groupId: string) => {
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
     .from("players")
@@ -437,8 +439,8 @@ export async function getPlayers(groupId: string) {
     return [];
   }
 
-  return data;
-}
+  return data as PlayerRow[];
+});
 
 export async function getPlayerStats(groupId: string) {
   const supabaseServer = await getSupabaseServerClient();
@@ -454,10 +456,16 @@ export async function getPlayerStats(groupId: string) {
   return data;
 }
 
-export async function getPairAggregates(groupId: string) {
+export async function getPairAggregates(
+  groupId: string,
+  players?: PlayerRow[]
+) {
   const supabaseServer = await getSupabaseServerClient();
-  const players = await getPlayers(groupId);
-  const playerIds = new Set(players.map((player) => player.id));
+  const resolvedPlayers = players ?? (await getPlayers(groupId));
+  if (resolvedPlayers.length === 0) {
+    return [];
+  }
+  const playerIds = new Set(resolvedPlayers.map((player) => player.id));
   const { data, error } = await supabaseServer
     .from("mv_pair_aggregates")
     .select(
@@ -477,12 +485,11 @@ export async function getPairAggregates(groupId: string) {
 }
 
 export async function getUsualPairs(groupId: string, limit = 6) {
-  const supabaseServer = await getSupabaseServerClient();
-  const [pairs, players] = await Promise.all([
-    getPairAggregates(groupId),
-    getPlayers(groupId),
-  ]);
-  const playerMap = new Map(players.map((player) => [player.id, player]));
+  const players = await getPlayers(groupId);
+  const pairs = await getPairAggregates(groupId, players);
+  const playerMap = new Map(
+    players.map((player) => [player.id, player])
+  );
 
   return pairs
     .map((pair) => {
@@ -552,17 +559,17 @@ export async function getPulseStats(groupId: string) {
 
 export async function getTopStats(groupId: string) {
   const supabaseServer = await getSupabaseServerClient();
-  const [playerStats, pairStats, eloRatingsResult, players, inviteMostPlayed] =
+  const players = await getPlayers(groupId);
+  const [playerStats, pairStats, eloRatingsResult, inviteMostPlayed] =
     await Promise.all([
       getPlayerStats(groupId),
-      getPairAggregates(groupId),
+      getPairAggregates(groupId, players),
       supabaseServer
         .from("elo_ratings")
         .select("player_id, rating, matches(played_at)")
         .order("played_at", { foreignTable: "matches", ascending: true })
         .order("created_at", { ascending: true }),
-      getPlayers(groupId),
-      getInviteMostPlayed(groupId),
+      getInviteMostPlayed(groupId, players),
     ]);
 
   const playerById = new Map(players.map((p) => [p.id, p.name]));
@@ -644,10 +651,13 @@ export async function getTopStats(groupId: string) {
   ];
 }
 
-export async function getInviteMostPlayed(groupId: string) {
+export async function getInviteMostPlayed(
+  groupId: string,
+  players?: PlayerRow[]
+) {
   const supabaseServer = await getSupabaseServerClient();
-  const players = await getPlayers(groupId);
-  const playerIds = new Set(players.map((player) => player.id));
+  const resolvedPlayers = players ?? (await getPlayers(groupId));
+  const playerIds = new Set(resolvedPlayers.map((player) => player.id));
   const { data, error } = await supabaseServer
     .from("v_player_match_results")
     .select(
