@@ -112,7 +112,11 @@ export default function NewMatchForm({
       <input type="hidden" name="group_id" value={groupId} />
       <input type="hidden" name="group_slug" value={groupSlug} />
       {(clientError || state?.error) && (
-        <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4 text-sm text-[var(--ink)]">
+        <div
+          className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4 text-sm text-[var(--ink)]"
+          role="status"
+          aria-live="polite"
+        >
           {clientError ?? state?.error}
         </div>
       )}
@@ -127,6 +131,7 @@ export default function NewMatchForm({
               type="date"
               name="played_date"
               defaultValue={defaultDate}
+              autoComplete="off"
               className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
             />
           </label>
@@ -135,6 +140,7 @@ export default function NewMatchForm({
             <input
               type="time"
               name="played_time"
+              autoComplete="off"
               className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
             />
           </label>
@@ -142,6 +148,7 @@ export default function NewMatchForm({
             Mejor de
             <select
               name="best_of"
+              aria-label="Mejor de sets"
               className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
             >
               <option value="3">3 sets</option>
@@ -153,7 +160,8 @@ export default function NewMatchForm({
             <input
               type="text"
               name="created_by"
-              placeholder="Tu nombre"
+              placeholder="Tu nombre (ej: Fede?)"
+              autoComplete="off"
               className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
             />
           </label>
@@ -201,6 +209,7 @@ export default function NewMatchForm({
                 name="team1_player1"
                 value={team1Player1}
                 onChange={(event) => setTeam1Player1(event.target.value)}
+                aria-label="Equipo 1 jugador 1"
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
               >
                 <option value="">Elegir jugador</option>
@@ -210,6 +219,7 @@ export default function NewMatchForm({
                 name="team1_player2"
                 value={team1Player2}
                 onChange={(event) => setTeam1Player2(event.target.value)}
+                aria-label="Equipo 1 jugador 2"
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
               >
                 <option value="">Elegir jugador</option>
@@ -226,6 +236,7 @@ export default function NewMatchForm({
                 name="team2_player1"
                 value={team2Player1}
                 onChange={(event) => setTeam2Player1(event.target.value)}
+                aria-label="Equipo 2 jugador 1"
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
               >
                 <option value="">Elegir jugador</option>
@@ -235,6 +246,7 @@ export default function NewMatchForm({
                 name="team2_player2"
                 value={team2Player2}
                 onChange={(event) => setTeam2Player2(event.target.value)}
+                aria-label="Equipo 2 jugador 2"
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
               >
                 <option value="">Elegir jugador</option>
@@ -267,16 +279,18 @@ export default function NewMatchForm({
                 type="number"
                 min={0}
                 max={7}
-                placeholder="Equipo 1"
+                placeholder="Equipo 1 (ej: 6?)"
                 name={`set${setNumber}_team1`}
+                aria-label={`Set ${setNumber} - Equipo 1`}
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
               />
               <input
                 type="number"
                 min={0}
                 max={7}
-                placeholder="Equipo 2"
+                placeholder="Equipo 2 (ej: 4?)"
                 name={`set${setNumber}_team2`}
+                aria-label={`Set ${setNumber} - Equipo 2`}
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
               />
             </div>
@@ -287,13 +301,13 @@ export default function NewMatchForm({
       <div className="flex flex-wrap gap-3">
         <button
           type="submit"
-          className="rounded-full bg-[var(--accent)] px-6 py-2 text-sm font-semibold text-white"
+          className="rounded-full bg-[var(--accent)] px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
         >
           Guardar partido
         </button>
         <button
           type="button"
-          className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-6 py-2 text-sm font-semibold text-[var(--ink)]"
+          className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-6 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
         >
           Cancelar
         </button>

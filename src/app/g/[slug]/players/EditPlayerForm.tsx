@@ -50,7 +50,7 @@ export default function EditPlayerForm({
           <button
             type="button"
             onClick={() => setIsEditing(true)}
-            className="rounded-full border border-[color:var(--card-border)] px-3 py-1 text-xs font-semibold text-[var(--ink)]"
+            className="rounded-full border border-[color:var(--card-border)] px-3 py-1 text-xs font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
           >
             Editar
           </button>
@@ -64,7 +64,11 @@ export default function EditPlayerForm({
           <input type="hidden" name="group_slug" value={groupSlug} />
 
           {state?.error ? (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-400">
+            <div
+              className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-400"
+              role="status"
+              aria-live="polite"
+            >
               {state.error}
             </div>
           ) : null}
@@ -75,19 +79,21 @@ export default function EditPlayerForm({
               name="player_name"
               value={draftName}
               onChange={(event) => setDraftName(event.target.value)}
-              placeholder="Nuevo nombre"
+              placeholder="Nuevo nombre (ej: Nico?)"
+              aria-label="Nuevo nombre del jugador"
+              autoComplete="off"
               className="flex-1 rounded-full border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-1.5 text-sm"
             />
             <button
               type="submit"
-              className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white"
+              className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
             >
               Guardar
             </button>
             <button
               type="button"
               onClick={() => setIsEditing(false)}
-              className="rounded-full border border-[color:var(--card-border)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)]"
+              className="rounded-full border border-[color:var(--card-border)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
             >
               Cancelar
             </button>

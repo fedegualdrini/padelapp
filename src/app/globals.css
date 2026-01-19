@@ -14,6 +14,7 @@
   --card-border: rgba(255, 255, 255, 0.45);
   --card-border-strong: rgba(255, 255, 255, 0.7);
   --input-bg: rgba(255, 255, 255, 0.9);
+  color-scheme: light;
 }
 
 @theme inline {
@@ -37,6 +38,7 @@
   --card-border: rgba(148, 163, 184, 0.24);
   --card-border-strong: rgba(148, 163, 184, 0.35);
   --input-bg: rgba(15, 23, 42, 0.95);
+  color-scheme: dark;
 }
 
 body {
