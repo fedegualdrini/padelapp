@@ -3,13 +3,20 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export async function joinGroup(formData: FormData) {
+type JoinGroupState = {
+  error?: string;
+};
+
+export async function joinGroup(
+  prevState: JoinGroupState | null,
+  formData: FormData
+): Promise<JoinGroupState> {
   const supabaseServer = await createSupabaseServerClient();
   const slug = String(formData.get("group_slug") ?? "").trim();
   const passphrase = String(formData.get("group_passphrase") ?? "").trim();
 
   if (!slug || !passphrase) {
-    throw new Error("La clave del grupo es obligatoria.");
+    return { error: "La clave del grupo es obligatoria." };
   }
 
   const { data: authData, error: authError } =
@@ -21,7 +28,7 @@ export async function joinGroup(formData: FormData) {
     const { error: signInError } =
       await supabaseServer.auth.signInAnonymously();
     if (signInError) {
-      throw new Error("No se pudo iniciar sesion.");
+      return { error: "No se pudo iniciar sesión." };
     }
   }
 
@@ -35,11 +42,13 @@ export async function joinGroup(formData: FormData) {
 
   if (error || !data) {
     console.error("joinGroup failed", { error });
-    throw new Error(
-      `No se pudo ingresar al grupo.${
-        error?.message ? ` ${error.message}` : ""
-      }`
-    );
+
+    // Return user-friendly error messages
+    if (error?.message?.includes("Invalid passphrase")) {
+      return { error: "Clave incorrecta. Por favor, intentá de nuevo." };
+    }
+
+    return { error: "No se pudo ingresar al grupo. Verificá la clave e intentá nuevamente." };
   }
 
   redirect(`/g/${slug}`);

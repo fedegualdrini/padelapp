@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { getGroupBySlug, getPairAggregates, getPlayers, isGroupMember } from "@/lib/data";
+import { getGroupBySlug, getPairAggregates, getPlayers } from "@/lib/data";
 
 type PairsPageProps = {
   params: Promise<{ slug: string }>;
@@ -9,14 +8,7 @@ export default async function PairsPage({ params }: PairsPageProps) {
   const { slug } = await params;
   const group = await getGroupBySlug(slug);
 
-  if (!group) {
-    redirect(`/g/${slug}/join`);
-  }
-
-  const isMember = await isGroupMember(group.id);
-  if (!isMember) {
-    redirect(`/g/${slug}/join`);
-  }
+  // Layout already verifies group exists and user is a member
 
   const [pairStats, players] = await Promise.all([
     getPairAggregates(group.id),

@@ -2,12 +2,12 @@ import { notFound } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import { getGroupBySlug } from "@/lib/data";
 
-type GroupLayoutProps = {
+type JoinLayoutProps = {
   children: React.ReactNode;
   params: Promise<{ slug: string }>;
 };
 
-export default async function GroupLayout({ children, params }: GroupLayoutProps) {
+export default async function JoinLayout({ children, params }: JoinLayoutProps) {
   const { slug } = await params;
   const group = await getGroupBySlug(slug);
 
@@ -15,8 +15,9 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
     notFound();
   }
 
+  // Simple layout without navigation for join page
   return (
-    <AppShell groupName={group.name} slug={group.slug}>
+    <AppShell groupName={group.name} slug={group.slug} showNavigation={false}>
       {children}
     </AppShell>
   );

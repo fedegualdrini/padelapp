@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
-import { getGroupBySlug, getPlayers, getPlayerStats, isGroupMember } from "@/lib/data";
-import { addInvite } from "@/app/players/actions";
+import { getGroupBySlug, getPlayers, getPlayerStats } from "@/lib/data";
+import AddPlayerForm from "./AddPlayerForm";
+import EditPlayerForm from "./EditPlayerForm";
 
 type PlayersPageProps = {
   params: Promise<{ slug: string }>;
@@ -10,14 +10,7 @@ export default async function PlayersPage({ params }: PlayersPageProps) {
   const { slug } = await params;
   const group = await getGroupBySlug(slug);
 
-  if (!group) {
-    redirect(`/g/${slug}/join`);
-  }
-
-  const isMember = await isGroupMember(group.id);
-  if (!isMember) {
-    redirect(`/g/${slug}/join`);
-  }
+  // Layout already verifies group exists and user is a member
 
   const [players, stats] = await Promise.all([
     getPlayers(group.id),
@@ -41,35 +34,11 @@ export default async function PlayersPage({ params }: PlayersPageProps) {
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-              Invitados
-            </p>
             <h3 className="font-display text-lg text-[var(--ink)]">
-              Agregar invitado
+              Agregar jugador
             </h3>
           </div>
-          <form action={addInvite} className="flex flex-wrap items-center gap-2">
-            <input type="hidden" name="group_id" value={group.id} />
-            <input type="hidden" name="group_slug" value={group.slug} />
-            <input
-              type="text"
-              name="invite_name"
-              placeholder="Nombre del invitado"
-              className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-4 py-2 text-sm"
-            />
-            <input
-              type="text"
-              name="created_by"
-              placeholder="Agregado por (opcional)"
-              className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-4 py-2 text-sm"
-            />
-            <button
-              type="submit"
-              className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white"
-            >
-              Agregar invitado
-            </button>
-          </form>
+          <AddPlayerForm groupId={group.id} groupSlug={group.slug} />
         </div>
       </section>
 
@@ -83,9 +52,12 @@ export default async function PlayersPage({ params }: PlayersPageProps) {
                 key={player.id}
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4"
               >
-                <p className="text-base font-semibold text-[var(--ink)]">
-                  {player.name}
-                </p>
+                <EditPlayerForm
+                  playerId={player.id}
+                  initialName={player.name}
+                  groupId={group.id}
+                  groupSlug={group.slug}
+                />
                 {stat ? (
                   <p className="mt-2 text-sm text-[var(--muted)]">
                     {stat.wins}G - {stat.losses}P -{" "}
@@ -112,9 +84,12 @@ export default async function PlayersPage({ params }: PlayersPageProps) {
                 key={player.id}
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4"
               >
-                <p className="text-base font-semibold text-[var(--ink)]">
-                  {player.name}
-                </p>
+                <EditPlayerForm
+                  playerId={player.id}
+                  initialName={player.name}
+                  groupId={group.id}
+                  groupSlug={group.slug}
+                />
                 {stat ? (
                   <p className="mt-2 text-sm text-[var(--muted)]">
                     {stat.wins}G - {stat.losses}P -{" "}

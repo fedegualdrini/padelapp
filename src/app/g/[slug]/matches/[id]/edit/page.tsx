@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getGroupBySlug, getMatchEditData, getPlayers, isGroupMember } from "@/lib/data";
+import { getGroupBySlug, getMatchEditData, getPlayers } from "@/lib/data";
 import { updateMatch } from "@/app/matches/[id]/edit/actions";
 
 type EditMatchPageProps = {
@@ -10,14 +10,7 @@ export default async function EditMatchPage({ params }: EditMatchPageProps) {
   const { slug, id } = await params;
   const group = await getGroupBySlug(slug);
 
-  if (!group) {
-    redirect(`/g/${slug}/join`);
-  }
-
-  const isMember = await isGroupMember(group.id);
-  if (!isMember) {
-    redirect(`/g/${slug}/join`);
-  }
+  // Layout already verifies group exists and user is a member
 
   const [players, match] = await Promise.all([
     getPlayers(group.id),

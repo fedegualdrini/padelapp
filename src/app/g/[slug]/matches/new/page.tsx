@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { getGroupBySlug, getPlayers, getUsualPairs, isGroupMember } from "@/lib/data";
+import { getGroupBySlug, getPlayers, getUsualPairs } from "@/lib/data";
 import NewMatchForm from "@/components/NewMatchForm";
 
 type NewMatchPageProps = {
@@ -10,14 +9,7 @@ export default async function NewMatchPage({ params }: NewMatchPageProps) {
   const { slug } = await params;
   const group = await getGroupBySlug(slug);
 
-  if (!group) {
-    redirect(`/g/${slug}/join`);
-  }
-
-  const isMember = await isGroupMember(group.id);
-  if (!isMember) {
-    redirect(`/g/${slug}/join`);
-  }
+  // Layout already verifies group exists and user is a member
 
   const [players, usualPairs] = await Promise.all([
     getPlayers(group.id),

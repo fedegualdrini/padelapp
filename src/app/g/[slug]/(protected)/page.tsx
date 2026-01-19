@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import MatchCard from "@/components/MatchCard";
 import StatCard from "@/components/StatCard";
-import { getEloLeaderboard, getGroupBySlug, getPulseStats, getRecentMatches, getTopStats, isGroupMember } from "@/lib/data";
+import { getEloLeaderboard, getGroupBySlug, getPulseStats, getRecentMatches, getTopStats } from "@/lib/data";
 
 type GroupPageProps = {
   params: Promise<{ slug: string }>;
@@ -12,14 +11,7 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
   const { slug } = await params;
   const group = await getGroupBySlug(slug);
 
-  if (!group) {
-    redirect(`/g/${slug}/join`);
-  }
-
-  const isMember = await isGroupMember(group.id);
-  if (!isMember) {
-    redirect(`/g/${slug}/join`);
-  }
+  // Layout already verifies group exists and user is a member
 
   const [topStats, recentMatches, pulse, leaderboard] = await Promise.all([
     getTopStats(group.id),

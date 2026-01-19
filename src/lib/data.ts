@@ -91,10 +91,20 @@ export async function getGroupByMatchId(matchId: string) {
 
 export async function isGroupMember(groupId: string) {
   const supabaseServer = await getSupabaseServerClient();
+
+  // Get the current user
+  const { data: { user }, error: authError } = await supabaseServer.auth.getUser();
+
+  if (authError || !user) {
+    return false;
+  }
+
+  // Check if this specific user is a member of the group
   const { data, error } = await supabaseServer
     .from("group_members")
     .select("group_id")
     .eq("group_id", groupId)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   if (error || !data) {
