@@ -12,6 +12,9 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
   const group = await getGroupBySlug(slug);
 
   // Layout already verifies group exists and user is a member
+  if (!group) {
+    return null;
+  }
 
   const [topStats, recentMatches, pulse, leaderboard] = await Promise.all([
     getTopStats(group.id),
