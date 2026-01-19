@@ -1,6 +1,7 @@
 import { getGroupBySlug, getPlayers, getPlayerStats } from "@/lib/data";
 import AddPlayerForm from "./AddPlayerForm";
 import EditPlayerForm from "./EditPlayerForm";
+import { notFound } from "next/navigation";
 
 type PlayersPageProps = {
   params: Promise<{ slug: string }>;
@@ -11,6 +12,9 @@ export default async function PlayersPage({ params }: PlayersPageProps) {
   const group = await getGroupBySlug(slug);
 
   // Layout already verifies group exists and user is a member
+  if (!group) {
+    notFound();
+  }
 
   const [players, stats] = await Promise.all([
     getPlayers(group.id),

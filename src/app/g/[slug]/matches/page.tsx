@@ -1,6 +1,7 @@
 import Link from "next/link";
 import MatchCard from "@/components/MatchCard";
 import { getGroupBySlug, getMatches } from "@/lib/data";
+import { notFound } from "next/navigation";
 
 type MatchesPageProps = {
   params: Promise<{ slug: string }>;
@@ -11,6 +12,9 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
   const group = await getGroupBySlug(slug);
 
   // Layout already verifies group exists and user is a member
+  if (!group) {
+    notFound();
+  }
 
   const matches = await getMatches(group.id);
 

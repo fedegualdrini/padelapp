@@ -1,4 +1,5 @@
 import { getGroupBySlug, getPairAggregates, getPlayers } from "@/lib/data";
+import { notFound } from "next/navigation";
 
 type PairsPageProps = {
   params: Promise<{ slug: string }>;
@@ -9,6 +10,9 @@ export default async function PairsPage({ params }: PairsPageProps) {
   const group = await getGroupBySlug(slug);
 
   // Layout already verifies group exists and user is a member
+  if (!group) {
+    notFound();
+  }
 
   const [pairStats, players] = await Promise.all([
     getPairAggregates(group.id),

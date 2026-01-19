@@ -2,6 +2,7 @@ import Link from "next/link";
 import MatchCard from "@/components/MatchCard";
 import StatCard from "@/components/StatCard";
 import { getEloLeaderboard, getGroupBySlug, getPulseStats, getRecentMatches, getTopStats } from "@/lib/data";
+import { notFound } from "next/navigation";
 
 type GroupPageProps = {
   params: Promise<{ slug: string }>;
@@ -13,7 +14,7 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
 
   // Layout already verifies group exists and user is a member
   if (!group) {
-    return null;
+    notFound();
   }
 
   const [topStats, recentMatches, pulse, leaderboard] = await Promise.all([

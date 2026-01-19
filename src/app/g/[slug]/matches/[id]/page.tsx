@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getGroupBySlug, getMatchById, getMatchEloDeltas } from "@/lib/data";
 
 type MatchPageProps = {
@@ -11,6 +11,9 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
   const group = await getGroupBySlug(slug);
 
   // Layout already verifies group exists and user is a member
+  if (!group) {
+    notFound();
+  }
 
   const [match, eloDeltas] = await Promise.all([
     getMatchById(group.id, id),

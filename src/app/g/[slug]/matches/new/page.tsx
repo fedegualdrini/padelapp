@@ -1,5 +1,6 @@
 import { getGroupBySlug, getPlayers, getUsualPairs } from "@/lib/data";
 import NewMatchForm from "@/components/NewMatchForm";
+import { notFound } from "next/navigation";
 
 type NewMatchPageProps = {
   params: Promise<{ slug: string }>;
@@ -10,6 +11,9 @@ export default async function NewMatchPage({ params }: NewMatchPageProps) {
   const group = await getGroupBySlug(slug);
 
   // Layout already verifies group exists and user is a member
+  if (!group) {
+    notFound();
+  }
 
   const [players, usualPairs] = await Promise.all([
     getPlayers(group.id),
