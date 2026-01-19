@@ -11,6 +11,9 @@ export default async function EditMatchPage({ params }: EditMatchPageProps) {
   const group = await getGroupBySlug(slug);
 
   // Layout already verifies group exists and user is a member
+  if (!group) {
+    return null;
+  }
 
   const [players, match] = await Promise.all([
     getPlayers(group.id),
