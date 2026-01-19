@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getGroupBySlug, getMatchEditData, getPlayers } from "@/lib/data";
 import { updateMatch } from "@/app/matches/[id]/edit/actions";
 

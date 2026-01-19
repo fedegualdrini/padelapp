@@ -477,7 +477,6 @@ export async function getPairAggregates(groupId: string) {
 }
 
 export async function getUsualPairs(groupId: string, limit = 6) {
-  const supabaseServer = await getSupabaseServerClient();
   const [pairs, players] = await Promise.all([
     getPairAggregates(groupId),
     getPlayers(groupId),

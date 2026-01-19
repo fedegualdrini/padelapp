@@ -11,6 +11,8 @@ type AddPlayerState = {
 type UpdatePlayerState = {
   error?: string;
   success?: boolean;
+  name?: string;
+  editKey?: string;
 };
 
 export async function addPlayer(
@@ -89,6 +91,7 @@ export async function updatePlayer(
   const playerId = String(formData.get("player_id") ?? "").trim();
   const groupId = String(formData.get("group_id") ?? "").trim();
   const groupSlug = String(formData.get("group_slug") ?? "").trim();
+  const editKey = String(formData.get("edit_key") ?? "").trim();
 
   if (!name || !playerId || !groupId || !groupSlug) {
     return { error: "El nombre del jugador es obligatorio." };
@@ -136,5 +139,5 @@ export async function updatePlayer(
   }
 
   revalidatePath(`/g/${groupSlug}/players`);
-  return { success: true };
+  return { success: true, name, editKey };
 }
