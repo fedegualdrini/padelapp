@@ -132,11 +132,9 @@ export function TradingViewChart({
       },
       rightPriceScale: {
         borderColor: themeColors.grid,
-        textColor: themeColors.textPrimary,
       },
       timeScale: {
         borderColor: themeColors.grid,
-        textColor: themeColors.textPrimary,
         timeVisible: true,
         secondsVisible: false,
       },
@@ -180,11 +178,9 @@ export function TradingViewChart({
       },
       rightPriceScale: {
         borderColor: themeColors.grid,
-        textColor: themeColors.textPrimary,
       },
       timeScale: {
         borderColor: themeColors.grid,
-        textColor: themeColors.textPrimary,
       },
     });
   }, [themeColors]);
