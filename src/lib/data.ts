@@ -731,3 +731,53 @@ export async function getEloLeaderboard(groupId: string, limit = 8) {
     .sort((a, b) => b.rating - a.rating)
     .slice(0, limit);
 }
+
+type EloTimelinePoint = { date: string; rating: number };
+type EloTimelineSeries = {
+  playerId: string;
+  name: string;
+  status: string;
+  points: EloTimelinePoint[];
+};
+
+type EloRatingRow = {
+  player_id: string;
+  rating: number;
+  created_at: string;
+  matches: { played_at?: string; group_id?: string } | null;
+};
+
+export async function getEloTimeline(groupId: string) {
+  const supabaseServer = await getSupabaseServerClient();
+  const [players, ratingsResult] = await Promise.all([
+    getPlayers(groupId),
+    supabaseServer
+      .from("elo_ratings")
+      .select("player_id, rating, created_at, matches(played_at, group_id)")
+      .eq("matches.group_id", groupId)
+      .order("played_at", { foreignTable: "matches", ascending: true })
+      .order("created_at", { ascending: true }),
+  ]);
+
+  const seriesByPlayer = new Map<string, EloTimelineSeries>();
+  players.forEach((player) => {
+    seriesByPlayer.set(player.id, {
+      playerId: player.id,
+      name: player.name,
+      status: player.status,
+      points: [],
+    });
+  });
+
+  if (!ratingsResult.error && ratingsResult.data) {
+    (ratingsResult.data as unknown as EloRatingRow[]).forEach((row) => {
+      const playedAt = row.matches?.played_at;
+      if (!playedAt) return;
+      const target = seriesByPlayer.get(row.player_id);
+      if (!target) return;
+      target.points.push({ date: playedAt, rating: row.rating });
+    });
+  }
+
+  return Array.from(seriesByPlayer.values());
+}
