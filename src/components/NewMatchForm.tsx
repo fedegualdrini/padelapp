@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent, useActionState } from "react";
 import { createMatch } from "@/app/matches/new/actions";
+import MatchPredictionBanner from "./MatchPredictionBanner";
 
 type Player = {
   id: string;
@@ -256,6 +257,20 @@ export default function NewMatchForm({
           </div>
         </div>
       </section>
+
+      <MatchPredictionBanner
+        groupId={groupId}
+        team1PlayerIds={[team1Player1 || null, team1Player2 || null]}
+        team2PlayerIds={[team2Player1 || null, team2Player2 || null]}
+        team1Names={[
+          players.find((p) => p.id === team1Player1)?.name || "?",
+          players.find((p) => p.id === team1Player2)?.name || "?",
+        ]}
+        team2Names={[
+          players.find((p) => p.id === team2Player1)?.name || "?",
+          players.find((p) => p.id === team2Player2)?.name || "?",
+        ]}
+      />
 
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
         <div className="flex items-center justify-between">

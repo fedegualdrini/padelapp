@@ -1,12 +1,40 @@
-# CLAUDE.md
+# Instructions
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Rules
+- Read the relevant skill file(s) before writing code when a context matches.
+- Keep data access in `src/lib/data.ts` and rely on RLS for access control.
+- Prefer Server Components for data fetching; use Client Components only for interactivity.
+- Do not use Supabase service keys in app code.
+
+## Skills (Auto-load based on context)
+
+IMPORTANT: When you detect any of these contexts, read the corresponding skill file BEFORE writing code.
+
+| Context | Read this file |
+|---------|----------------|
+| Next.js routes, layouts, server components, middleware | `skills/nextjs/SKILL.md` |
+| React client components, hooks, UI state | `skills/react/SKILL.md` |
+| Supabase schema, RLS, auth, queries | `skills/supabase/SKILL.md` |
+| Tailwind classes, layout, styling | `skills/tailwind/SKILL.md` |
+| Creating a new skill or agent instruction | `skills/skill-creator/SKILL.md` |
+| Any user request (always) | `skills/agent-usage-reporting/SKILL.md` |
+| Updating skill metadata or auto-invoke tables | `skills/skill-sync/SKILL.md` |
+| Deployment requests | `C:/Users/Fede/.codex/skills/vercel-deploy-claimable/SKILL.md` |
+| React/Next.js performance work | `C:/Users/Fede/.codex/skills/react-best-practices/SKILL.md` |
+| UI/UX or accessibility review requests | `C:/Users/Fede/.codex/skills/web-design-guidelines/SKILL.md` |
+| Installing new skills | `C:/Users/Fede/.codex/skills/.system/skill-installer/SKILL.md` |
+
+### How to use skills
+1. Detect context from the request or file being edited
+2. Read the relevant SKILL.md file(s) first
+3. Apply all patterns and rules from the skill
+4. Multiple skills can apply (e.g., React + Tailwind)
 
 ## Project Overview
 
-A multi-group padel tennis tracker with group-scoped data, ELO rankings, and match statistics. Built on Next.js 16 (App Router) with Supabase for PostgreSQL backend and authentication.
+A multi-group padel tracker with group-scoped data, ELO rankings, and match statistics. Built on Next.js 16 (App Router) with Supabase for PostgreSQL backend and authentication.
 
-**Key characteristics:**
+Key characteristics:
 - Anonymous authentication (no email/password accounts)
 - Passphrase-based group access with bcrypt hashing
 - Row-Level Security (RLS) for data isolation between groups
@@ -28,23 +56,22 @@ supabase db reset    # Run all migrations + seed data
 supabase db push     # Apply pending migrations only
 ```
 
-**Seed data:** Default group with slug `padel` and passphrase `padel`.
+Seed data: Default group with slug `padel` and passphrase `padel`.
 
 ## Architecture Patterns
 
 ### Multi-Group Data Isolation
 
 All data is scoped to groups via `group_id` foreign keys. Access control is enforced through:
+1. `group_members` table (links anonymous Supabase users to groups)
+2. RLS policies (membership-based access)
+3. Join flow at `/g/[slug]/join` with passphrase verification
 
-1. **Membership table** (`group_members`): Links anonymous Supabase users to groups
-2. **RLS policies**: All queries filtered by `group_id` based on membership
-3. **Join flow**: Users join groups via `/g/[slug]/join` with passphrase verification
-
-**Important:** When creating queries for group-scoped data (players, matches, pairs, stats), always filter by `group_id` and rely on RLS to enforce access.
+Important: When creating queries for group-scoped data (players, matches, pairs, stats), always filter by `group_id` and rely on RLS to enforce access.
 
 ### Supabase SSR Pattern
 
-**Server Components:**
+Server Components:
 ```typescript
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -52,23 +79,23 @@ const supabase = await createSupabaseServerClient();
 const { data } = await supabase.from("players").select("*");
 ```
 
-**Client Components:**
+Client Components:
 ```typescript
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const supabase = createSupabaseBrowserClient();
 ```
 
-**Middleware:** (`src/middleware.ts`) Ensures anonymous session exists on every request. Runs before all routes except static assets.
+Middleware (`src/middleware.ts`) ensures an anonymous session exists on every request. Runs before all routes except static assets.
 
 ### Data Layer Organization
 
-**Primary data access:** `src/lib/data.ts` (713 lines)
-- Contains typed query functions for all entities
+Primary data access: `src/lib/data.ts`
+- Typed query functions for all entities
 - Returns typed objects with joined relations
 - Example: `getMatches(groupId)`, `getPlayers(groupId)`, `getPairStats(groupId)`
 
-**Pattern:** Server Components call data layer functions → data layer uses server Supabase client → RLS enforces access.
+Pattern: Server Components call data layer functions -> data layer uses server Supabase client -> RLS enforces access.
 
 ### Routing Structure
 
@@ -83,27 +110,27 @@ const supabase = createSupabaseBrowserClient();
 /g/[slug]/pairs             # Pair statistics
 ```
 
-**Layout pattern:**
+Layout pattern:
 - `src/app/layout.tsx`: Root layout with theme provider
 - `src/app/g/[slug]/layout.tsx`: Group layout wrapper (verifies membership)
 
 ### Component Patterns
 
-**Server vs Client Components:**
-- **Server** (default): Data fetching, layouts, static content
-- **Client** (`"use client"`): Forms, interactive UI, theme toggles
+Server vs Client Components:
+- Server (default): Data fetching, layouts, static content
+- Client (`"use client"`): Forms, interactive UI, theme toggles
 
-**Key components:**
+Key components:
 - `AppShell.tsx`: Main layout wrapper with navigation
 - `NavBar.tsx`: Client component for navigation menu
-- `NewMatchForm.tsx`: Match creation form (11.5 KB, complex state management)
+- `NewMatchForm.tsx`: Match creation form (complex state management)
 - `MatchCard.tsx`: Match display with set scores
 
 ## Database Patterns
 
 ### Schema Overview
 
-**Core tables:**
+Core tables:
 - `groups`: Group definitions (name, slug, passphrase hash)
 - `group_members`: User-to-group membership (for RLS)
 - `players`: Player profiles (group-scoped)
@@ -117,13 +144,13 @@ const supabase = createSupabaseBrowserClient();
 
 ### Database Helper Functions
 
-**Refresh statistics:**
+Refresh statistics:
 ```sql
 select refresh_stats_views();
 ```
 Refreshes materialized views for pair stats.
 
-**Recompute ELO ratings:**
+Recompute ELO ratings:
 ```sql
 select recompute_all_elo();
 ```
@@ -132,7 +159,6 @@ Rebuilds ELO ratings across all matches (use after data corrections).
 ### Passphrase Authentication
 
 Groups use bcrypt password hashing via `pgcrypto` extension:
-
 ```sql
 select create_group_with_passphrase('Group Name', 'group-slug', 'passphrase123');
 ```
@@ -142,7 +168,7 @@ This function:
 2. Adds creating user to `group_members`
 3. Returns the group record
 
-**Verification:** Join flow in `src/app/g/[slug]/join` calls RPC function to verify passphrase and add membership.
+Verification: Join flow in `src/app/g/[slug]/join` calls RPC function to verify passphrase and add membership.
 
 ### RLS Policy Pattern
 
@@ -158,7 +184,7 @@ create policy "Members can select" on players
   );
 ```
 
-**Public access:** Only `groups` table allows public `SELECT` (for listing groups on home page).
+Public access: Only `groups` table allows public SELECT (for listing groups on home page).
 
 ## Key Conventions
 
@@ -190,8 +216,8 @@ NEXT_PUBLIC_SUPABASE_URL=<your-project-url>
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
 ```
 
-**Supabase requirements:**
-- Anonymous Auth enabled (Dashboard → Auth → Providers → Anonymous)
+Supabase requirements:
+- Anonymous Auth enabled (Dashboard -> Auth -> Providers -> Anonymous)
 - `pgcrypto` extension enabled
 - Migrations applied in order
 

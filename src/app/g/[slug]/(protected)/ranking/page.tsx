@@ -24,8 +24,7 @@ export default async function RankingPage({ params }: RankingPageProps) {
         </p>
         <h2 className="font-display text-2xl text-[var(--ink)]">Ranking</h2>
         <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
-          Seguimiento de ELO por jugador. Usa los rangos para comparar
-          tendencias recientes.
+          Seguimiento histórico de ELO por jugador.
         </p>
       </div>
 

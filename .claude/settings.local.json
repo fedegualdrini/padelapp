@@ -3,7 +3,14 @@
     "allow": [
       "Bash(ls:*)",
       "Bash(powershell:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Skill(superpowers:brainstorming)",
+      "Bash(npm install:*)",
+      "WebSearch",
+      "Bash(npx playwright test:*)",
+      "Bash(npx playwright show-report)",
+      "Bash(dir /s /b \"D:\\\\padelApp\\\\src\\\\app\\\\g\")",
+      "Bash(findstr:*)"
     ]
   }
 }

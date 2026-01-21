@@ -1,6 +1,8 @@
 import { getGroupBySlug, getPlayers, getPlayerStats } from "@/lib/data";
 import AddPlayerForm from "./AddPlayerForm";
 import EditPlayerForm from "./EditPlayerForm";
+import FormIndicator from "@/components/FormIndicator";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 type PlayersPageProps = {
@@ -28,11 +30,19 @@ export default async function PlayersPage({ params }: PlayersPageProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-          Plantel
-        </p>
-        <h2 className="font-display text-2xl text-[var(--ink)]">Jugadores</h2>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
+            Plantel
+          </p>
+          <h2 className="font-display text-2xl text-[var(--ink)]">Jugadores</h2>
+        </div>
+        <Link
+          href={`/g/${group.slug}/players/compare`}
+          className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-solid)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:-translate-y-0.5"
+        >
+          Comparar jugadores
+        </Link>
       </div>
 
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
@@ -56,12 +66,15 @@ export default async function PlayersPage({ params }: PlayersPageProps) {
                 key={player.id}
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4"
               >
-                <EditPlayerForm
-                  playerId={player.id}
-                  initialName={player.name}
-                  groupId={group.id}
-                  groupSlug={group.slug}
-                />
+                <div className="flex items-center gap-2">
+                  <EditPlayerForm
+                    playerId={player.id}
+                    initialName={player.name}
+                    groupId={group.id}
+                    groupSlug={group.slug}
+                  />
+                  <FormIndicator groupId={group.id} playerId={player.id} />
+                </div>
                 {stat ? (
                   <p className="mt-2 text-sm text-[var(--muted)]">
                     {stat.wins}G - {stat.losses}P -{" "}
@@ -88,12 +101,15 @@ export default async function PlayersPage({ params }: PlayersPageProps) {
                 key={player.id}
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4"
               >
-                <EditPlayerForm
-                  playerId={player.id}
-                  initialName={player.name}
-                  groupId={group.id}
-                  groupSlug={group.slug}
-                />
+                <div className="flex items-center gap-2">
+                  <EditPlayerForm
+                    playerId={player.id}
+                    initialName={player.name}
+                    groupId={group.id}
+                    groupSlug={group.slug}
+                  />
+                  <FormIndicator groupId={group.id} playerId={player.id} />
+                </div>
                 {stat ? (
                   <p className="mt-2 text-sm text-[var(--muted)]">
                     {stat.wins}G - {stat.losses}P -{" "}

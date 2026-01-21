@@ -1,0 +1,66 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - link "Saltar al contenido" [ref=e5] [cursor=pointer]:
+      - /url: "#main-content"
+    - banner [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - paragraph [ref=e9]: Pami Club
+          - heading "Padel Tracker" [level=1] [ref=e10]
+        - generic [ref=e11]:
+          - button "Cambiar tema" [ref=e12]: Modo oscuro
+          - link "Nuevo partido" [ref=e13] [cursor=pointer]:
+            - /url: /g/padel/matches/new
+      - generic [ref=e14]:
+        - paragraph [ref=e15]: Registrá sets completos, química de parejas y ELO todo el año.
+        - link "Ver partidos >" [ref=e16] [cursor=pointer]:
+          - /url: /g/padel/matches
+      - navigation [ref=e17]:
+        - link "Panel" [ref=e18] [cursor=pointer]:
+          - /url: /g/padel
+        - link "Partidos" [ref=e19] [cursor=pointer]:
+          - /url: /g/padel/matches
+        - link "Nuevo partido" [ref=e20] [cursor=pointer]:
+          - /url: /g/padel/matches/new
+        - link "Ranking" [ref=e21] [cursor=pointer]:
+          - /url: /g/padel/ranking
+        - link "Jugadores" [ref=e22] [cursor=pointer]:
+          - /url: /g/padel/players
+        - link "Parejas" [ref=e23] [cursor=pointer]:
+          - /url: /g/padel/pairs
+    - main [ref=e24]:
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - paragraph [ref=e27]: Comparación
+          - heading "Head to Head" [level=2] [ref=e28]
+          - paragraph [ref=e29]: Compará el rendimiento entre dos jugadores cuando se enfrentan.
+        - generic [ref=e30]:
+          - heading "Seleccionar jugadores" [level=3] [ref=e31]
+          - generic [ref=e32]:
+            - generic [ref=e33]:
+              - text: Jugador A
+              - combobox "Jugador A" [ref=e34]:
+                - option "Elegir jugador"
+                - option "Fachi" [selected]
+                - option "Fede"
+                - option "Leo"
+                - option "Lucho"
+                - option "Nico"
+            - generic [ref=e35]:
+              - text: Jugador B
+              - combobox "Jugador B" [ref=e36]:
+                - option "Elegir jugador"
+                - option "Fachi" [selected]
+                - option "Fede"
+                - option "Leo"
+                - option "Lucho"
+                - option "Nico"
+        - link "← Volver a jugadores" [ref=e38] [cursor=pointer]:
+          - /url: /g/padel/players
+  - button "Open Next.js Dev Tools" [ref=e44] [cursor=pointer]:
+    - img [ref=e45]
+  - alert [ref=e48]
+```

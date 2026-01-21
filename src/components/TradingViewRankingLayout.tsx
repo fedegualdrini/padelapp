@@ -35,19 +35,10 @@ const INVITE_COLORS = [
   "#a16207",
 ];
 
-const TIME_RANGES = [
-  { label: "1W", days: 7 },
-  { label: "1M", days: 30 },
-  { label: "3M", days: 90 },
-  { label: "6M", days: 180 },
-  { label: "1Y", days: 365 },
-  { label: "ALL", days: null },
-] as const;
 
 export function TradingViewRankingLayout({
   data,
 }: TradingViewRankingLayoutProps) {
-  const [rangeDays, setRangeDays] = useState<number | null>(30);
   const [filters, setFilters] = useState<FilterState>({
     status: "all",
     eloRange: [0, 2000],
@@ -76,7 +67,7 @@ export function TradingViewRankingLayout({
     return colorMap;
   }, [data]);
 
-  // Filter data by time range and add continuation points
+  // Add baseline point and extend to current date
   const timeFilteredData = useMemo(() => {
     // Find the earliest and latest dates across ALL players
     const allDates = data.flatMap(s => s.points.map(p => new Date(p.date)));
@@ -93,57 +84,11 @@ export function TradingViewRankingLayout({
     baselineDate.setDate(baselineDate.getDate() - 1);
 
     return data.map((series) => {
-      const allPoints = series.points;
-
       // Always start with baseline point at ELO 1000, then add all player points
-      const allPointsWithBaseline = [
+      const points = [
         { date: baselineDate.toISOString(), rating: 1000 },
-        ...allPoints,
+        ...series.points,
       ];
-
-      let points = allPointsWithBaseline;
-
-      // Apply time range filter if specified
-      if (rangeDays !== null) {
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - rangeDays);
-
-        // Filter all points (including baseline) by time range
-        const pointsInRange = allPointsWithBaseline.filter(
-          (point) => new Date(point.date) >= cutoffDate
-        );
-
-        // If no points in range, find the last point before cutoff
-        if (pointsInRange.length === 0) {
-          const lastPointBeforeCutoff = allPointsWithBaseline
-            .filter((point) => new Date(point.date) < cutoffDate)
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-
-          if (lastPointBeforeCutoff) {
-            // Show flat line from cutoff to maxDate
-            points = [
-              { date: cutoffDate.toISOString(), rating: lastPointBeforeCutoff.rating },
-              { date: maxDate.toISOString(), rating: lastPointBeforeCutoff.rating },
-            ];
-          } else {
-            points = [];
-          }
-        } else {
-          // Include the last point before range for continuity
-          const lastPointBeforeCutoff = allPointsWithBaseline
-            .filter((point) => new Date(point.date) < cutoffDate)
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-
-          if (lastPointBeforeCutoff) {
-            points = [
-              { date: cutoffDate.toISOString(), rating: lastPointBeforeCutoff.rating },
-              ...pointsInRange,
-            ];
-          } else {
-            points = pointsInRange;
-          }
-        }
-      }
 
       // Add continuation to maxDate if the last point is before it
       if (points.length > 0) {
@@ -152,10 +97,7 @@ export function TradingViewRankingLayout({
 
         // If last point is before the max date, extend the line
         if (lastDate < maxDate) {
-          points = [
-            ...points,
-            { date: maxDate.toISOString(), rating: lastPoint.rating },
-          ];
+          points.push({ date: maxDate.toISOString(), rating: lastPoint.rating });
         }
       }
 
@@ -164,7 +106,7 @@ export function TradingViewRankingLayout({
         points,
       };
     });
-  }, [data, rangeDays]);
+  }, [data]);
 
   // Apply filters
   const filteredData = useMemo(() => {
@@ -213,24 +155,6 @@ export function TradingViewRankingLayout({
 
   return (
     <div className="space-y-6">
-      {/* Time Range Controls */}
-      <div className="flex justify-end gap-2">
-        {TIME_RANGES.map((range) => (
-          <button
-            key={range.label}
-            onClick={() => setRangeDays(range.days)}
-            aria-pressed={rangeDays === range.days}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              rangeDays === range.days
-                ? "bg-[var(--accent)] text-white"
-                : "bg-[var(--card-solid)] text-[var(--ink)] hover:bg-[var(--card-border)] border border-[var(--card-border)]"
-            }`}
-          >
-            {range.label}
-          </button>
-        ))}
-      </div>
-
       {/* Main Layout */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Chart Section - 70% on desktop */}
@@ -247,7 +171,7 @@ export function TradingViewRankingLayout({
                 <div className="text-center">
                   <p className="text-sm font-medium">No data to display</p>
                   <p className="text-xs mt-1">
-                    Try adjusting your filters or time range
+                    Try adjusting your filters
                   </p>
                 </div>
               </div>
