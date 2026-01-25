@@ -817,19 +817,14 @@ export async function getPlayerRecentForm(
   }
 
   // Get recent matches with results
+  // NOTE: We query an enriched view instead of joining `v_player_match_results` -> matches,
+  // because PostgREST can't infer relationships from a plain view.
   const { data: matchResults, error: matchError } = await supabaseServer
-    .from("v_player_match_results")
-    .select(
-      `
-        match_id,
-        player_id,
-        is_win,
-        matches!inner ( played_at, group_id )
-      `
-    )
+    .from("v_player_match_results_enriched")
+    .select("match_id, player_id, is_win, played_at")
     .eq("player_id", playerId)
-    .eq("matches.group_id", groupId)
-    .order("played_at", { foreignTable: "matches", ascending: false })
+    .eq("group_id", groupId)
+    .order("played_at", { ascending: false })
     .limit(matchCount);
 
   if (matchError || !matchResults || matchResults.length === 0) {
