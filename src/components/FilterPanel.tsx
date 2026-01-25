@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export type FilterState = {
   status: "all" | "usual" | "invite";
@@ -21,11 +21,11 @@ export function FilterPanel({
   minElo,
   maxElo,
 }: FilterPanelProps) {
-  const [localEloRange, setLocalEloRange] = useState(filters.eloRange);
-
-  useEffect(() => {
-    setLocalEloRange(filters.eloRange);
-  }, [filters.eloRange]);
+  // Keep local state only for smooth slider dragging.
+  // We update the parent state on mouse/touch end.
+  const [localEloRange, setLocalEloRange] = useState<[number, number]>(
+    filters.eloRange
+  );
 
   const hasActiveFilters =
     filters.status !== "all" ||
@@ -60,9 +60,11 @@ export function FilterPanel({
   };
 
   const handleReset = () => {
+    const resetRange: [number, number] = [minElo, maxElo];
+    setLocalEloRange(resetRange);
     onFiltersChange({
       status: "all",
-      eloRange: [minElo, maxElo],
+      eloRange: resetRange,
       activeOnly: false,
     });
   };
@@ -125,9 +127,7 @@ export function FilterPanel({
 
       {/* ELO Range Slider */}
       <div className="space-y-2">
-        <label className="text-xs font-medium text-[var(--muted)]">
-          ELO Range
-        </label>
+        <label className="text-xs font-medium text-[var(--muted)]">ELO Range</label>
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <input
@@ -138,6 +138,7 @@ export function FilterPanel({
               onChange={(e) => handleEloRangeChange(0, Number(e.target.value))}
               onMouseUp={handleEloRangeCommit}
               onTouchEnd={handleEloRangeCommit}
+              aria-label="Minimum ELO"
               className="flex-1"
             />
             <span className="text-xs font-mono w-12 text-right tabular-nums">
@@ -153,6 +154,7 @@ export function FilterPanel({
               onChange={(e) => handleEloRangeChange(1, Number(e.target.value))}
               onMouseUp={handleEloRangeCommit}
               onTouchEnd={handleEloRangeCommit}
+              aria-label="Maximum ELO"
               className="flex-1"
             />
             <span className="text-xs font-mono w-12 text-right tabular-nums">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { updatePlayer } from "@/app/players/actions";
 
 type EditPlayerFormProps = {
@@ -21,26 +21,24 @@ export default function EditPlayerForm({
   groupId,
   groupSlug,
 }: EditPlayerFormProps) {
-  const [state, formAction] = useActionState<UpdatePlayerState, FormData>(
-    updatePlayer,
-    {}
-  );
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(initialName);
   const [draftName, setDraftName] = useState(initialName);
 
-  useEffect(() => {
-    if (state?.success) {
-      setName(draftName.trim() || name);
-      setIsEditing(false);
-    }
-  }, [state?.success, draftName, name]);
-
-  useEffect(() => {
-    if (!isEditing) {
-      setDraftName(name);
-    }
-  }, [isEditing, name]);
+  // Wrap the server action so we can update local UI state *outside* of an effect.
+  const [state, formAction] = useActionState<UpdatePlayerState, FormData>(
+    async (prev, formData) => {
+      const result = await updatePlayer(prev, formData);
+      if (result?.success) {
+        const nextName = String(formData.get("player_name") ?? "").trim();
+        setName(nextName || name);
+        setDraftName(nextName || name);
+        setIsEditing(false);
+      }
+      return result;
+    },
+    {}
+  );
 
   return (
     <div className="mt-1">
@@ -49,7 +47,10 @@ export default function EditPlayerForm({
         {!isEditing ? (
           <button
             type="button"
-            onClick={() => setIsEditing(true)}
+            onClick={() => {
+              setDraftName(name);
+              setIsEditing(true);
+            }}
             className="rounded-full border border-[color:var(--card-border)] px-3 py-1 text-xs font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
           >
             Editar
@@ -92,7 +93,10 @@ export default function EditPlayerForm({
             </button>
             <button
               type="button"
-              onClick={() => setIsEditing(false)}
+              onClick={() => {
+                setDraftName(name);
+                setIsEditing(false);
+              }}
               className="rounded-full border border-[color:var(--card-border)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
             >
               Cancelar

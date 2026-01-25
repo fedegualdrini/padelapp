@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getPlayerElos } from "@/app/matches/new/prediction-actions";
 import { calculateMatchPrediction } from "@/lib/elo-utils";
 
@@ -12,6 +12,11 @@ type MatchPredictionBannerProps = {
   team2Names: [string, string];
 };
 
+type EloState = {
+  team1AvgElo: number;
+  team2AvgElo: number;
+} | null;
+
 export default function MatchPredictionBanner({
   groupId,
   team1PlayerIds,
@@ -19,54 +24,73 @@ export default function MatchPredictionBanner({
   team1Names,
   team2Names,
 }: MatchPredictionBannerProps) {
-  const [prediction, setPrediction] = useState<ReturnType<
-    typeof calculateMatchPrediction
-  > | null>(null);
-  const [team1AvgElo, setTeam1AvgElo] = useState<number | null>(null);
-  const [team2AvgElo, setTeam2AvgElo] = useState<number | null>(null);
+  const hasAllPlayers =
+    Boolean(team1PlayerIds[0]) &&
+    Boolean(team1PlayerIds[1]) &&
+    Boolean(team2PlayerIds[0]) &&
+    Boolean(team2PlayerIds[1]);
 
-  useEffect(() => {
-    // Check if all 4 players are selected
-    if (
-      !team1PlayerIds[0] ||
-      !team1PlayerIds[1] ||
-      !team2PlayerIds[0] ||
-      !team2PlayerIds[1]
-    ) {
-      setPrediction(null);
-      setTeam1AvgElo(null);
-      setTeam2AvgElo(null);
-      return;
-    }
+  const [eloState, setEloState] = useState<EloState>(null);
 
-    const allPlayerIds = [
+  const playerKey = useMemo(() => {
+    // Stable key so the effect only runs when the ids *change*
+    return [
+      groupId,
       team1PlayerIds[0],
       team1PlayerIds[1],
       team2PlayerIds[0],
       team2PlayerIds[1],
-    ];
-
-    // Fetch ELOs and calculate prediction
-    getPlayerElos(groupId, allPlayerIds).then((elos) => {
-      const team1Elo1 = elos[team1PlayerIds[0]!] ?? 1000;
-      const team1Elo2 = elos[team1PlayerIds[1]!] ?? 1000;
-      const team2Elo1 = elos[team2PlayerIds[0]!] ?? 1000;
-      const team2Elo2 = elos[team2PlayerIds[1]!] ?? 1000;
-
-      const avgTeam1 = (team1Elo1 + team1Elo2) / 2;
-      const avgTeam2 = (team2Elo1 + team2Elo2) / 2;
-
-      setTeam1AvgElo(Math.round(avgTeam1));
-      setTeam2AvgElo(Math.round(avgTeam2));
-
-      const pred = calculateMatchPrediction(avgTeam1, avgTeam2);
-      setPrediction(pred);
-    });
+    ].join(":");
   }, [groupId, team1PlayerIds, team2PlayerIds]);
 
-  if (!prediction || team1AvgElo === null || team2AvgElo === null) {
+  useEffect(() => {
+    if (!hasAllPlayers) return;
+
+    let cancelled = false;
+
+    const allPlayerIds = [
+      team1PlayerIds[0]!,
+      team1PlayerIds[1]!,
+      team2PlayerIds[0]!,
+      team2PlayerIds[1]!,
+    ];
+
+    getPlayerElos(groupId, allPlayerIds)
+      .then((elos) => {
+        if (cancelled) return;
+
+        const team1Elo1 = elos[team1PlayerIds[0]!] ?? 1000;
+        const team1Elo2 = elos[team1PlayerIds[1]!] ?? 1000;
+        const team2Elo1 = elos[team2PlayerIds[0]!] ?? 1000;
+        const team2Elo2 = elos[team2PlayerIds[1]!] ?? 1000;
+
+        const avgTeam1 = (team1Elo1 + team1Elo2) / 2;
+        const avgTeam2 = (team2Elo1 + team2Elo2) / 2;
+
+        setEloState({
+          team1AvgElo: Math.round(avgTeam1),
+          team2AvgElo: Math.round(avgTeam2),
+        });
+      })
+      .catch(() => {
+        // Keep the banner hidden on errors.
+        if (cancelled) return;
+        setEloState(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [playerKey, hasAllPlayers, groupId, team1PlayerIds, team2PlayerIds]);
+
+  if (!hasAllPlayers || !eloState) {
     return null;
   }
+
+  const prediction = calculateMatchPrediction(
+    eloState.team1AvgElo,
+    eloState.team2AvgElo
+  );
 
   const team1Percent = Math.round(prediction.team1WinProb * 100);
   const team2Percent = Math.round(prediction.team2WinProb * 100);
@@ -104,7 +128,7 @@ export default function MatchPredictionBanner({
             {team1Names[0]} / {team1Names[1]}
           </p>
           <p className="mt-1 text-xs text-[var(--muted)]">
-            ELO promedio: {team1AvgElo}
+            ELO promedio: {eloState.team1AvgElo}
           </p>
           <p
             className={`mt-1 text-lg font-semibold ${
@@ -134,7 +158,7 @@ export default function MatchPredictionBanner({
             {team2Names[0]} / {team2Names[1]}
           </p>
           <p className="mt-1 text-xs text-[var(--muted)]">
-            ELO promedio: {team2AvgElo}
+            ELO promedio: {eloState.team2AvgElo}
           </p>
           <p
             className={`mt-1 text-lg font-semibold ${
