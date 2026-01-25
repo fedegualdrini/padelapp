@@ -445,8 +445,8 @@ export const getPlayers = cache(async (groupId: string) => {
 export async function getPlayerStats(groupId: string) {
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
-    .from("mv_player_stats")
-    .select("player_id, wins, losses, win_rate")
+    .from("mv_player_stats_v2")
+    .select("player_id, matches_played, wins, losses, undecided, win_rate")
     .eq("group_id", groupId);
 
   if (error || !data) {
