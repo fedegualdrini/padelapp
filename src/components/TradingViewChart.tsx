@@ -11,9 +11,11 @@ import {
   type IChartApi,
   type ISeriesApi,
   type LineData,
+  type UTCTimestamp,
 } from "lightweight-charts";
 
 type EloTimelinePoint = { date: string; rating: number };
+
 type EloTimelineSeries = {
   playerId: string;
   name: string;
@@ -50,7 +52,7 @@ export function TradingViewChart({
   data,
   hiddenPlayers = new Set(),
   focusedPlayer = null,
-  onSeriesHover,
+  onSeriesHover: _onSeriesHover,
 }: TradingViewChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -76,15 +78,18 @@ export function TradingViewChart({
   // Transform data for Lightweight Charts
   const transformedData = useMemo(() => {
     return data.map((series, index) => {
-      const colorArray = series.status === "usual" ? USUAL_COLORS : INVITE_COLORS;
+      const colorArray =
+        series.status === "usual" ? USUAL_COLORS : INVITE_COLORS;
       const color = colorArray[index % colorArray.length];
 
       const lineData: LineData[] = series.points
         .map((point) => ({
-          time: Math.floor(new Date(point.date).getTime() / 1000) as any,
+          time: Math.floor(
+            new Date(point.date).getTime() / 1000
+          ) as UTCTimestamp,
           value: point.rating,
         }))
-        .sort((a, b) => (a.time as number) - (b.time as number)); // Sort in ascending order
+        .sort((a, b) => (a.time as number) - (b.time as number)); // ascending
 
       return {
         playerId: series.playerId,
@@ -144,7 +149,6 @@ export function TradingViewChart({
 
     chartRef.current = chart;
 
-    // Handle resize
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
@@ -194,8 +198,8 @@ export function TradingViewChart({
     seriesMapRef.current.forEach((series) => {
       try {
         chart.removeSeries(series);
-      } catch (e) {
-        // Series might already be removed
+      } catch {
+        // best-effort cleanup
       }
     });
     seriesMapRef.current.clear();
@@ -217,7 +221,7 @@ export function TradingViewChart({
         // Apply opacity if not focused
         if (focusedPlayer && focusedPlayer !== seriesData.playerId) {
           series.applyOptions({
-            color: seriesData.color + "33", // 20% opacity
+            color: seriesData.color + "33", // ~20% opacity
           });
         }
 

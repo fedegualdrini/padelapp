@@ -1,6 +1,26 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
+
+type SortKey = "rank" | "name" | "elo" | "matches";
+
+type SortIconProps = {
+  column: SortKey;
+  sortKey: SortKey;
+  sortDirection: "asc" | "desc";
+};
+
+function SortIcon({ column, sortKey, sortDirection }: SortIconProps) {
+  if (sortKey !== column) {
+    return <span className="ml-1 text-[var(--muted)] opacity-50">↕</span>;
+  }
+
+  return (
+    <span className="ml-1 text-[var(--accent)]">
+      {sortDirection === "asc" ? "↑" : "↓"}
+    </span>
+  );
+}
 
 export type RankingPlayer = {
   playerId: string;
@@ -17,8 +37,6 @@ interface CurrentRankingsTableProps {
   onPlayerClick?: (playerId: string | null) => void;
   focusedPlayer?: string | null;
 }
-
-type SortKey = "rank" | "name" | "elo" | "matches";
 
 export function CurrentRankingsTable({
   players,
@@ -61,19 +79,6 @@ export function CurrentRankingsTable({
     }
   };
 
-  const SortIcon = ({ column }: { column: SortKey }) => {
-    if (sortKey !== column) {
-      return (
-        <span className="ml-1 text-[var(--muted)] opacity-50">↕</span>
-      );
-    }
-    return (
-      <span className="ml-1 text-[var(--accent)]">
-        {sortDirection === "asc" ? "↑" : "↓"}
-      </span>
-    );
-  };
-
   return (
     <div className="rounded-lg border border-[var(--card-border)] bg-[var(--card-glass)] backdrop-blur-sm overflow-hidden">
       <div className="px-4 py-3 border-b border-[var(--card-border)]">
@@ -89,7 +94,12 @@ export function CurrentRankingsTable({
                   onClick={() => handleSort("elo")}
                   className="flex items-center hover:text-[var(--ink)] transition-colors"
                 >
-                  #<SortIcon column="elo" />
+                  #
+                  <SortIcon
+                    column="elo"
+                    sortKey={sortKey}
+                    sortDirection={sortDirection}
+                  />
                 </button>
               </th>
               <th className="px-3 py-2 text-left font-medium text-[var(--muted)]">
@@ -97,7 +107,12 @@ export function CurrentRankingsTable({
                   onClick={() => handleSort("name")}
                   className="flex items-center hover:text-[var(--ink)] transition-colors"
                 >
-                  Player<SortIcon column="name" />
+                  Player
+                  <SortIcon
+                    column="name"
+                    sortKey={sortKey}
+                    sortDirection={sortDirection}
+                  />
                 </button>
               </th>
               <th className="px-3 py-2 text-right font-medium text-[var(--muted)]">
@@ -105,7 +120,12 @@ export function CurrentRankingsTable({
                   onClick={() => handleSort("elo")}
                   className="flex items-center justify-end hover:text-[var(--ink)] transition-colors ml-auto"
                 >
-                  ELO<SortIcon column="elo" />
+                  ELO
+                  <SortIcon
+                    column="elo"
+                    sortKey={sortKey}
+                    sortDirection={sortDirection}
+                  />
                 </button>
               </th>
               <th className="px-3 py-2 text-center font-medium text-[var(--muted)]">
@@ -123,7 +143,9 @@ export function CurrentRankingsTable({
                   key={player.playerId}
                   onMouseEnter={() => onPlayerHover?.(player.playerId)}
                   onMouseLeave={() => onPlayerHover?.(null)}
-                  onClick={() => onPlayerClick?.(isFocused ? null : player.playerId)}
+                  onClick={() =>
+                    onPlayerClick?.(isFocused ? null : player.playerId)
+                  }
                   className={`border-b border-[var(--card-border)] cursor-pointer transition-all ${
                     isFocused
                       ? "bg-[var(--accent)]/10"
