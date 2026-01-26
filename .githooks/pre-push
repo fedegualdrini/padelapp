@@ -21,6 +21,13 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
   exit 1
 fi
 
+if [[ "${TEST_DB_ALLOW_RESET:-}" != "true" ]]; then
+  echo "[pre-push] TEST_DB_ALLOW_RESET is not set to 'true'."
+  echo "[pre-push] The db reset step DROPS and recreates the public schema."
+  echo "[pre-push] Add it to .env.test: TEST_DB_ALLOW_RESET=true"
+  exit 1
+fi
+
 echo "[pre-push] Running full test suite…"
 
 npm run -s typecheck
