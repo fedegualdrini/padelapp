@@ -1,5 +1,6 @@
 "use server";
 
+// (removed) previously used next/server.after
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -196,7 +197,12 @@ export async function createMatch(
     return { error: "No se pudieron guardar los marcadores." };
   }
 
-  await supabaseServer.rpc("refresh_stats_views");
+  // Keep stats views in sync for pages that read from materialized views.
+  // We await here to avoid UI showing stale counts (e.g. "-1 match") right after creation.
+  const { error: refreshError } = await supabaseServer.rpc("refresh_stats_views");
+  if (refreshError) {
+    console.error("refresh_stats_views failed", { refreshError });
+  }
 
   redirect(`/g/${groupSlug}/matches/${match.id}`);
 }

@@ -11,6 +11,7 @@ type MatchCardProps = {
   playedAt: string;
   bestOf: number;
   createdBy: string;
+  updatedBy?: string | null;
   teams: readonly MatchTeam[];
   winner: string;
   basePath?: string;
@@ -21,11 +22,17 @@ export default function MatchCard({
   playedAt,
   bestOf,
   createdBy,
+  updatedBy,
   teams,
   winner,
   basePath = "",
 }: MatchCardProps) {
   const matchHref = `${basePath}/matches/${id}`;
+
+  const effectiveUpdatedBy = (updatedBy ?? "").trim();
+  const isEdited = Boolean(effectiveUpdatedBy) && effectiveUpdatedBy !== createdBy;
+  const attributionLabel = isEdited ? "Editado por" : "Creado por";
+  const attributionName = isEdited ? effectiveUpdatedBy : createdBy;
 
   return (
     <Link
@@ -40,7 +47,7 @@ export default function MatchCard({
           <p className="mt-2 text-lg font-semibold text-[var(--ink)]">{winner}</p>
         </div>
           <span className="rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-semibold text-white">
-            {createdBy}
+            {attributionLabel} {attributionName}
           </span>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">

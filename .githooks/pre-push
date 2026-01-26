@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Pre-push gate: run full test suite before allowing a push.
+# Loads local env if present (NOT committed).
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+if [[ -f .env.test ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source .env.test
+  set +a
+fi
+
+if [[ -z "${DATABASE_URL:-}" ]]; then
+  echo "[pre-push] DATABASE_URL is not set."
+  echo "[pre-push] Add it to .env.test (ignored by git) or export it in your shell."
+  echo "[pre-push] Example: echo 'DATABASE_URL=postgresql://...' > .env.test"
+  exit 1
+fi
+
+if [[ "${TEST_DB_ALLOW_RESET:-}" != "true" ]]; then
+  echo "[pre-push] TEST_DB_ALLOW_RESET is not set to 'true'."
+  echo "[pre-push] The db reset step DROPS and recreates the public schema."
+  echo "[pre-push] Add it to .env.test: TEST_DB_ALLOW_RESET=true"
+  exit 1
+fi
+
+echo "[pre-push] Running full test suite…"
+
+npm run -s typecheck
+npm run -s lint
+npm run -s test:unit
+npm run -s test:db
+npm run -s test:e2e
+
+echo "[pre-push] ✅ All checks passed. Proceeding with push."

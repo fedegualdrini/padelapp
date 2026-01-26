@@ -15,7 +15,7 @@ export default function ThemeToggle() {
     return (
       <button
         type="button"
-        className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-glass)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]"
+        className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-glass)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
         aria-label="Cambiar tema"
       >
         Tema
@@ -29,7 +29,7 @@ export default function ThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-glass)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)] transition hover:-translate-y-0.5"
+      className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-glass)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
       aria-label="Cambiar tema"
     >
       {isDark ? "Modo claro" : "Modo oscuro"}

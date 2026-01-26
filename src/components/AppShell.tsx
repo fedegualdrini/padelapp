@@ -14,6 +14,12 @@ export default function AppShell({ groupName, slug, children, showNavigation = t
 
   return (
     <div className="relative">
+      <a
+        href="#main-content"
+        className="sr-only rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+      >
+        Saltar al contenido
+      </a>
       <header className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pb-6 pt-8 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -29,7 +35,7 @@ export default function AppShell({ groupName, slug, children, showNavigation = t
             {showNavigation && (
               <Link
                 href={`${basePath}/matches/new`}
-                className="rounded-full bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5"
+                className="rounded-full bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
               >
                 Nuevo partido
               </Link>
@@ -44,7 +50,7 @@ export default function AppShell({ groupName, slug, children, showNavigation = t
               </p>
               <Link
                 href={`${basePath}/matches`}
-                className="text-sm font-semibold text-[var(--accent)]"
+                className="text-sm font-semibold text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
               >
                 Ver partidos &gt;
               </Link>
@@ -54,7 +60,10 @@ export default function AppShell({ groupName, slug, children, showNavigation = t
         )}
       </header>
 
-      <main className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6">
+      <main
+        id="main-content"
+        className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6"
+      >
         {children}
       </main>
     </div>

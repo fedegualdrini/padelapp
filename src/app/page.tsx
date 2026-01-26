@@ -31,7 +31,7 @@ export default async function Home() {
               <Link
                 key={group.id}
                 href={`/g/${group.slug}/join`}
-                className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4 text-sm font-semibold text-[var(--ink)] transition hover:-translate-y-0.5"
+                className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4 text-sm font-semibold text-[var(--ink)] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
               >
                 {group.name}
                 <span className="mt-1 block text-xs font-normal text-[var(--muted)]">
@@ -49,18 +49,22 @@ export default async function Home() {
           <input
             type="text"
             name="group_name"
-            placeholder="Nombre del grupo"
+            placeholder="Nombre del grupo (ej: Centro Padel?)"
+            aria-label="Nombre del grupo"
+            autoComplete="off"
             className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-4 py-2 text-sm"
           />
           <input
             type="password"
             name="group_passphrase"
-            placeholder="Clave del grupo"
+            placeholder="Clave del grupo (ej: cancha2026?)"
+            aria-label="Clave del grupo"
+            autoComplete="off"
             className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-4 py-2 text-sm"
           />
           <button
             type="submit"
-            className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white"
+            className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
           >
             Crear grupo
           </button>
@@ -68,4 +72,5 @@ export default async function Home() {
       </section>
     </div>
   );
-}
+}
+

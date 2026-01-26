@@ -13,8 +13,6 @@ type EditPlayerFormProps = {
 type UpdatePlayerState = {
   error?: string;
   success?: boolean;
-  name?: string;
-  editKey?: string;
 };
 
 export default function EditPlayerForm({
@@ -23,52 +21,58 @@ export default function EditPlayerForm({
   groupId,
   groupSlug,
 }: EditPlayerFormProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(initialName);
+  const [draftName, setDraftName] = useState(initialName);
+
+  // Wrap the server action so we can update local UI state *outside* of an effect.
   const [state, formAction] = useActionState<UpdatePlayerState, FormData>(
-    updatePlayer,
+    async (prev, formData) => {
+      const result = await updatePlayer(prev, formData);
+      if (result?.success) {
+        const nextName = String(formData.get("player_name") ?? "").trim();
+        setName(nextName || name);
+        setDraftName(nextName || name);
+        setIsEditing(false);
+      }
+      return result;
+    },
     {}
   );
-  const [isEditing, setIsEditing] = useState(false);
-  const [draftName, setDraftName] = useState("");
-  const [editKey, setEditKey] = useState(0);
-
-  const nameToShow = state?.name ?? initialName;
-  const currentEditKey = String(editKey);
-  const closeOnSuccess = state?.success && state?.editKey === currentEditKey;
-  const showEditor = isEditing && !closeOnSuccess;
-
-  const handleStartEdit = () => {
-    setDraftName(nameToShow);
-    setIsEditing(true);
-    setEditKey((value) => value + 1);
-  };
 
   return (
     <div className="mt-1">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-base font-semibold text-[var(--ink)]">{nameToShow}</p>
-        {!showEditor && (
+        <p className="text-base font-semibold text-[var(--ink)]">{name}</p>
+        {!isEditing ? (
           <button
             type="button"
-            onClick={handleStartEdit}
-            className="rounded-full border border-[color:var(--card-border)] px-3 py-1 text-xs font-semibold text-[var(--ink)]"
+            onClick={() => {
+              setDraftName(name);
+              setIsEditing(true);
+            }}
+            className="rounded-full border border-[color:var(--card-border)] px-3 py-1 text-xs font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
           >
             Editar
           </button>
-        )}
+        ) : null}
       </div>
 
-      {showEditor && (
+      {isEditing ? (
         <form action={formAction} className="mt-3 grid gap-2">
           <input type="hidden" name="player_id" value={playerId} />
           <input type="hidden" name="group_id" value={groupId} />
           <input type="hidden" name="group_slug" value={groupSlug} />
-          <input type="hidden" name="edit_key" value={currentEditKey} />
 
-          {state?.error && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-400">
+          {state?.error ? (
+            <div
+              className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-400"
+              role="status"
+              aria-live="polite"
+            >
               {state.error}
             </div>
-          )}
+          ) : null}
 
           <div className="flex flex-wrap items-center gap-2">
             <input
@@ -76,25 +80,30 @@ export default function EditPlayerForm({
               name="player_name"
               value={draftName}
               onChange={(event) => setDraftName(event.target.value)}
-              placeholder="Nuevo nombre"
+              placeholder="Nuevo nombre (ej: Nico?)"
+              aria-label="Nuevo nombre del jugador"
+              autoComplete="off"
               className="flex-1 rounded-full border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-1.5 text-sm"
             />
             <button
               type="submit"
-              className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white"
+              className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
             >
               Guardar
             </button>
             <button
               type="button"
-              onClick={() => setIsEditing(false)}
-              className="rounded-full border border-[color:var(--card-border)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)]"
+              onClick={() => {
+                setDraftName(name);
+                setIsEditing(false);
+              }}
+              className="rounded-full border border-[color:var(--card-border)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
             >
               Cancelar
             </button>
           </div>
         </form>
-      )}
+      ) : null}
     </div>
   );
 }
