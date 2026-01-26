@@ -23,4 +23,6 @@ export async function clearMatchHistory(slug: string) {
   revalidatePath(`/g/${slug}/matches`);
   revalidatePath(`/g/${slug}`);
   revalidatePath(`/g/${slug}/ranking`);
+  revalidatePath(`/g/${slug}/players`);
 }
+
