@@ -177,10 +177,29 @@ async function handleMessage({ cfg, db, msg }) {
   const chatJid = msg?.ChatJID || msg?.chat?.jid || msg?.chat || msg?.jid;
   if (!chatJid || chatJid !== cfg.groupJid) return;
 
-  // Ignore bot-authored messages to prevent loops.
-  if (msg?.FromMe === true || msg?.fromMe === true) return;
-
   const text = normalizeCmd(msg?.Text || msg?.text || msg?.message?.text || msg?.body || '');
+
+  // In this setup, wacli is linked to the admin's personal WhatsApp account,
+  // so group commands sent by the admin appear as FromMe=true.
+  // We therefore must NOT blanket-ignore FromMe.
+  // Instead, ignore messages that look like our own bot outputs (to avoid loops).
+  const botOutputPrefixes = [
+    '🗓️ lista jueves',
+    '📋 estado',
+    '✅ confirmado',
+    '⏳ lista de espera',
+    '❌ no viene',
+    '🔒 lista cerrada',
+    '🔓 lista reabierta',
+    '🧹 lista reiniciada',
+    '💡 sugerencias',
+    '🆔 tu id',
+    '⚠️ no tengo tu identidad',
+    '✅ vinculado',
+  ];
+  const looksLikeBotOutput = botOutputPrefixes.some((p) => text.startsWith(p));
+  if (looksLikeBotOutput) return;
+
   if (!text.startsWith('!')) return;
 
   // Sender identity:
