@@ -16,6 +16,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { spawn } from 'node:child_process';
 import pg from 'pg';
 
@@ -273,6 +274,54 @@ async function wacliSendGroupText(groupJid, message) {
       else reject(new Error(err || `wacli send failed (code ${code})`));
     });
   });
+}
+
+async function wacliSendGroupFile(groupJid, filePath, caption) {
+  return new Promise((resolve, reject) => {
+    const args = ['send', 'file', '--to', groupJid, '--file', filePath];
+    if (caption) args.push('--caption', caption);
+    const p = spawn('wacli', args, {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let out = '';
+    let err = '';
+    p.stdout.on('data', (d) => (out += d.toString('utf8')));
+    p.stderr.on('data', (d) => (err += d.toString('utf8')));
+    p.on('close', (code) => {
+      if (code === 0) resolve(out.trim());
+      else reject(new Error(err || `wacli send file failed (code ${code})`));
+    });
+  });
+}
+
+async function maybeSendRankingScreenshot({ groupJid, caption, matchId }) {
+  const url = process.env.RANKING_SCREENSHOT_URL;
+  if (!url) return false;
+
+  let playwright;
+  try {
+    playwright = await import('playwright');
+  } catch {
+    return false;
+  }
+
+  const filePath = path.join(os.tmpdir(), `ranking-${matchId}.png`);
+  try {
+    const browser = await playwright.chromium.launch({ headless: true });
+    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: filePath, fullPage: true });
+    await browser.close();
+
+    await wacliSendGroupFile(groupJid, filePath, caption);
+    return true;
+  } catch {
+    try {
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    } catch {}
+    return false;
+  }
 }
 
 async function handleMessage({ cfg, db, msg, state }) {
@@ -597,9 +646,101 @@ async function handleMessage({ cfg, db, msg, state }) {
 
         await db.query('commit');
 
-        // Message
+        // Post-load summary (ELO deltas + leaderboard)
         const scoreText = setScores.map((s) => `${s.team1}-${s.team2}`).join(' ');
-        await wacliSendGroupText(cfg.groupJid, `✅ Partido cargado\n\nResultado: ${scoreText}`);
+
+        async function getMatchEloDeltas(matchId, groupId) {
+          const { rows: ratings } = await db.query(
+            `select er.player_id, er.rating
+               from elo_ratings er
+               join matches m on m.id = er.as_of_match_id
+              where er.as_of_match_id = $1
+                and m.group_id = $2`,
+            [matchId, groupId]
+          );
+          if (!ratings.length) return null;
+
+          const playerIds = ratings.map((r) => r.player_id);
+          const { rows: names } = await db.query(
+            `select id as player_id, name from players where id = any($1::uuid[])`,
+            [playerIds]
+          );
+          const nameById = new Map(names.map((r) => [r.player_id, r.name]));
+
+          const deltas = [];
+          for (const r of ratings) {
+            const { rows: prev } = await db.query(
+              `select get_player_elo_before($1::uuid, $2::uuid) as rating_before`,
+              [r.player_id, matchId]
+            );
+            const before = Number(prev[0]?.rating_before);
+            const after = Number(r.rating);
+            if (!Number.isFinite(before) || !Number.isFinite(after)) continue;
+            deltas.push({
+              playerId: r.player_id,
+              name: nameById.get(r.player_id) ?? r.player_id,
+              before,
+              after,
+              delta: after - before,
+            });
+          }
+
+          // Sort by absolute delta desc (so it's easy to read)
+          deltas.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+          return deltas;
+        }
+
+        async function getEloLeaderboardText(groupId, limit = 8) {
+          // Latest rating per player (same source as ranking timeline)
+          const { rows } = await db.query(
+            `select distinct on (er.player_id)
+                er.player_id,
+                er.rating,
+                p.name
+             from elo_ratings er
+             join matches m on m.id = er.as_of_match_id
+             join players p on p.id = er.player_id
+             where m.group_id = $1
+             order by er.player_id, m.played_at desc, m.created_at desc, er.created_at desc`,
+            [groupId]
+          );
+          if (!rows.length) return '🏆 Ranking: Not enough data for suggestions.';
+
+          const ordered = [...rows]
+            .map((r) => ({ name: r.name, rating: Number(r.rating) }))
+            .sort((a, b) => b.rating - a.rating)
+            .slice(0, limit);
+
+          const lines = ordered.map((r, idx) => `${idx + 1}) ${r.name} — ${r.rating}`);
+          return `🏆 Ranking (top ${Math.min(limit, ordered.length)}):\n${lines.join('\n')}`;
+        }
+
+        // Short retry: ELO triggers may lag slightly
+        let deltas = null;
+        for (let i = 0; i < 3; i += 1) {
+          deltas = await getMatchEloDeltas(matchId, occ.group_id);
+          if (deltas) break;
+          await new Promise((r) => setTimeout(r, 500));
+        }
+
+        const deltasText = deltas
+          ? `📈 ELO (este partido):\n${deltas
+              .map((d) => `- ${d.name}: ${d.delta >= 0 ? '+' : ''}${d.delta} (\n  ${d.before} → ${d.after})`)
+              .join('\n')}`
+          : '📈 ELO (este partido): Not enough data for suggestions.';
+
+        const leaderboardText = await getEloLeaderboardText(occ.group_id, 8);
+
+        const message = `✅ Partido cargado\n\nResultado: ${scoreText}\n\n${deltasText}\n\n${leaderboardText}`;
+        await wacliSendGroupText(cfg.groupJid, message);
+
+        // Optional: screenshot (best effort)
+        await maybeSendRankingScreenshot({
+          groupJid: cfg.groupJid,
+          caption: '📊 Ranking actualizado',
+          matchId,
+        });
+
         return;
       } catch (e) {
         await db.query('rollback');
