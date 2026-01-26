@@ -9,6 +9,7 @@ type MatchRow = {
   played_at: string;
   best_of: number;
   created_by: string;
+  updated_by?: string | null;
   match_teams: {
     team_number: number;
     match_team_players: { players: { id: string; name: string } | null }[];
@@ -24,6 +25,7 @@ type MatchEditRow = {
   played_at: string;
   best_of: number;
   created_by: string;
+  updated_by?: string | null;
   match_teams: {
     team_number: number;
     id: string;
@@ -169,6 +171,7 @@ const buildMatchView = (match: MatchRow) => {
     playedAt: formatDate(match.played_at),
     bestOf: match.best_of,
     createdBy: match.created_by,
+    updatedBy: match.updated_by ?? match.created_by,
     teams: [
       {
         name: teamNames[0] ?? "Team 1",
@@ -195,6 +198,7 @@ export async function getRecentMatches(groupId: string, limit = 3) {
         played_at,
         best_of,
         created_by,
+        updated_by,
         match_teams (
           team_number,
           match_team_players (
@@ -228,6 +232,7 @@ export async function getMatches(groupId: string) {
         played_at,
         best_of,
         created_by,
+        updated_by,
         match_teams (
           team_number,
           match_team_players (
@@ -260,6 +265,7 @@ export async function getMatchById(groupId: string, id: string) {
         played_at,
         best_of,
         created_by,
+        updated_by,
         match_teams (
           team_number,
           match_team_players (
