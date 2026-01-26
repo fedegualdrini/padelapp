@@ -100,6 +100,17 @@ async function upsertAttendance(client, occurrenceId, groupId, playerId, status,
   );
 }
 
+async function getPlayerIdForSenderJid(client, groupId, senderJid) {
+  const { rows } = await client.query(
+    `select player_id
+       from whatsapp_sender_identities
+      where group_id = $1 and sender_jid = $2
+      limit 1`,
+    [groupId, senderJid]
+  );
+  return rows[0]?.player_id ?? null;
+}
+
 async function getPlayerIdForPhone(client, groupId, phoneE164) {
   const { rows } = await client.query(
     `select player_id from whatsapp_identities where group_id = $1 and phone_e164 = $2 limit 1`,
@@ -159,22 +170,95 @@ async function wacliSendGroupText(groupJid, message) {
 }
 
 async function handleMessage({ cfg, db, msg }) {
-  // msg shape depends on wacli JSON. We treat it defensively.
-  const chatJid = msg?.chat?.jid || msg?.chat || msg?.jid;
+  // msg shape depends on wacli JSON.
+  // For wacli sync --json, messages look like:
+  // { ChatJID, ChatName, MsgID, SenderJID, Timestamp, FromMe, Text, DisplayText, ... }
+  // We'll support both the wacli shape and a couple of fallback shapes.
+  const chatJid = msg?.ChatJID || msg?.chat?.jid || msg?.chat || msg?.jid;
   if (!chatJid || chatJid !== cfg.groupJid) return;
 
-  const text = normalizeCmd(msg?.text || msg?.message?.text || msg?.body || '');
+  const text = normalizeCmd(msg?.Text || msg?.text || msg?.message?.text || msg?.body || '');
   if (!text.startsWith('!')) return;
 
-  const fromPhone = msg?.from?.phone || msg?.from || msg?.sender?.phone || msg?.sender;
-  const messageId = msg?.id || msg?.message?.id || msg?.key?.id || null;
+  // Sender identity:
+  // - Prefer SenderJID when present (wacli json)
+  // - Else fall back to older shapes.
+  const senderJid = msg?.SenderJID || msg?.sender?.jid || msg?.from?.jid || msg?.from || msg?.sender;
+  const messageId = msg?.MsgID || msg?.id || msg?.message?.id || msg?.key?.id || null;
+
+  // Sender identity:
+  // - senderJid is the stable value we can use for mapping when WhatsApp emits LIDs.
+  // - fromPhone is best-effort digits extraction for phone-based mapping.
+  const senderJidStr = (senderJid && typeof senderJid === 'string') ? senderJid : String(senderJid || '');
+  const fromPhone = senderJidStr;
 
   const weekly = await ensureWeeklyEvent(db, cfg.padelGroupId);
 
   // Strict mode: ignore everything until admin starts with !jueves
   const activeOccurrenceId = await getActiveOccurrence(db, weekly.id);
 
-  const isAdmin = String(fromPhone || '') === String(cfg.adminPhone || '');
+  // Try to match admin:
+  // - If sender is an E.164 JID (e.g. 54911...@s.whatsapp.net), match on digits.
+  // - If sender is a LID (e.g. 2757...@lid), we can't derive the phone; in that case
+  //   allow override by setting cfg.adminSenderJid.
+  function digits(s) {
+    return String(s || '').replace(/\D/g, '');
+  }
+
+  const adminDigits = digits(cfg.adminPhone);
+  const senderDigits = digits(fromPhone);
+
+  const isAdmin =
+    (adminDigits && senderDigits && senderDigits.endsWith(adminDigits)) ||
+    (cfg.adminSenderJid && String(senderJidStr) === String(cfg.adminSenderJid));
+
+  if (text === '!whoami') {
+    // Helper for mapping: show the sender JID that WhatsApp/wacli sees.
+    // This is needed when SenderJID is a LID (not a phone JID).
+    await wacliSendGroupText(cfg.groupJid, `🆔 Tu ID (senderJid): ${senderJidStr}`);
+    return;
+  }
+
+  if (text.startsWith('!bindjid')) {
+    // Admin-only mapping helper:
+    // Usage: !bindjid <senderJid> <player name>
+    if (!isAdmin) return;
+
+    const parts = text.split(/\s+/).filter(Boolean);
+    if (parts.length < 3) {
+      await wacliSendGroupText(cfg.groupJid, 'Uso: !bindjid <senderJid> <player name>');
+      return;
+    }
+
+    const bindSenderJid = parts[1];
+    const playerName = parts.slice(2).join(' ');
+
+    const { rows: players } = await db.query(
+      `select id, name
+         from players
+        where group_id = $1
+          and lower(name) = lower($2)
+        limit 1`,
+      [cfg.padelGroupId, playerName]
+    );
+
+    const player = players[0];
+    if (!player) {
+      await wacliSendGroupText(cfg.groupJid, `No encontré jugador con nombre: ${playerName}`);
+      return;
+    }
+
+    await db.query(
+      `insert into whatsapp_sender_identities (group_id, player_id, sender_jid)
+       values ($1,$2,$3)
+       on conflict (group_id, sender_jid)
+       do update set player_id = excluded.player_id, updated_at = now()`,
+      [cfg.padelGroupId, player.id, bindSenderJid]
+    );
+
+    await wacliSendGroupText(cfg.groupJid, `✅ Vinculado ${player.name} ↔ ${bindSenderJid}`);
+    return;
+  }
 
   if (text === '!jueves') {
     if (!isAdmin) {
@@ -298,8 +382,14 @@ async function handleMessage({ cfg, db, msg }) {
       return;
     }
 
-    const playerId = await getPlayerIdForPhone(db, cfg.padelGroupId, fromPhone);
+    // Resolve player:
+    // 1) Prefer senderJid mapping (works for @lid)
+    // 2) Fall back to phone mapping when sender includes phone digits
+    let playerId = await getPlayerIdForSenderJid(db, cfg.padelGroupId, senderJidStr);
+    if (!playerId) playerId = await getPlayerIdForPhone(db, cfg.padelGroupId, fromPhone);
     if (!playerId) {
+      // Help debugging / onboarding
+      await wacliSendGroupText(cfg.groupJid, `⚠️ No tengo tu identidad registrada. Enviá !whoami y pedile al admin que te vincule.`);
       return;
     }
 
