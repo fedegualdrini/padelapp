@@ -2,6 +2,10 @@ import { notFound } from "next/navigation";
 import { TradingViewRankingLayout } from "@/components/TradingViewRankingLayout";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+// This route is used for bot screenshots; keep it always fresh.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type ShareRankingPageProps = {
   params: Promise<{ slug: string; token: string }>;
 };

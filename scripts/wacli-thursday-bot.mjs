@@ -309,8 +309,13 @@ async function maybeSendRankingScreenshot({ groupJid, caption, matchId }) {
   try {
     const browser = await playwright.chromium.launch({ headless: true });
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-    await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 });
-    await page.waitForTimeout(500);
+    // Cache-bust the URL to avoid stale SSR/edge caches right after a match load.
+    const cacheBust = url.includes('?') ? `&ts=${Date.now()}` : `?ts=${Date.now()}`;
+    await page.goto(`${url}${cacheBust}`, { waitUntil: 'networkidle', timeout: 30_000 });
+
+    // Give charts a moment to paint after data arrives.
+    await page.waitForTimeout(Number(process.env.RANKING_SCREENSHOT_RENDER_WAIT_MS || 2000));
+
     await page.screenshot({ path: filePath, fullPage: true });
     await browser.close();
 
@@ -735,6 +740,8 @@ async function handleMessage({ cfg, db, msg, state }) {
         await wacliSendGroupText(cfg.groupJid, message);
 
         // Optional: screenshot (best effort)
+        // Extra delay to let ELO triggers/materialized views settle.
+        await new Promise((r) => setTimeout(r, Number(process.env.RANKING_SCREENSHOT_PRE_WAIT_MS || 1500)));
         await maybeSendRankingScreenshot({
           groupJid: cfg.groupJid,
           caption: '📊 Ranking actualizado',
