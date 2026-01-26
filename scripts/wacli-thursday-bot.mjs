@@ -202,22 +202,158 @@ async function handleMessage({ cfg, db, msg }) {
     return;
   }
 
-  if (text === '!in' || text === '!out') {
-    const playerId = await getPlayerIdForPhone(db, cfg.padelGroupId, fromPhone);
-    if (!playerId) {
-      // Optional: announce unknown mapping
+  async function getOccurrenceMeta(occId) {
+    const { rows } = await db.query(
+      `select starts_at, status from event_occurrences where id = $1 limit 1`,
+      [occId]
+    );
+    return rows[0] || null;
+  }
+
+  function cutoffAt(startsAt) {
+    // Tuesday 14:00 before the Thursday occurrence (UTC-based for now).
+    const d = new Date(startsAt);
+    const day = d.getUTCDay();
+    // target Thursday(4) -> cutoff Tuesday(2) is -2 days
+    const deltaDays = -2;
+    const c = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 14, 0, 0));
+    c.setUTCDate(c.getUTCDate() + deltaDays);
+    return c;
+  }
+
+  async function maybeAutoLock(occId) {
+    const meta = await getOccurrenceMeta(occId);
+    if (!meta) return { locked: false, meta: null };
+    if (meta.status !== 'open') return { locked: meta.status === 'locked', meta };
+    const now = new Date();
+    const cut = cutoffAt(meta.starts_at);
+    if (now >= cut) {
+      await db.query(`update event_occurrences set status = 'locked', updated_at = now() where id = $1`, [occId]);
+      return { locked: true, meta: { ...meta, status: 'locked' } };
+    }
+    return { locked: false, meta };
+  }
+
+  if (text === '!lock' || text === '!unlock' || text === '!reset' || text === '!suggest') {
+    if (!isAdmin) return;
+
+    if (text === '!lock') {
+      await db.query(`update event_occurrences set status = 'locked', updated_at = now() where id = $1`, [activeOccurrenceId]);
+      const roster = await buildRoster(db, activeOccurrenceId);
+      await wacliSendGroupText(cfg.groupJid, `🔒 Lista cerrada\n\n${formatRoster(roster, 4)}`);
       return;
     }
 
-    const desired = text === '!in' ? 'confirmed' : 'declined';
-    await upsertAttendance(db, activeOccurrenceId, cfg.padelGroupId, playerId, desired, 'whatsapp', messageId);
+    if (text === '!unlock') {
+      await db.query(`update event_occurrences set status = 'open', updated_at = now() where id = $1`, [activeOccurrenceId]);
+      await wacliSendGroupText(cfg.groupJid, `🔓 Lista reabierta\n\nUsá: !in / !out / !status`);
+      return;
+    }
 
+    if (text === '!reset') {
+      await db.query(`delete from attendance where occurrence_id = $1`, [activeOccurrenceId]);
+      await wacliSendGroupText(cfg.groupJid, `🧹 Lista reiniciada\n\nUsá: !in / !out / !status`);
+      return;
+    }
+
+    if (text === '!suggest') {
+      // Suggest usual players not confirmed/declined/maybe/waitlist.
+      const { rows } = await db.query(
+        `with taken as (
+           select player_id from attendance where occurrence_id = $1
+         )
+         select p.name
+           from players p
+          where p.group_id = $2
+            and p.status = 'usual'
+            and p.id not in (select player_id from taken)
+          order by p.name asc
+          limit 6`,
+        [activeOccurrenceId, cfg.padelGroupId]
+      );
+      const names = rows.map((r) => r.name);
+      await wacliSendGroupText(
+        cfg.groupJid,
+        `💡 Sugerencias para invitar:\n${names.length ? names.map((n) => `- ${n}`).join('\n') : '- (sin sugerencias)'}`
+      );
+      return;
+    }
+  }
+
+  if (text === '!status') {
+    const { locked } = await maybeAutoLock(activeOccurrenceId);
     const roster = await buildRoster(db, activeOccurrenceId);
-    await wacliSendGroupText(cfg.groupJid, `${text === '!in' ? '✅ Confirmado' : '❌ No viene'}\n\n${formatRoster(roster, 4)}`);
+    await wacliSendGroupText(
+      cfg.groupJid,
+      `📋 Estado${locked ? ' (cerrado)' : ''}\n\n${formatRoster(roster, 4)}`
+    );
     return;
   }
 
-  // TODO: !lock/!unlock/!reset/!suggest, waitlist enforcement, cutoff enforcement.
+  if (text === '!in' || text === '!out') {
+    const lockCheck = await maybeAutoLock(activeOccurrenceId);
+    const isLocked = lockCheck.locked;
+    if (isLocked && !isAdmin) {
+      // strict: no changes after lock
+      return;
+    }
+
+    const playerId = await getPlayerIdForPhone(db, cfg.padelGroupId, fromPhone);
+    if (!playerId) {
+      return;
+    }
+
+    if (text === '!in') {
+      // Capacity enforcement
+      const { rows: counts } = await db.query(
+        `select status, count(*)::int as n
+           from attendance
+          where occurrence_id = $1
+          group by status`,
+        [activeOccurrenceId]
+      );
+      const confirmedCount = counts.find((r) => r.status === 'confirmed')?.n ?? 0;
+      const status = confirmedCount < 4 ? 'confirmed' : 'waitlist';
+      await upsertAttendance(db, activeOccurrenceId, cfg.padelGroupId, playerId, status, 'whatsapp', messageId);
+
+      const roster = await buildRoster(db, activeOccurrenceId);
+      await wacliSendGroupText(
+        cfg.groupJid,
+        `${status === 'confirmed' ? '✅ Confirmado' : '⏳ Lista de espera'}\n\n${formatRoster(roster, 4)}`
+      );
+      return;
+    }
+
+    // !out
+    await upsertAttendance(db, activeOccurrenceId, cfg.padelGroupId, playerId, 'declined', 'whatsapp', messageId);
+
+    // Auto-promote earliest waitlisted if there is space.
+    const { rows: confirmedRows } = await db.query(
+      `select count(*)::int as n from attendance where occurrence_id = $1 and status = 'confirmed'`,
+      [activeOccurrenceId]
+    );
+    const confirmedCount = confirmedRows[0]?.n ?? 0;
+    if (confirmedCount < 4) {
+      const { rows: nextWait } = await db.query(
+        `select player_id
+           from attendance
+          where occurrence_id = $1 and status = 'waitlist'
+          order by created_at asc
+          limit 1`,
+        [activeOccurrenceId]
+      );
+      if (nextWait[0]?.player_id) {
+        await db.query(
+          `update attendance set status = 'confirmed', updated_at = now() where occurrence_id = $1 and player_id = $2`,
+          [activeOccurrenceId, nextWait[0].player_id]
+        );
+      }
+    }
+
+    const roster = await buildRoster(db, activeOccurrenceId);
+    await wacliSendGroupText(cfg.groupJid, `❌ No viene\n\n${formatRoster(roster, 4)}`);
+    return;
+  }
 }
 
 async function main() {
