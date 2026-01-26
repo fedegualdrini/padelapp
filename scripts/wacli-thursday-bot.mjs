@@ -460,30 +460,39 @@ async function main() {
 
   const seen = new Set();
 
-  async function pollOnce() {
+  async function run(cmd, args) {
     return new Promise((resolve, reject) => {
-      const p = spawn('wacli', ['messages', 'list', '--limit', '30', '--json'], {
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
+      const p = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
       let out = '';
       let err = '';
       p.stdout.on('data', (d) => (out += d.toString('utf8')));
       p.stderr.on('data', (d) => (err += d.toString('utf8')));
       p.on('close', (code) => {
-        if (code !== 0) return reject(new Error(err || `wacli messages list failed (code ${code})`));
+        if (code !== 0) return reject(new Error(err || `${cmd} ${args.join(' ')} failed (code ${code})`));
         resolve(out);
       });
     });
   }
 
+  async function syncOnce() {
+    // Pull new messages from WhatsApp into the local store.
+    // This holds the store lock briefly, then exits.
+    await run('wacli', ['sync', '--once', '--idle-exit', '2s', '--json']);
+  }
+
+  async function listMessages() {
+    return run('wacli', ['messages', 'list', '--limit', '40', '--json']);
+  }
+
   async function loop() {
     while (true) {
       try {
-        const raw = await pollOnce();
+        await syncOnce();
+        const raw = await listMessages();
         const parsed = JSON.parse(raw);
         const msgs = parsed?.data?.messages || parsed?.data || parsed?.messages || [];
 
-        // wacli returns newest first; we process oldest->newest for nicer behavior.
+        // wacli returns newest first; process oldest->newest.
         const ordered = [...msgs].reverse();
         for (const m of ordered) {
           const id = m?.MsgID || m?.id;
@@ -493,12 +502,10 @@ async function main() {
           await handleMessage({ cfg, db, msg: m });
         }
       } catch (e) {
-        // Keep running; print diagnostics.
         process.stderr.write(String(e?.stack || e) + '\n');
       }
 
-      // Small delay to avoid hammering.
-      await new Promise((r) => setTimeout(r, 1500));
+      await new Promise((r) => setTimeout(r, 1000));
     }
   }
 
