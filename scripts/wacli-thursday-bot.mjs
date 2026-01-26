@@ -454,37 +454,55 @@ async function main() {
   const db = new Client({ connectionString: databaseUrl });
   await db.connect();
 
-  // Stream wacli sync output as JSON lines.
-  const p = spawn('wacli', ['sync', '--follow', '--json'], {
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  // IMPORTANT: wacli uses a single-store lock. A long-running `wacli sync --follow` prevents
+  // concurrent `wacli send` calls (needed to reply). For MVP, we poll the local wacli message DB
+  // and send replies between polls.
 
-  p.stderr.on('data', (d) => {
-    // Keep stderr for diagnostics; do not crash.
-    process.stderr.write(d);
-  });
+  const seen = new Set();
 
-  let buf = '';
-  p.stdout.on('data', async (d) => {
-    buf += d.toString('utf8');
-    const lines = buf.split('\n');
-    buf = lines.pop() || '';
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
+  async function pollOnce() {
+    return new Promise((resolve, reject) => {
+      const p = spawn('wacli', ['messages', 'list', '--limit', '30', '--json'], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      let out = '';
+      let err = '';
+      p.stdout.on('data', (d) => (out += d.toString('utf8')));
+      p.stderr.on('data', (d) => (err += d.toString('utf8')));
+      p.on('close', (code) => {
+        if (code !== 0) return reject(new Error(err || `wacli messages list failed (code ${code})`));
+        resolve(out);
+      });
+    });
+  }
+
+  async function loop() {
+    while (true) {
       try {
-        const msg = JSON.parse(trimmed);
-        await handleMessage({ cfg, db, msg });
-      } catch {
-        // ignore malformed lines
-      }
-    }
-  });
+        const raw = await pollOnce();
+        const parsed = JSON.parse(raw);
+        const msgs = parsed?.data?.messages || parsed?.data || parsed?.messages || [];
 
-  p.on('close', async (code) => {
-    await db.end();
-    die(`wacli sync exited (code ${code})`);
-  });
+        // wacli returns newest first; we process oldest->newest for nicer behavior.
+        const ordered = [...msgs].reverse();
+        for (const m of ordered) {
+          const id = m?.MsgID || m?.id;
+          if (!id) continue;
+          if (seen.has(id)) continue;
+          seen.add(id);
+          await handleMessage({ cfg, db, msg: m });
+        }
+      } catch (e) {
+        // Keep running; print diagnostics.
+        process.stderr.write(String(e?.stack || e) + '\n');
+      }
+
+      // Small delay to avoid hammering.
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+  }
+
+  await loop();
 }
 
 main().catch((err) => {
