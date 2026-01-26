@@ -177,6 +177,9 @@ async function handleMessage({ cfg, db, msg }) {
   const chatJid = msg?.ChatJID || msg?.chat?.jid || msg?.chat || msg?.jid;
   if (!chatJid || chatJid !== cfg.groupJid) return;
 
+  // Ignore bot-authored messages to prevent loops.
+  if (msg?.FromMe === true || msg?.fromMe === true) return;
+
   const text = normalizeCmd(msg?.Text || msg?.text || msg?.message?.text || msg?.body || '');
   if (!text.startsWith('!')) return;
 
