@@ -51,5 +51,6 @@ yarn-error.log*
 next-env.d.ts
 /webtemp/
 
-# wacli bot config (local-only)
+# wacli bot config/state (local-only)
 .wacli-bot.json
+.wacli-bot-state.json

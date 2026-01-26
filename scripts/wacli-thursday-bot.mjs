@@ -35,6 +35,28 @@ function loadConfig() {
   return JSON.parse(raw);
 }
 
+function loadState() {
+  const p = path.resolve(process.cwd(), '.wacli-bot-state.json');
+  if (!fs.existsSync(p)) return { lastProcessedTs: 0 };
+  try {
+    const raw = fs.readFileSync(p, 'utf8');
+    const parsed = JSON.parse(raw);
+    return {
+      lastProcessedTs: Number(parsed?.lastProcessedTs || 0),
+    };
+  } catch {
+    return { lastProcessedTs: 0 };
+  }
+}
+
+function saveState(state) {
+  const p = path.resolve(process.cwd(), '.wacli-bot-state.json');
+  const tmp = `${p}.tmp`;
+  const payload = JSON.stringify({ lastProcessedTs: state.lastProcessedTs || 0 }, null, 2);
+  fs.writeFileSync(tmp, payload + '\n');
+  fs.renameSync(tmp, p);
+}
+
 function normalizeCmd(text) {
   return String(text || '').trim().toLowerCase();
 }
@@ -480,6 +502,10 @@ async function main() {
   // concurrent `wacli send` calls (needed to reply). For MVP, we poll the local wacli message DB
   // and send replies between polls.
 
+  // Persisted cursor so restarts do NOT re-process old commands and spam the group.
+  const state = loadState();
+
+  // In-process dedupe (within a single run)
   const seen = new Set();
 
   async function run(cmd, args) {
@@ -519,9 +545,21 @@ async function main() {
         for (const m of ordered) {
           const id = m?.MsgID || m?.id;
           if (!id) continue;
+
+          const ts = m?.Timestamp ? Date.parse(m.Timestamp) : NaN;
+          if (!Number.isNaN(ts) && ts <= state.lastProcessedTs) continue;
+
           if (seen.has(id)) continue;
           seen.add(id);
+
           await handleMessage({ cfg, db, msg: m });
+
+          // Advance cursor even if the message was ignored inside handleMessage.
+          // This prevents replay-spam after restarts.
+          if (!Number.isNaN(ts) && ts > state.lastProcessedTs) {
+            state.lastProcessedTs = ts;
+            saveState(state);
+          }
         }
       } catch (e) {
         process.stderr.write(String(e?.stack || e) + '\n');
