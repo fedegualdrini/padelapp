@@ -164,6 +164,71 @@ async function buildRoster(client, occurrenceId) {
   return by;
 }
 
+async function getConfirmedPlayers(client, occurrenceId) {
+  const { rows } = await client.query(
+    `select a.player_id, p.name
+       from attendance a
+       join players p on p.id = a.player_id
+      where a.occurrence_id = $1
+        and a.status = 'confirmed'
+      order by a.created_at asc`,
+    [occurrenceId]
+  );
+  return rows;
+}
+
+async function getLatestEloByPlayer(client, groupId, playerIds) {
+  if (!playerIds.length) return new Map();
+
+  // Same data source as ranking: elo_ratings joined to matches filtered by group.
+  // We pick the latest rating per player by match played_at (desc) and created_at (desc).
+  const { rows } = await client.query(
+    `select distinct on (er.player_id)
+        er.player_id,
+        er.rating
+     from elo_ratings er
+     join matches m on m.id = er.as_of_match_id
+     where m.group_id = $1
+       and er.player_id = any($2::uuid[])
+     order by er.player_id, m.played_at desc, m.created_at desc, er.created_at desc`,
+    [groupId, playerIds]
+  );
+
+  const map = new Map();
+  for (const r of rows) map.set(r.player_id, Number(r.rating));
+  return map;
+}
+
+function suggestPairsByElo(players) {
+  // players: [{ player_id, name, elo }], length=4
+  const [a, b, c, d] = players;
+  const splits = [
+    { team1: [a, b], team2: [c, d] },
+    { team1: [a, c], team2: [b, d] },
+    { team1: [a, d], team2: [b, c] },
+  ].map((s) => {
+    const sum1 = s.team1[0].elo + s.team1[1].elo;
+    const sum2 = s.team2[0].elo + s.team2[1].elo;
+    return { ...s, sum1, sum2, diff: Math.abs(sum1 - sum2) };
+  });
+
+  splits.sort((x, y) => x.diff - y.diff);
+  return splits[0];
+}
+
+function formatPairSuggestion(playersWithElo) {
+  if (playersWithElo.length !== 4) return '';
+  const best = suggestPairsByElo(playersWithElo);
+  const t1 = best.team1.map((p) => p.name).join(' + ');
+  const t2 = best.team2.map((p) => p.name).join(' + ');
+  return [
+    '🎾 Parejas sugeridas (por ELO):',
+    `Equipo 1: ${t1} (ELO ${best.sum1})`,
+    `Equipo 2: ${t2} (ELO ${best.sum2})`,
+    `Δ ELO: ${best.diff}`,
+  ].join('\n');
+}
+
 function formatRoster(by, capacity = 4) {
   const confirmed = by.confirmed || [];
   const waitlist = by.waitlist || [];
@@ -364,6 +429,21 @@ async function handleMessage({ cfg, db, msg }) {
     const cut = cutoffAt(meta.starts_at);
     if (now >= cut) {
       await db.query(`update event_occurrences set status = 'locked', updated_at = now() where id = $1`, [occId]);
+
+      // Notify the group once it becomes locked (first interaction after cutoff)
+      const roster = await buildRoster(db, occId);
+      const confirmed = await getConfirmedPlayers(db, occId);
+      let pairBlock = '';
+      if (confirmed.length === 4) {
+        const eloByPlayer = await getLatestEloByPlayer(db, cfg.padelGroupId, confirmed.map((p) => p.player_id));
+        const withElo = confirmed
+          .map((p) => ({ ...p, elo: eloByPlayer.get(p.player_id) }))
+          .filter((p) => typeof p.elo === 'number' && Number.isFinite(p.elo));
+        if (withElo.length === 4) pairBlock = `\n\n${formatPairSuggestion(withElo)}`;
+        else pairBlock = `\n\n🎾 Parejas sugeridas: No hay suficientes datos todavía (faltan partidos para calcular ELO).`;
+      }
+      await wacliSendGroupText(cfg.groupJid, `🔒 Lista cerrada\n\n${formatRoster(roster, 4)}${pairBlock}`);
+
       return { locked: true, meta: { ...meta, status: 'locked' } };
     }
     return { locked: false, meta };
@@ -374,8 +454,22 @@ async function handleMessage({ cfg, db, msg }) {
 
     if (text === '!lock') {
       await db.query(`update event_occurrences set status = 'locked', updated_at = now() where id = $1`, [activeOccurrenceId]);
+
       const roster = await buildRoster(db, activeOccurrenceId);
-      await wacliSendGroupText(cfg.groupJid, `🔒 Lista cerrada\n\n${formatRoster(roster, 4)}`);
+
+      // Pair suggestions (only when exactly 4 confirmed and ELO exists for all 4)
+      const confirmed = await getConfirmedPlayers(db, activeOccurrenceId);
+      let pairBlock = '';
+      if (confirmed.length === 4) {
+        const eloByPlayer = await getLatestEloByPlayer(db, cfg.padelGroupId, confirmed.map((p) => p.player_id));
+        const withElo = confirmed
+          .map((p) => ({ ...p, elo: eloByPlayer.get(p.player_id) }))
+          .filter((p) => typeof p.elo === 'number' && Number.isFinite(p.elo));
+        if (withElo.length === 4) pairBlock = `\n\n${formatPairSuggestion(withElo)}`;
+        else pairBlock = `\n\n🎾 Parejas sugeridas: No hay suficientes datos todavía (faltan partidos para calcular ELO).`;
+      }
+
+      await wacliSendGroupText(cfg.groupJid, `🔒 Lista cerrada\n\n${formatRoster(roster, 4)}${pairBlock}`);
       return;
     }
 
