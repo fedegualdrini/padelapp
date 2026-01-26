@@ -37,16 +37,18 @@ function loadConfig() {
 
 function loadState() {
   const p = path.resolve(process.cwd(), '.wacli-bot-state.json');
-  if (!fs.existsSync(p)) return { lastProcessedTs: 0, inviteMenu: null };
+  if (!fs.existsSync(p)) return { lastProcessedTs: 0, inviteMenu: null, loadMenu: null, loadSession: null };
   try {
     const raw = fs.readFileSync(p, 'utf8');
     const parsed = JSON.parse(raw);
     return {
       lastProcessedTs: Number(parsed?.lastProcessedTs || 0),
       inviteMenu: parsed?.inviteMenu ?? null,
+      loadMenu: parsed?.loadMenu ?? null,
+      loadSession: parsed?.loadSession ?? null,
     };
   } catch {
-    return { lastProcessedTs: 0, inviteMenu: null };
+    return { lastProcessedTs: 0, inviteMenu: null, loadMenu: null, loadSession: null };
   }
 }
 
@@ -57,6 +59,8 @@ function saveState(state) {
     {
       lastProcessedTs: state.lastProcessedTs || 0,
       inviteMenu: state.inviteMenu ?? null,
+      loadMenu: state.loadMenu ?? null,
+      loadSession: state.loadSession ?? null,
     },
     null,
     2
@@ -300,6 +304,8 @@ async function handleMessage({ cfg, db, msg, state }) {
     '✅ vinculado',
     '📨 invitados',
     '✅ invite',
+    '📝 partidos pendientes',
+    '✅ partido cargado',
   ];
   const looksLikeBotOutput = botOutputPrefixes.some((p) => text.startsWith(p));
   if (looksLikeBotOutput) return;
@@ -403,6 +409,347 @@ async function handleMessage({ cfg, db, msg, state }) {
 
   if (!activeOccurrenceId) {
     // ignore all commands pre-kickoff
+    return;
+  }
+
+  // Load match results flow (any member)
+  // - !load -> list pending locked occurrences not yet loaded
+  // - !load <n> -> select occurrence
+  // - !load bo3|bo5 -> select format
+  // - !load score 6-4 3-6 6-2 -> persist match in padelapp schema
+  if (text === '!load' || text.startsWith('!load ')) {
+    const menuTtlMs = 15 * 60 * 1000;
+    const sessionTtlMs = 30 * 60 * 1000;
+
+    function formatDateShort(isoOrDate) {
+      const d = new Date(isoOrDate);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function normalizeCreatedBy(s) {
+      // Stable identifier for matches.created_by
+      return normalizeSenderJid(s);
+    }
+
+    async function getPendingOccurrences(groupId, limit = 10) {
+      const { rows } = await db.query(
+        `select eo.id as occurrence_id, eo.starts_at, eo.status, we.name as weekly_name
+           from event_occurrences eo
+           join weekly_events we on we.id = eo.weekly_event_id
+          where eo.group_id = $1
+            and eo.status = 'locked'
+            and eo.loaded_match_id is null
+          order by eo.starts_at desc
+          limit $2`,
+        [groupId, limit]
+      );
+      return rows;
+    }
+
+    async function getConfirmedForOccurrence(occurrenceId) {
+      return getConfirmedPlayers(db, occurrenceId);
+    }
+
+    function parseBestOf(token) {
+      if (token === 'bo3') return 3;
+      if (token === 'bo5') return 5;
+      return null;
+    }
+
+    function isValidSetScore(team1, team2) {
+      const valid =
+        (team1 === 6 && team2 >= 0 && team2 <= 4) ||
+        (team2 === 6 && team1 >= 0 && team1 <= 4) ||
+        (team1 === 7 && (team2 === 5 || team2 === 6)) ||
+        (team2 === 7 && (team1 === 5 || team1 === 6));
+      return valid;
+    }
+
+    function parseScores(parts) {
+      // parts: ['6-4','3-6','6-2']
+      const scores = [];
+      for (let i = 0; i < parts.length; i += 1) {
+        const m = String(parts[i]).match(/^(\d+)-(\d+)$/);
+        if (!m) return { error: `Marcador inválido: ${parts[i]}` };
+        const a = Number(m[1]);
+        const b = Number(m[2]);
+        if (Number.isNaN(a) || Number.isNaN(b)) return { error: `Marcador inválido: ${parts[i]}` };
+        if (!isValidSetScore(a, b)) return { error: `Set ${i + 1} tiene un marcador inválido.` };
+        scores.push({ setNumber: i + 1, team1: a, team2: b });
+      }
+      return { scores };
+    }
+
+    async function createMatchFromLoadSession(session, setScores) {
+      const { occurrenceId, bestOf, teams, createdAtTs } = session;
+      if (!occurrenceId || !bestOf || !teams?.team1 || !teams?.team2) {
+        throw new Error('Load session incompleta');
+      }
+
+      // Validate set completion rules (same as UI)
+      const requiredSets = Math.floor(bestOf / 2) + 1;
+      if (setScores.length < requiredSets) throw new Error('El partido está incompleto. Cargá todos los sets jugados.');
+
+      const team1Wins = setScores.reduce((acc, s) => acc + (s.team1 > s.team2 ? 1 : 0), 0);
+      const team2Wins = setScores.reduce((acc, s) => acc + (s.team2 > s.team1 ? 1 : 0), 0);
+      if (team1Wins < requiredSets && team2Wins < requiredSets) throw new Error('El partido debe incluir el set ganador.');
+      if (setScores.length !== team1Wins + team2Wins) throw new Error('Hay sets de más luego de completar el partido.');
+
+      // Pull occurrence
+      const { rows: occRows } = await db.query(
+        `select id, group_id, starts_at, status, loaded_match_id
+           from event_occurrences
+          where id = $1
+          limit 1`,
+        [occurrenceId]
+      );
+      const occ = occRows[0];
+      if (!occ) throw new Error('Occurrence no encontrada');
+      if (occ.status !== 'locked') throw new Error('La occurrence debe estar locked para cargar.');
+      if (occ.loaded_match_id) throw new Error('Esta occurrence ya fue cargada.');
+
+      const createdBy = normalizeCreatedBy(senderJidStr);
+
+      // Transaction
+      await db.query('begin');
+      try {
+        const matchIns = await db.query(
+          `insert into matches (group_id, played_at, best_of, created_by, updated_by)
+           values ($1,$2,$3,$4,$4)
+           returning id`,
+          [occ.group_id, occ.starts_at, bestOf, createdBy]
+        );
+        const matchId = matchIns.rows[0].id;
+
+        const teamsIns = await db.query(
+          `insert into match_teams (match_id, team_number, updated_by)
+           values ($1,1,$2), ($1,2,$2)
+           returning id, team_number`,
+          [matchId, createdBy]
+        );
+        const team1Id = teamsIns.rows.find((t) => t.team_number === 1)?.id;
+        const team2Id = teamsIns.rows.find((t) => t.team_number === 2)?.id;
+        if (!team1Id || !team2Id) throw new Error('No se pudieron crear los equipos.');
+
+        const mtpRows = [
+          { match_team_id: team1Id, player_id: teams.team1[0] },
+          { match_team_id: team1Id, player_id: teams.team1[1] },
+          { match_team_id: team2Id, player_id: teams.team2[0] },
+          { match_team_id: team2Id, player_id: teams.team2[1] },
+        ];
+
+        // unique players check
+        const uniq = new Set(mtpRows.map((r) => r.player_id));
+        if (uniq.size !== 4) throw new Error('Los jugadores deben ser únicos entre equipos.');
+
+        await db.query(
+          `insert into match_team_players (match_team_id, player_id, updated_by)
+           values ($1,$2,$3),($4,$5,$6),($7,$8,$9),($10,$11,$12)`,
+          [
+            mtpRows[0].match_team_id, mtpRows[0].player_id, createdBy,
+            mtpRows[1].match_team_id, mtpRows[1].player_id, createdBy,
+            mtpRows[2].match_team_id, mtpRows[2].player_id, createdBy,
+            mtpRows[3].match_team_id, mtpRows[3].player_id, createdBy,
+          ]
+        );
+
+        const setsIns = await db.query(
+          `insert into sets (match_id, set_number, updated_by)
+           select $1, x.set_number, $2
+             from unnest($3::smallint[]) as x(set_number)
+           returning id, set_number`,
+          [matchId, createdBy, setScores.map((s) => s.setNumber)]
+        );
+
+        // Build set_scores rows
+        const scoreValues = [];
+        const params = [];
+        let pi = 1;
+        for (const s of setScores) {
+          const setRow = setsIns.rows.find((r) => r.set_number === s.setNumber);
+          if (!setRow) throw new Error('No se pudieron crear los sets.');
+          // (set_id, team1_games, team2_games, updated_by)
+          scoreValues.push(`($${pi++}, $${pi++}, $${pi++}, $${pi++})`);
+          params.push(setRow.id, s.team1, s.team2, createdBy);
+        }
+
+        await db.query(
+          `insert into set_scores (set_id, team1_games, team2_games, updated_by)
+           values ${scoreValues.join(',')}`,
+          params
+        );
+
+        // Refresh stats views (best-effort)
+        try {
+          await db.query('select refresh_stats_views()');
+        } catch {
+          // ignore
+        }
+
+        await db.query(
+          `update event_occurrences
+              set loaded_match_id = $2,
+                  loaded_at = now(),
+                  updated_at = now()
+            where id = $1`,
+          [occurrenceId, matchId]
+        );
+
+        await db.query('commit');
+
+        // Message
+        const scoreText = setScores.map((s) => `${s.team1}-${s.team2}`).join(' ');
+        await wacliSendGroupText(cfg.groupJid, `✅ Partido cargado\n\nResultado: ${scoreText}`);
+        return;
+      } catch (e) {
+        await db.query('rollback');
+        throw e;
+      }
+    }
+
+    // Handle score submission
+    const scoreMatch = text.match(/^!load\s+score\s+(.+)$/);
+    if (scoreMatch) {
+      const session = state?.loadSession;
+      if (!session || !session.createdAtTs) {
+        await wacliSendGroupText(cfg.groupJid, '📝 No hay carga activa. Enviá !load para empezar.');
+        return;
+      }
+      if (Date.now() - Number(session.createdAtTs) > sessionTtlMs) {
+        state.loadSession = null;
+        saveState(state);
+        await wacliSendGroupText(cfg.groupJid, '📝 La carga expiró. Enviá !load de nuevo.');
+        return;
+      }
+
+      const parts = scoreMatch[1].trim().split(/\s+/).filter(Boolean);
+      const parsed = parseScores(parts);
+      if (parsed.error) {
+        await wacliSendGroupText(cfg.groupJid, `📝 ${parsed.error}`);
+        return;
+      }
+
+      try {
+        await createMatchFromLoadSession(session, parsed.scores);
+        // clear session
+        state.loadSession = null;
+        saveState(state);
+      } catch (e) {
+        await wacliSendGroupText(cfg.groupJid, `📝 Error: ${String(e?.message || e)}`);
+      }
+      return;
+    }
+
+    // Handle best-of selection
+    const formatMatch = text.match(/^!load\s+(bo3|bo5)$/);
+    if (formatMatch) {
+      const bestOf = parseBestOf(formatMatch[1]);
+      const session = state?.loadSession;
+      if (!session || !session.occurrenceId) {
+        await wacliSendGroupText(cfg.groupJid, '📝 Primero elegí un partido: !load <n>');
+        return;
+      }
+      session.bestOf = bestOf;
+      session.createdAtTs = Date.now();
+      state.loadSession = session;
+      saveState(state);
+      await wacliSendGroupText(cfg.groupJid, `📝 Formato seleccionado: BO${bestOf}.\nEnviá: !load score 6-4 3-6 6-2`);
+      return;
+    }
+
+    // Handle occurrence selection: !load <n>
+    const sel = text.match(/^!load\s+(\d+)$/);
+    if (sel) {
+      const n = Number(sel[1]);
+      const menu = state?.loadMenu;
+      if (!menu || !menu.createdAtTs || !Array.isArray(menu.items)) {
+        await wacliSendGroupText(cfg.groupJid, '📝 Menú no disponible. Enviá !load primero.');
+        return;
+      }
+      if (Date.now() - Number(menu.createdAtTs) > menuTtlMs) {
+        state.loadMenu = null;
+        saveState(state);
+        await wacliSendGroupText(cfg.groupJid, '📝 Menú expiró. Enviá !load de nuevo.');
+        return;
+      }
+      const item = menu.items.find((it) => Number(it.n) === n);
+      if (!item) {
+        await wacliSendGroupText(cfg.groupJid, '📝 Número inválido. Enviá !load de nuevo.');
+        return;
+      }
+
+      // Resolve teams (default)
+      const confirmed = await getConfirmedForOccurrence(item.occurrenceId);
+      if (confirmed.length !== 4) {
+        await wacliSendGroupText(cfg.groupJid, '📝 Para cargar, se necesitan exactamente 4 confirmados.');
+        return;
+      }
+
+      // Try ELO-based split
+      const eloByPlayer = await getLatestEloByPlayer(db, cfg.padelGroupId, confirmed.map((p) => p.player_id));
+      const withElo = confirmed
+        .map((p) => ({ ...p, elo: eloByPlayer.get(p.player_id) }))
+        .filter((p) => typeof p.elo === 'number' && Number.isFinite(p.elo));
+
+      let team1;
+      let team2;
+      if (withElo.length === 4) {
+        const best = suggestPairsByElo(withElo);
+        team1 = best.team1;
+        team2 = best.team2;
+      } else {
+        team1 = confirmed.slice(0, 2);
+        team2 = confirmed.slice(2, 4);
+      }
+
+      state.loadSession = {
+        occurrenceId: item.occurrenceId,
+        createdAtTs: Date.now(),
+        bestOf: null,
+        teams: {
+          team1: team1.map((p) => p.player_id),
+          team2: team2.map((p) => p.player_id),
+        },
+      };
+      saveState(state);
+
+      const team1Names = team1.map((p) => p.name).join(' + ');
+      const team2Names = team2.map((p) => p.name).join(' + ');
+      await wacliSendGroupText(
+        cfg.groupJid,
+        `📝 Cargando partido ${formatDateShort(item.startsAt)}\n\nEquipos: ${team1Names} vs ${team2Names}\n\nElegí formato: !load bo3  o  !load bo5`
+      );
+      return;
+    }
+
+    // Default: show menu
+    if (text === '!load') {
+      const pending = await getPendingOccurrences(cfg.padelGroupId, 10);
+      if (!pending.length) {
+        await wacliSendGroupText(cfg.groupJid, '📝 Partidos pendientes para cargar: ninguno.');
+        return;
+      }
+
+      const items = pending.map((p, idx) => ({ n: idx + 1, occurrenceId: p.occurrence_id, startsAt: p.starts_at }));
+      state.loadMenu = { createdAtTs: Date.now(), items };
+      saveState(state);
+
+      const lines = [];
+      for (let i = 0; i < pending.length; i += 1) {
+        const p = pending[i];
+        const confirmed = await getConfirmedForOccurrence(p.occurrence_id);
+        const confirmedNames = confirmed.map((x) => x.name).join(', ') || '-';
+        lines.push(`${i + 1}) ${p.weekly_name} — ${formatDateShort(p.starts_at)} — Confirmados: ${confirmedNames}`);
+      }
+
+      await wacliSendGroupText(
+        cfg.groupJid,
+        `📝 Partidos pendientes para cargar:\n\n${lines.join('\n')}\n\nResponder: !load <n>`
+      );
+      return;
+    }
+
+    await wacliSendGroupText(cfg.groupJid, 'Uso: !load  |  !load <n>  |  !load bo3|bo5  |  !load score <sets>');
     return;
   }
 
