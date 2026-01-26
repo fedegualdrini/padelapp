@@ -58,6 +58,17 @@ create policy "open_insert_audit_log" on audit_log for insert with check (true);
 create policy "open_update_audit_log" on audit_log for update using (true) with check (true);
 create policy "open_delete_audit_log" on audit_log for delete using (true);
 
+-- Grants for tables (required even when RLS policies are permissive)
+grant select, insert, update, delete on table groups to anon, authenticated;
+grant select, insert, update, delete on table players to anon, authenticated;
+grant select, insert, update, delete on table matches to anon, authenticated;
+grant select, insert, update, delete on table match_teams to anon, authenticated;
+grant select, insert, update, delete on table match_team_players to anon, authenticated;
+grant select, insert, update, delete on table sets to anon, authenticated;
+grant select, insert, update, delete on table set_scores to anon, authenticated;
+grant select, insert, update, delete on table elo_ratings to anon, authenticated;
+grant select, insert, update, delete on table audit_log to anon, authenticated;
+
 -- Grants for materialized views + functions
 grant select on mv_player_stats to anon, authenticated;
 grant select on mv_pair_stats to anon, authenticated;

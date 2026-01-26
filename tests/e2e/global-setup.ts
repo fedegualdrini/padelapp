@@ -30,7 +30,17 @@ export default async function globalSetup(config: FullConfig) {
     await joinButton.click();
 
     // Successful join should redirect away from /join.
-    await page.waitForURL((url) => !url.pathname.includes('/join'), { timeout: 30000 });
+    // If the server action fails, JoinForm renders an error in a role=status box.
+    const joinError = page.getByRole('status');
+    await Promise.race([
+      page.waitForURL((url) => !url.pathname.includes('/join'), { timeout: 30000 }),
+      joinError
+        .waitFor({ state: 'visible', timeout: 30000 })
+        .then(async () => {
+          const msg = (await joinError.innerText().catch(() => '')).trim();
+          throw new Error(`Join group failed${msg ? `: ${msg}` : ''}`);
+        }),
+    ]);
   }
 
   // Sanity: ranking page should be reachable.
@@ -52,7 +62,8 @@ export default async function globalSetup(config: FullConfig) {
   }
 
   try {
-    await expect(page.getByRole('heading', { name: 'Ranking', exact: true })).toBeVisible({
+    // Ranking page uses an <h2>, so don't require a strict a11y role=heading.
+    await expect(page.locator('h2', { hasText: 'Ranking' })).toBeVisible({
       timeout: 30000,
     });
   } catch (err) {

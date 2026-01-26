@@ -101,6 +101,9 @@ $$ language plpgsql security definer set search_path = public, extensions;
 grant execute on function create_group_with_passphrase(text, text, text) to anon, authenticated;
 grant execute on function join_group_with_passphrase(text, text) to anon, authenticated;
 
+-- Grants for new table
+grant select, insert, update, delete on table group_members to anon, authenticated;
+
 -- Refresh stats functions should run with elevated privileges
 create or replace function refresh_stats_views()
 returns void as $$
