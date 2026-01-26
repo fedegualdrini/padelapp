@@ -30,7 +30,13 @@ export default function ClearMatchHistoryButton({ slug, disabled }: Props) {
           try {
             await clearMatchHistory(slug);
           } catch (e) {
-            alert(String((e as any)?.message || e));
+            const msg =
+              e instanceof Error
+                ? e.message
+                : typeof e === "string"
+                  ? e
+                  : "Error";
+            alert(msg);
           }
         });
       }}
