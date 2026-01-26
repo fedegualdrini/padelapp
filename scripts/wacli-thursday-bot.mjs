@@ -122,13 +122,20 @@ async function upsertAttendance(client, occurrenceId, groupId, playerId, status,
   );
 }
 
+function normalizeSenderJid(senderJid) {
+  const s = String(senderJid || '');
+  // Normalize "2757...:44@lid" -> "2757...@lid" so it matches what we store from group participants.
+  return s.replace(/:(\d+)@lid$/, '@lid');
+}
+
 async function getPlayerIdForSenderJid(client, groupId, senderJid) {
+  const normalized = normalizeSenderJid(senderJid);
   const { rows } = await client.query(
     `select player_id
        from whatsapp_sender_identities
       where group_id = $1 and sender_jid = $2
       limit 1`,
-    [groupId, senderJid]
+    [groupId, normalized]
   );
   return rows[0]?.player_id ?? null;
 }
