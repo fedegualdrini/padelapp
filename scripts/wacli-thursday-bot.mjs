@@ -37,22 +37,30 @@ function loadConfig() {
 
 function loadState() {
   const p = path.resolve(process.cwd(), '.wacli-bot-state.json');
-  if (!fs.existsSync(p)) return { lastProcessedTs: 0 };
+  if (!fs.existsSync(p)) return { lastProcessedTs: 0, inviteMenu: null };
   try {
     const raw = fs.readFileSync(p, 'utf8');
     const parsed = JSON.parse(raw);
     return {
       lastProcessedTs: Number(parsed?.lastProcessedTs || 0),
+      inviteMenu: parsed?.inviteMenu ?? null,
     };
   } catch {
-    return { lastProcessedTs: 0 };
+    return { lastProcessedTs: 0, inviteMenu: null };
   }
 }
 
 function saveState(state) {
   const p = path.resolve(process.cwd(), '.wacli-bot-state.json');
   const tmp = `${p}.tmp`;
-  const payload = JSON.stringify({ lastProcessedTs: state.lastProcessedTs || 0 }, null, 2);
+  const payload = JSON.stringify(
+    {
+      lastProcessedTs: state.lastProcessedTs || 0,
+      inviteMenu: state.inviteMenu ?? null,
+    },
+    null,
+    2
+  );
   fs.writeFileSync(tmp, payload + '\n');
   fs.renameSync(tmp, p);
 }
@@ -263,7 +271,7 @@ async function wacliSendGroupText(groupJid, message) {
   });
 }
 
-async function handleMessage({ cfg, db, msg }) {
+async function handleMessage({ cfg, db, msg, state }) {
   // msg shape depends on wacli JSON.
   // For wacli sync --json, messages look like:
   // { ChatJID, ChatName, MsgID, SenderJID, Timestamp, FromMe, Text, DisplayText, ... }
@@ -290,6 +298,8 @@ async function handleMessage({ cfg, db, msg }) {
     '🆔 tu id',
     '⚠️ no tengo tu identidad',
     '✅ vinculado',
+    '📨 invitados',
+    '✅ invite',
   ];
   const looksLikeBotOutput = botOutputPrefixes.some((p) => text.startsWith(p));
   if (looksLikeBotOutput) return;
@@ -393,6 +403,107 @@ async function handleMessage({ cfg, db, msg }) {
 
   if (!activeOccurrenceId) {
     // ignore all commands pre-kickoff
+    return;
+  }
+
+  // Admin invite menu
+  // - !invite -> show numbered list of invite players sorted by matches played
+  // - !invite <n> in|out -> mark that invite as confirmed/declined for the active occurrence
+  if (text === '!invite' || text.startsWith('!invite ')) {
+    if (!isAdmin) return;
+
+    async function getInvitesSorted(groupId, limit = 20) {
+      const { rows } = await db.query(
+        `with invite_players as (
+           select id, name
+             from players
+            where group_id = $1 and status = 'invite'
+         ), stats as (
+           select v.player_id, count(distinct v.match_id)::int as matches_played
+             from v_player_match_participation_enriched v
+            where v.group_id = $1
+            group by v.player_id
+         )
+         select ip.id as player_id, ip.name,
+                coalesce(s.matches_played, 0) as matches_played
+           from invite_players ip
+           left join stats s on s.player_id = ip.id
+          order by matches_played desc, ip.name asc
+          limit $2`,
+        [groupId, limit]
+      );
+      return rows;
+    }
+
+    const menuTtlMs = 15 * 60 * 1000;
+
+    // Selection form: !invite <n> in|out
+    const m = text.match(/^!invite\s+(\d+)\s+(in|out)$/);
+    if (m) {
+      const n = Number(m[1]);
+      const action = m[2];
+
+      const menu = state?.inviteMenu;
+      if (!menu || !menu.createdAtTs || !Array.isArray(menu.items)) {
+        await wacliSendGroupText(cfg.groupJid, '📨 Invitados: menú no disponible. Enviá !invite primero.');
+        return;
+      }
+      if (Date.now() - Number(menu.createdAtTs) > menuTtlMs) {
+        await wacliSendGroupText(cfg.groupJid, '📨 Invitados: menú expiró. Enviá !invite de nuevo.');
+        return;
+      }
+
+      const item = menu.items.find((it) => Number(it.n) === n);
+      if (!item) {
+        await wacliSendGroupText(cfg.groupJid, '📨 Invitados: número inválido. Enviá !invite para ver la lista.');
+        return;
+      }
+
+      // Apply to attendance
+      // Resolve current confirmed count
+      const { rows: confirmedRows } = await db.query(
+        `select count(*)::int as n from attendance where occurrence_id=$1 and status='confirmed'`,
+        [activeOccurrenceId]
+      );
+      const confirmedCount = confirmedRows[0]?.n ?? 0;
+
+      if (action === 'in') {
+        const status = confirmedCount < 4 ? 'confirmed' : 'waitlist';
+        await upsertAttendance(db, activeOccurrenceId, cfg.padelGroupId, item.playerId, status, 'admin', messageId);
+        const roster = await buildRoster(db, activeOccurrenceId);
+        await wacliSendGroupText(cfg.groupJid, `✅ Invite ${item.name}: ${status === 'confirmed' ? 'confirmado' : 'espera'}\n\n${formatRoster(roster, 4)}`);
+        return;
+      }
+
+      // out
+      await upsertAttendance(db, activeOccurrenceId, cfg.padelGroupId, item.playerId, 'declined', 'admin', messageId);
+      const roster = await buildRoster(db, activeOccurrenceId);
+      await wacliSendGroupText(cfg.groupJid, `✅ Invite ${item.name}: no viene\n\n${formatRoster(roster, 4)}`);
+      return;
+    }
+
+    // Menu form: !invite
+    if (text === '!invite') {
+      const invites = await getInvitesSorted(cfg.padelGroupId, 20);
+      if (!invites.length) {
+        await wacliSendGroupText(cfg.groupJid, '📨 Invitados: no hay jugadores con status invite.');
+        return;
+      }
+
+      const items = invites.map((p, idx) => ({ n: idx + 1, playerId: p.player_id, name: p.name }));
+      state.inviteMenu = { createdAtTs: Date.now(), items };
+      saveState(state);
+
+      const lines = invites.map((p, idx) => `${idx + 1}) ${p.name} — ${p.matches_played} partidos`);
+      await wacliSendGroupText(
+        cfg.groupJid,
+        `📨 Invitados (ordenados por partidos):\n\n${lines.join('\n')}\n\nResponder: !invite <n> in|out`
+      );
+      return;
+    }
+
+    // fallback usage
+    await wacliSendGroupText(cfg.groupJid, 'Uso: !invite  (o)  !invite <n> in|out');
     return;
   }
 
@@ -653,7 +764,7 @@ async function main() {
           if (seen.has(id)) continue;
           seen.add(id);
 
-          await handleMessage({ cfg, db, msg: m });
+          await handleMessage({ cfg, db, msg: m, state });
 
           // Advance cursor even if the message was ignored inside handleMessage.
           // This prevents replay-spam after restarts.
