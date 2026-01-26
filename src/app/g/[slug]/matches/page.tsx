@@ -1,5 +1,6 @@
 import Link from "next/link";
 import MatchCard from "@/components/MatchCard";
+import ClearMatchHistoryButton from "@/components/ClearMatchHistoryButton";
 import { getGroupBySlug, getMatches } from "@/lib/data";
 import { notFound } from "next/navigation";
 
@@ -29,10 +30,11 @@ export default async function MatchesPage({ params }: MatchesPageProps) {
             Todos los partidos
           </h2>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-glass)] px-4 py-2 text-sm font-semibold text-[var(--ink)]">
             Filtrar
           </button>
+          <ClearMatchHistoryButton slug={slug} />
           <Link
             href={`/g/${slug}/matches/new`}
             className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white"
