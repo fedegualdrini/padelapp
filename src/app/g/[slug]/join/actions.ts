@@ -24,15 +24,20 @@ export async function joinGroup(
   if (authError) {
     console.error("joinGroup auth lookup failed", { authError });
   }
+
+  // Ensure we have an auth.uid() for the RPC.
+  // signInAnonymously() writes cookies, but the existing client may not pick up the new session
+  // within the same request, so re-create the client after signing in.
+  let supabase = supabaseServer;
   if (!authData?.user) {
-    const { error: signInError } =
-      await supabaseServer.auth.signInAnonymously();
+    const { error: signInError } = await supabaseServer.auth.signInAnonymously();
     if (signInError) {
       return { error: "No se pudo iniciar sesión." };
     }
+    supabase = await createSupabaseServerClient();
   }
 
-  const { data, error } = await supabaseServer.rpc(
+  const { data, error } = await supabase.rpc(
     "join_group_with_passphrase",
     {
       p_slug: slug,

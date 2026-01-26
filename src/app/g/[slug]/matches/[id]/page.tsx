@@ -42,7 +42,9 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
             {match.teams[0].name} vs {match.teams[1].name}
           </h2>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Cargado por {match.createdBy}
+            {match.updatedBy && match.updatedBy !== match.createdBy
+              ? `Editado por ${match.updatedBy}`
+              : `Creado por ${match.createdBy}`}
           </p>
         </div>
         <Link
