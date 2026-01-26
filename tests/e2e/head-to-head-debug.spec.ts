@@ -1,4 +1,5 @@
-import { test, type Page } from '@playwright/test';
+import { test } from '@playwright/test';
+import { gotoCompare, getOptionValue } from './utils';
 
 type SupabaseRequestLog = {
   url: string;
@@ -8,52 +9,16 @@ type SupabaseRequestLog = {
 };
 
 test.describe('Head-to-Head URL Navigation Debug', () => {
-  // Helper function to join the group
-  async function joinGroup(page: Page) {
-    console.log('\nAuthenticating: Joining group with passphrase...');
-    await page.goto('/g/padel/join', { waitUntil: 'networkidle' });
-
-    const joinPageVisible = await page
-      .locator('text=Ingresá la clave')
-      .isVisible()
-      .catch(() => false);
-
-    if (joinPageVisible) {
-      const passphraseInput = page
-        .locator('input[type="password"]')
-        .or(page.locator('input[name="passphrase"]'));
-      await passphraseInput.fill('padel');
-
-      const joinButton = page.locator('button:has-text("Ingresar")');
-      await joinButton.click();
-
-      await page.waitForURL(/\/g\/padel/, { timeout: 10000 });
-      console.log('Successfully joined group!');
-    }
-  }
 
   test('should check if URL parameters are being set correctly', async ({ page }) => {
     console.log('\n=== Testing URL Navigation with Query Parameters ===\n');
 
-    // Authenticate
-    await joinGroup(page);
-
-    // Navigate to compare page
-    await page.goto('/g/padel/players/compare', { waitUntil: 'networkidle' });
+    // With globalSetup+storageState, we should already be authenticated.
+    const { playerASelect, playerBSelect } = await gotoCompare(page);
     console.log('Initial URL:', page.url());
 
-    // Get player IDs from the dropdowns
-    const playerASelect = page.locator('select[name="playerA"]');
-    const playerBSelect = page.locator('select[name="playerB"]');
-
-    const playerAId = await playerASelect
-      .locator('option')
-      .nth(1)
-      .getAttribute('value');
-    const playerBId = await playerBSelect
-      .locator('option')
-      .nth(2)
-      .getAttribute('value');
+    const playerAId = await getOptionValue(playerASelect, 1);
+    const playerBId = await getOptionValue(playerBSelect, 2);
 
     console.log(`\nPlayer A ID: ${playerAId}`);
     console.log(`Player B ID: ${playerBId}`);
@@ -77,7 +42,7 @@ test.describe('Head-to-Head URL Navigation Debug', () => {
       }
     });
 
-    await page.goto(manualUrl, { waitUntil: 'networkidle' });
+    await page.goto(manualUrl, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
     console.log('URL after manual navigation:', page.url());

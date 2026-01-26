@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { gotoCompare, getOptionValue } from './utils';
 
 /**
  * Head-to-Head Comparison Feature Verification Test
@@ -8,27 +9,6 @@ import { test, expect, type Page } from '@playwright/test';
  */
 
 test.describe('Head-to-Head Comparison - Bug Fix Verification', () => {
-  // Helper function to join the group
-  async function joinGroup(page: Page) {
-    await page.goto('/g/padel/join', { waitUntil: 'networkidle' });
-
-    const joinPageVisible = await page
-      .locator('text=Ingresá la clave')
-      .isVisible()
-      .catch(() => false);
-
-    if (joinPageVisible) {
-      const passphraseInput = page
-        .locator('input[type="password"]')
-        .or(page.locator('input[name="passphrase"]'));
-      await passphraseInput.fill('padel');
-
-      const joinButton = page.locator('button:has-text("Ingresar")');
-      await joinButton.click();
-
-      await page.waitForURL(/\/g\/padel/, { timeout: 10000 });
-    }
-  }
 
   test('should display head-to-head comparison after selecting two players', async ({ page }) => {
     console.log('\n=== Head-to-Head Comparison Feature Verification ===\n');
@@ -47,40 +27,35 @@ test.describe('Head-to-Head Comparison - Bug Fix Verification', () => {
       console.error('Page error:', error.message);
     });
 
-    // Step 1: Authenticate
-    console.log('Step 1: Authenticating with group...');
-    await joinGroup(page);
+    // Step 1+2: Navigate to compare page (auth is handled by globalSetup/storageState)
+    console.log('Step 1: Navigating to /g/padel/players/compare...');
+    const { playerASelect, playerBSelect } = await gotoCompare(page);
 
-    // Step 2: Navigate to compare page
-    console.log('Step 2: Navigating to /g/padel/players/compare...');
-    await page.goto('/g/padel/players/compare', { waitUntil: 'networkidle' });
-
-    // Step 3: Select two players
-    console.log('Step 3: Selecting two players...');
-    const playerASelect = page.locator('select[name="playerA"]');
-    const playerBSelect = page.locator('select[name="playerB"]');
-
-    await expect(playerASelect).toBeVisible();
-    await expect(playerBSelect).toBeVisible();
-
-    const playerAId = await playerASelect
-      .locator('option')
-      .nth(1)
-      .getAttribute('value');
-    const playerBId = await playerBSelect
-      .locator('option')
-      .nth(2)
-      .getAttribute('value');
+    // Step 2: Select two players
+    console.log('Step 2: Selecting two players...');
+    const playerAId = await getOptionValue(playerASelect, 1);
+    const playerBId = await getOptionValue(playerBSelect, 2);
 
     if (playerAId) await playerASelect.selectOption(playerAId);
     await page.waitForTimeout(300);
     if (playerBId) await playerBSelect.selectOption(playerBId);
 
-    // Step 4: Verify comparison is visible
-    console.log('Step 4: Verifying comparison section...');
-    const comparisonSection = page.locator('text=Head-to-head').first();
-    const isVisible = await comparisonSection.isVisible().catch(() => false);
-    console.log(`Comparison section visible: ${isVisible}`);
+    // Step 3: Verify results UI appears (either history or empty state)
+    console.log('Step 3: Verifying comparison results...');
+
+    await expect(page.getByRole('heading', { name: 'Head to Head', exact: true })).toBeVisible();
+
+    const matchHistory = page.getByText('Historial de enfrentamientos');
+    const noMatches = page.getByText('Sin enfrentamientos');
+
+    // Wait for one of the two states to show up.
+    await expect
+      .poll(async () => {
+        const a = await matchHistory.isVisible().catch(() => false);
+        const b = await noMatches.isVisible().catch(() => false);
+        return a || b;
+      }, { timeout: 20000 })
+      .toBe(true);
 
     // Basic assertion: should not have page errors
     expect(consoleErrors).toEqual([]);

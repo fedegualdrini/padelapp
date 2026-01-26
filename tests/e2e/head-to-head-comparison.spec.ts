@@ -1,35 +1,7 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { gotoCompare, getOptionValue } from './utils';
 
 test.describe('Head-to-Head Comparison Feature', () => {
-  // Helper function to join the group
-  async function joinGroup(page: Page) {
-    console.log('\nAuthenticating: Joining group with passphrase...');
-    await page.goto('/g/padel/join', { waitUntil: 'networkidle' });
-
-    // Check if we're on the join page
-    const joinPageVisible = await page
-      .locator('text=Ingresá la clave')
-      .isVisible()
-      .catch(() => false);
-
-    if (joinPageVisible) {
-      // Enter passphrase
-      const passphraseInput = page
-        .locator('input[type="password"]')
-        .or(page.locator('input[name="passphrase"]'));
-      await passphraseInput.fill('padel');
-
-      // Click join button
-      const joinButton = page.locator('button:has-text("Ingresar")');
-      await joinButton.click();
-
-      // Wait for navigation to complete
-      await page.waitForURL(/\/g\/padel/, { timeout: 10000 });
-      console.log('Successfully joined group!');
-    } else {
-      console.log('Already authenticated or redirected');
-    }
-  }
 
   test('should investigate why comparison data is not showing', async ({ page }) => {
     console.log('\n=== Starting Head-to-Head Comparison Investigation ===\n');
@@ -49,34 +21,17 @@ test.describe('Head-to-Head Comparison Feature', () => {
       console.error('Page error:', error.message);
     });
 
-    // Step 1: Authenticate
-    await joinGroup(page);
-
-    // Step 2: Navigate to compare page
+    // With globalSetup+storageState, we should already be authenticated.
     console.log('\nNavigating to comparison page...');
-    await page.goto('/g/padel/players/compare', { waitUntil: 'networkidle' });
+    const { playerASelect, playerBSelect } = await gotoCompare(page);
 
-    // Step 3: Check if dropdowns exist
-    const playerASelect = page.locator('select[name="playerA"]');
-    const playerBSelect = page.locator('select[name="playerB"]');
-
-    await expect(playerASelect).toBeVisible();
-    await expect(playerBSelect).toBeVisible();
-
-    // Get all options
-    const playerAOptions = await playerASelect.locator('option').all();
-    console.log(`\nPlayer A dropdown has ${playerAOptions.length} options`);
+    const optionCount = await playerASelect.locator('option').count();
+    console.log(`\nPlayer A dropdown has ${optionCount} options`);
 
     // Select two different players
-    if (playerAOptions.length >= 3) {
-      const playerAId = await playerASelect
-        .locator('option')
-        .nth(1)
-        .getAttribute('value');
-      const playerBId = await playerBSelect
-        .locator('option')
-        .nth(2)
-        .getAttribute('value');
+    if (optionCount >= 3) {
+      const playerAId = await getOptionValue(playerASelect, 1);
+      const playerBId = await getOptionValue(playerBSelect, 2);
 
       console.log(`Selecting Player A: ${playerAId}`);
       console.log(`Selecting Player B: ${playerBId}`);
@@ -89,9 +44,20 @@ test.describe('Head-to-Head Comparison Feature', () => {
       // Check for comparison data
       console.log('\nChecking for comparison data...');
 
-      const comparisonSection = page.locator('text=Head-to-head').first();
-      const isVisible = await comparisonSection.isVisible().catch(() => false);
-      console.log(`Comparison section visible: ${isVisible}`);
+      const comparisonHeader = page.getByRole('heading', { name: 'Head to Head', exact: true });
+      const headerVisible = await comparisonHeader.isVisible().catch(() => false);
+      console.log(`Comparison header visible: ${headerVisible}`);
+
+      // One of these should appear after selecting two distinct players:
+      // - Match history section (if they played)
+      // - "Sin enfrentamientos" empty state (if they never played)
+      const matchHistory = page.getByText('Historial de enfrentamientos');
+      const noMatches = page.getByText('Sin enfrentamientos');
+
+      const matchHistoryVisible = await matchHistory.isVisible().catch(() => false);
+      const noMatchesVisible = await noMatches.isVisible().catch(() => false);
+      console.log(`Match history visible: ${matchHistoryVisible}`);
+      console.log(`No matches visible: ${noMatchesVisible}`);
 
       // Take screenshot for debugging
       await page.screenshot({ path: 'test-results/comparison-page.png', fullPage: true });

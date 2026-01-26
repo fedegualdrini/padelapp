@@ -1,40 +1,15 @@
-import { test, type Page } from '@playwright/test';
+import { test } from '@playwright/test';
+import { gotoCompare, getOptionValue } from './utils';
 
 test.describe('Head-to-Head Root Cause Analysis', () => {
-  async function joinGroup(page: Page) {
-    await page.goto('/g/padel/join', { waitUntil: 'networkidle' });
-    const joinPageVisible = await page
-      .locator('text=Ingresá la clave')
-      .isVisible()
-      .catch(() => false);
-    if (joinPageVisible) {
-      const passphraseInput = page
-        .locator('input[type="password"]')
-        .or(page.locator('input[name="passphrase"]'));
-      await passphraseInput.fill('padel');
-      const joinButton = page.locator('button:has-text("Ingresar")');
-      await joinButton.click();
-      await page.waitForURL(/\/g\/padel/, { timeout: 10000 });
-    }
-  }
 
   test('should demonstrate the logic bug in handleChange', async ({ page }) => {
     console.log('\n=== ROOT CAUSE ANALYSIS ===\n');
 
-    await joinGroup(page);
-    await page.goto('/g/padel/players/compare', { waitUntil: 'networkidle' });
+    const { playerASelect, playerBSelect } = await gotoCompare(page);
 
-    const playerASelect = page.locator('select[name="playerA"]');
-    const playerBSelect = page.locator('select[name="playerB"]');
-
-    const playerAId = await playerASelect
-      .locator('option')
-      .nth(1)
-      .getAttribute('value');
-    const playerBId = await playerBSelect
-      .locator('option')
-      .nth(2)
-      .getAttribute('value');
+    const playerAId = await getOptionValue(playerASelect, 1);
+    const playerBId = await getOptionValue(playerBSelect, 2);
 
     console.log('Initial state:');
     console.log(`  playerA prop: undefined`);

@@ -3,33 +3,12 @@ import { test, expect } from '@playwright/test';
 test.describe('Ranking Page - Post Timeframe Removal', () => {
 
   test.beforeEach(async ({ page }) => {
-    // First, join the group with the default passphrase
-    await page.goto('/g/padel/join');
-    await page.waitForLoadState('networkidle');
-
-    // Check if we're already a member (redirected to dashboard)
-    const currentUrl = page.url();
-    if (!currentUrl.includes('/join')) {
-      // Already a member, navigate to ranking
-      await page.goto('/g/padel/ranking');
-      await page.waitForLoadState('networkidle');
-      return;
-    }
-
-    // Fill in the passphrase and submit
-    const passphraseInput = page.locator('input[type="password"], input[placeholder*="clave"]');
-    await passphraseInput.waitFor({ state: 'visible', timeout: 5000 });
-    await passphraseInput.fill('padel');
-
-    const submitButton = page.getByRole('button', { name: /ingresar|submit|join/i });
-    await submitButton.click();
-
-    // Wait for navigation away from join page
-    await page.waitForURL((url) => !url.pathname.includes('/join'), { timeout: 15000 });
-
-    // Now navigate to the ranking page
-    await page.goto('/g/padel/ranking');
-    await page.waitForLoadState('networkidle');
+    // Auth is handled once in globalSetup (storageState).
+    await page.goto('/g/padel/ranking', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('heading', { name: 'Ranking', exact: true }).waitFor({
+      state: 'visible',
+      timeout: 20000,
+    });
   });
 
   test.describe('Visual Verification', () => {
@@ -245,8 +224,8 @@ test.describe('Ranking Page - Post Timeframe Removal', () => {
     test('should display correctly on desktop viewport', async ({ page }) => {
       // Set desktop viewport
       await page.setViewportSize({ width: 1920, height: 1080 });
-      await page.reload();
-      await page.waitForLoadState('networkidle');
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('domcontentloaded');
 
       // Verify layout on desktop
       const flexContainer = page.locator('div.flex.flex-col.lg\\:flex-row');
@@ -261,8 +240,8 @@ test.describe('Ranking Page - Post Timeframe Removal', () => {
     test('should display correctly on tablet viewport', async ({ page }) => {
       // Set tablet viewport
       await page.setViewportSize({ width: 768, height: 1024 });
-      await page.reload();
-      await page.waitForLoadState('networkidle');
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('domcontentloaded');
 
       await page.screenshot({
         path: 'tests/e2e/screenshots/tablet-view.png',
@@ -273,8 +252,8 @@ test.describe('Ranking Page - Post Timeframe Removal', () => {
     test('should display correctly on mobile viewport', async ({ page }) => {
       // Set mobile viewport
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.reload();
-      await page.waitForLoadState('networkidle');
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('domcontentloaded');
 
       // On mobile, the flex should be column
       await page.screenshot({
@@ -291,8 +270,9 @@ test.describe('Ranking Page - Post Timeframe Removal', () => {
       await page.waitForSelector('canvas', { timeout: 10000 });
 
       // The chart should display all data (no timeframe restrictions)
-      // This is verified by the absence of timeframe buttons
-      const timeframeButtons = page.locator('button:has-text("1W"), button:has-text("1M"), button:has-text("ALL")');
+      // Verify that timeframe shortcut buttons are NOT present.
+      // NOTE: don't check for "ALL" here — it matches the "Player Status: All" filter.
+      const timeframeButtons = page.locator('button:has-text("1W"), button:has-text("1M"), button:has-text("3M"), button:has-text("6M"), button:has-text("1Y")');
       await expect(timeframeButtons).toHaveCount(0);
     });
 
