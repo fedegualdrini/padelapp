@@ -535,10 +535,11 @@ async function handleMessage({ cfg, db, msg, state }) {
     }
 
     async function createMatchFromLoadSession(session, setScores) {
-      const { occurrenceId, bestOf, teams, createdAtTs } = session;
-      if (!occurrenceId || !bestOf || !teams?.team1 || !teams?.team2) {
+      const { occurrenceId, bestOf, slots, createdAtTs } = session;
+      if (!occurrenceId || !bestOf || !Array.isArray(slots) || slots.length !== 4) {
         throw new Error('Load session incompleta');
       }
+      const teams = { team1: [slots[0], slots[1]], team2: [slots[2], slots[3]] };
 
       // Validate set completion rules (same as UI)
       const requiredSets = Math.floor(bestOf / 2) + 1;
@@ -755,6 +756,99 @@ async function handleMessage({ cfg, db, msg, state }) {
       }
     }
 
+    function formatSlots(namesById, slots) {
+      const safe = (pid) => namesById.get(pid) ?? pid;
+      return [
+        `1) ${safe(slots[0])}`,
+        `2) ${safe(slots[1])}`,
+        `3) ${safe(slots[2])}`,
+        `4) ${safe(slots[3])}`,
+      ].join('\n');
+    }
+
+    async function getPlayerNamesMap(playerIds) {
+      const { rows } = await db.query(
+        `select id, name from players where id = any($1::uuid[])`,
+        [playerIds]
+      );
+      return new Map(rows.map((r) => [r.id, r.name]));
+    }
+
+    // Handle swap: !load swap <a> <b>
+    const swapMatch = text.match(/^!load\s+swap\s+(\d)\s+(\d)$/);
+    if (swapMatch) {
+      const session = state?.loadSession;
+      if (!session?.createdAtTs) {
+        await wacliSendGroupText(cfg.groupJid, '📝 No hay carga activa. Enviá !load para empezar.');
+        return;
+      }
+      if (Date.now() - Number(session.createdAtTs) > sessionTtlMs) {
+        state.loadSession = null;
+        saveState(state);
+        await wacliSendGroupText(cfg.groupJid, '📝 La carga expiró. Enviá !load de nuevo.');
+        return;
+      }
+      if (session.stage !== 'teams' || !Array.isArray(session.slots) || session.slots.length !== 4) {
+        await wacliSendGroupText(cfg.groupJid, '📝 No se puede cambiar equipos en este paso.');
+        return;
+      }
+
+      const a = Number(swapMatch[1]);
+      const b = Number(swapMatch[2]);
+      if (![1, 2, 3, 4].includes(a) || ![1, 2, 3, 4].includes(b) || a === b) {
+        await wacliSendGroupText(cfg.groupJid, '📝 Uso: !load swap <1-4> <1-4> (ej: !load swap 1 3)');
+        return;
+      }
+
+      const idxA = a - 1;
+      const idxB = b - 1;
+      const slots = [...session.slots];
+      const tmp = slots[idxA];
+      slots[idxA] = slots[idxB];
+      slots[idxB] = tmp;
+
+      session.slots = slots;
+      state.loadSession = session;
+      saveState(state);
+
+      const namesById = await getPlayerNamesMap(slots);
+      const team1Names = `${namesById.get(slots[0])} + ${namesById.get(slots[1])}`;
+      const team2Names = `${namesById.get(slots[2])} + ${namesById.get(slots[3])}`;
+
+      await wacliSendGroupText(
+        cfg.groupJid,
+        `✅ Equipos actualizados\n\nEquipos: ${team1Names} vs ${team2Names}\n\nJugadores (slots):\n${formatSlots(namesById, slots)}\n\nMás cambios: !load swap <a> <b>\nCuando esté OK: !load ok`
+      );
+      return;
+    }
+
+    // Confirm teams: !load ok
+    if (text === '!load ok') {
+      const session = state?.loadSession;
+      if (!session?.createdAtTs) {
+        await wacliSendGroupText(cfg.groupJid, '📝 No hay carga activa. Enviá !load para empezar.');
+        return;
+      }
+      if (Date.now() - Number(session.createdAtTs) > sessionTtlMs) {
+        state.loadSession = null;
+        saveState(state);
+        await wacliSendGroupText(cfg.groupJid, '📝 La carga expiró. Enviá !load de nuevo.');
+        return;
+      }
+      if (!Array.isArray(session.slots) || session.slots.length !== 4) {
+        await wacliSendGroupText(cfg.groupJid, '📝 No se pudieron leer los equipos. Enviá !load de nuevo.');
+        return;
+      }
+
+      session.stage = 'format';
+      session.createdAtTs = Date.now();
+      state.loadSession = session;
+      saveState(state);
+
+      await wacliSendGroupText(cfg.groupJid, `📝 Equipos confirmados.\nElegí formato: !load bo3  o  !load bo5`);
+      return;
+    }
+
     // Handle score submission
     const scoreMatch = text.match(/^!load\s+score\s+(.+)$/);
     if (scoreMatch) {
@@ -778,6 +872,10 @@ async function handleMessage({ cfg, db, msg, state }) {
       }
 
       try {
+        if (session.stage !== 'format' || !session.bestOf) {
+          await wacliSendGroupText(cfg.groupJid, '📝 Falta seleccionar formato. Enviá: !load bo3  o  !load bo5');
+          return;
+        }
         await createMatchFromLoadSession(session, parsed.scores);
         // clear session
         state.loadSession = null;
@@ -795,6 +893,10 @@ async function handleMessage({ cfg, db, msg, state }) {
       const session = state?.loadSession;
       if (!session || !session.occurrenceId) {
         await wacliSendGroupText(cfg.groupJid, '📝 Primero elegí un partido: !load <n>');
+        return;
+      }
+      if (session.stage !== 'format') {
+        await wacliSendGroupText(cfg.groupJid, '📝 Antes confirmá equipos: usá !load ok (o cambiá con !load swap 1 3).');
         return;
       }
       session.bestOf = bestOf;
@@ -850,22 +952,38 @@ async function handleMessage({ cfg, db, msg, state }) {
         team2 = confirmed.slice(2, 4);
       }
 
+      // New flow: allow team edits before selecting format.
+      // Represent teams as 4 ordered slots:
+      // 1-2 => Team 1, 3-4 => Team 2.
+      const slots = [
+        team1[0].player_id,
+        team1[1].player_id,
+        team2[0].player_id,
+        team2[1].player_id,
+      ];
+
       state.loadSession = {
         occurrenceId: item.occurrenceId,
         createdAtTs: Date.now(),
+        stage: 'teams',
         bestOf: null,
-        teams: {
-          team1: team1.map((p) => p.player_id),
-          team2: team2.map((p) => p.player_id),
-        },
+        slots,
       };
       saveState(state);
 
+      const slotLines = [
+        `1) ${team1[0].name}`,
+        `2) ${team1[1].name}`,
+        `3) ${team2[0].name}`,
+        `4) ${team2[1].name}`,
+      ].join('\n');
+
       const team1Names = team1.map((p) => p.name).join(' + ');
       const team2Names = team2.map((p) => p.name).join(' + ');
+
       await wacliSendGroupText(
         cfg.groupJid,
-        `📝 Cargando partido ${formatDateShort(item.startsAt)}\n\nEquipos: ${team1Names} vs ${team2Names}\n\nElegí formato: !load bo3  o  !load bo5`
+        `📝 Cargando partido ${formatDateShort(item.startsAt)}\n\nEquipos propuestos: ${team1Names} vs ${team2Names}\n\nJugadores (slots):\n${slotLines}\n\nPara cambiar: !load swap <a> <b>  (ej: !load swap 1 3)\nCuando esté OK: !load ok`
       );
       return;
     }
