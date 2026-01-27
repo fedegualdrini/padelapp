@@ -130,12 +130,19 @@ const buildMatchView = (match: MatchRow) => {
     (a, b) => a.team_number - b.team_number
   );
 
-  const teamNames = teamsSorted.map((team) => {
-    const names =
+  const teamPlayers = teamsSorted.map((team) => {
+    const players =
       team.match_team_players
-        ?.map((mtp) => mtp.players?.name)
-        .filter(Boolean) ?? [];
-    return names.join(" / ") || `Equipo ${team.team_number}`;
+        ?.map((mtp) => mtp.players)
+        .filter((p): p is { id: string; name: string } => Boolean(p?.id) && Boolean(p?.name)) ??
+      [];
+
+    const name = players.map((p) => p.name).join(" / ") || `Equipo ${team.team_number}`;
+
+    return {
+      name,
+      players,
+    };
   });
 
   const setsSorted = [...(match.sets ?? [])].sort(
@@ -163,8 +170,8 @@ const buildMatchView = (match: MatchRow) => {
     team1SetWins === team2SetWins
       ? "Pendiente"
       : team1SetWins > team2SetWins
-      ? teamNames[0] ?? "Equipo 1"
-      : teamNames[1] ?? "Equipo 2";
+      ? teamPlayers[0]?.name ?? "Equipo 1"
+      : teamPlayers[1]?.name ?? "Equipo 2";
 
   return {
     id: match.id,
@@ -174,12 +181,14 @@ const buildMatchView = (match: MatchRow) => {
     updatedBy: match.updated_by ?? match.created_by,
     teams: [
       {
-        name: teamNames[0] ?? "Team 1",
+        name: teamPlayers[0]?.name ?? "Team 1",
+        players: teamPlayers[0]?.players ?? [],
         sets: team1Sets,
         opponentSets: team2Sets,
       },
       {
-        name: teamNames[1] ?? "Team 2",
+        name: teamPlayers[1]?.name ?? "Team 2",
+        players: teamPlayers[1]?.players ?? [],
         sets: team2Sets,
         opponentSets: team1Sets,
       },
