@@ -1,6 +1,8 @@
 # Feature: Click player name to filter matches
 
-**Status:** APPROVED
+**Status:** IMPLEMENTED
+
+**Implemented in:** 7e17f74cd37f2950de74524e7d05daf5968c6fb6
 
 ## Why
 Now that we have match filters, a fast UX win is making the match list itself interactive: clicking a player’s name should instantly filter the match history to that player. This reduces friction and makes “Filtrar” feel integrated instead of hidden.
