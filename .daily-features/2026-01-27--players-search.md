@@ -1,6 +1,8 @@
 # Feature: Player list search + quick status filter
 
-**Status:** APPROVED
+**Status:** IMPLEMENTED
+
+**Implemented in:** 05318bfccfe3a3671f207502a505cbc2bb306ffd
 
 ## Why
 As groups grow, the Players page becomes harder to navigate. A simple search box (by name) + a quick status filter (all/usual/invite) makes it much faster to find and manage players.
