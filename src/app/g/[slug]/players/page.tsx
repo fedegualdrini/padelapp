@@ -4,10 +4,20 @@ import PlayerDirectory from "@/components/PlayerDirectory";
 
 type PlayersPageProps = {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default async function PlayersPage({ params }: PlayersPageProps) {
+const isIsoDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+export default async function PlayersPage({ params, searchParams }: PlayersPageProps) {
   const { slug } = await params;
+  const sp = (await searchParams) ?? {};
+
+  const qRaw = sp.q;
+  const statusRaw = sp.status;
+
+  const q = typeof qRaw === 'string' ? qRaw : undefined;
+  const status = typeof statusRaw === 'string' ? (statusRaw as any) : undefined;
 
   const group = await getGroupBySlug(slug);
   if (!group) {
@@ -25,6 +35,8 @@ export default async function PlayersPage({ params }: PlayersPageProps) {
       groupSlug={group.slug}
       players={players}
       stats={stats}
+      q={q}
+      status={status}
     />
   );
 }
