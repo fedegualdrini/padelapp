@@ -535,7 +535,7 @@ async function handleMessage({ cfg, db, msg, state }) {
     }
 
     async function createMatchFromLoadSession(session, setScores) {
-      const { occurrenceId, bestOf, slots, createdAtTs } = session;
+      const { occurrenceId, bestOf, slots, createdAtTs, mvpPlayerId } = session;
       if (!occurrenceId || !bestOf || !Array.isArray(slots) || slots.length !== 4) {
         throw new Error('Load session incompleta');
       }
@@ -569,10 +569,10 @@ async function handleMessage({ cfg, db, msg, state }) {
       await db.query('begin');
       try {
         const matchIns = await db.query(
-          `insert into matches (group_id, played_at, best_of, created_by, updated_by)
-           values ($1,$2,$3,$4,$4)
+          `insert into matches (group_id, played_at, best_of, created_by, updated_by, mvp_player_id)
+           values ($1,$2,$3,$4,$4,$5)
            returning id`,
-          [occ.group_id, occ.starts_at, bestOf, createdBy]
+          [occ.group_id, occ.starts_at, bestOf, createdBy, mvpPlayerId || null]
         );
         const matchId = matchIns.rows[0].id;
 
@@ -596,6 +596,9 @@ async function handleMessage({ cfg, db, msg, state }) {
         // unique players check
         const uniq = new Set(mtpRows.map((r) => r.player_id));
         if (uniq.size !== 4) throw new Error('Los jugadores deben ser únicos entre equipos.');
+        if (mvpPlayerId && !uniq.has(mvpPlayerId)) {
+          throw new Error('El MVP debe ser uno de los jugadores del partido.');
+        }
 
         await db.query(
           `insert into match_team_players (match_team_id, player_id, updated_by)
@@ -772,6 +775,45 @@ async function handleMessage({ cfg, db, msg, state }) {
         [playerIds]
       );
       return new Map(rows.map((r) => [r.id, r.name]));
+    }
+
+    // Set MVP: !load mvp <1-4>
+    const mvpMatch = text.match(/^!load\s+mvp\s+(\d)$/);
+    if (mvpMatch) {
+      const session = state?.loadSession;
+      if (!session?.createdAtTs) {
+        await wacliSendGroupText(cfg.groupJid, '📝 No hay carga activa. Enviá !load para empezar.');
+        return;
+      }
+      if (Date.now() - Number(session.createdAtTs) > sessionTtlMs) {
+        state.loadSession = null;
+        saveState(state);
+        await wacliSendGroupText(cfg.groupJid, '📝 La carga expiró. Enviá !load de nuevo.');
+        return;
+      }
+      if (!Array.isArray(session.slots) || session.slots.length !== 4) {
+        await wacliSendGroupText(cfg.groupJid, '📝 No se pudieron leer los jugadores. Enviá !load de nuevo.');
+        return;
+      }
+
+      const n = Number(mvpMatch[1]);
+      if (![1, 2, 3, 4].includes(n)) {
+        await wacliSendGroupText(cfg.groupJid, '📝 Uso: !load mvp <1-4> (ej: !load mvp 2)');
+        return;
+      }
+
+      const mvpPlayerId = session.slots[n - 1];
+      session.mvpPlayerId = mvpPlayerId;
+      session.createdAtTs = Date.now();
+      state.loadSession = session;
+      saveState(state);
+
+      const namesById = await getPlayerNamesMap(session.slots);
+      await wacliSendGroupText(
+        cfg.groupJid,
+        `🏅 MVP seleccionado: ${namesById.get(mvpPlayerId) ?? mvpPlayerId} (slot ${n})\n\nJugadores (slots):\n${formatSlots(namesById, session.slots)}`
+      );
+      return;
     }
 
     // Handle swap: !load swap <a> <b>
@@ -968,6 +1010,7 @@ async function handleMessage({ cfg, db, msg, state }) {
         stage: 'teams',
         bestOf: null,
         slots,
+        mvpPlayerId: null,
       };
       saveState(state);
 
@@ -983,7 +1026,7 @@ async function handleMessage({ cfg, db, msg, state }) {
 
       await wacliSendGroupText(
         cfg.groupJid,
-        `📝 Cargando partido ${formatDateShort(item.startsAt)}\n\nEquipos propuestos: ${team1Names} vs ${team2Names}\n\nJugadores (slots):\n${slotLines}\n\nPara cambiar: !load swap <a> <b>  (ej: !load swap 1 3)\nCuando esté OK: !load ok`
+        `📝 Cargando partido ${formatDateShort(item.startsAt)}\n\nEquipos propuestos: ${team1Names} vs ${team2Names}\n\nJugadores (slots):\n${slotLines}\n\nMVP (opcional): !load mvp <1-4>  (ej: !load mvp 2)\nPara cambiar: !load swap <a> <b>  (ej: !load swap 1 3)\nCuando esté OK: !load ok`
       );
       return;
     }
