@@ -222,9 +222,62 @@ export async function getRecentMatches(groupId: string, limit = 3) {
   return (data as unknown as MatchRow[]).map(buildMatchView);
 }
 
-export async function getMatches(groupId: string) {
+export async function getMatches(
+  groupId: string,
+  filters?: { playerId?: string; from?: string; to?: string }
+) {
   const supabaseServer = await getSupabaseServerClient();
-  const { data, error } = await supabaseServer
+
+  // If filtering by player, resolve match IDs via match_team_players -> match_teams.
+  let matchIds: string[] | null = null;
+  if (filters?.playerId) {
+    const { data: mtp, error: mtpError } = await supabaseServer
+      .from('match_team_players')
+      .select('match_team_id')
+      .eq('player_id', filters.playerId);
+
+    if (mtpError) {
+      // Fail closed: return empty rather than showing wrong results.
+      return [];
+    }
+
+    const matchTeamIds = Array.from(
+      new Set(
+        (mtp as Array<{ match_team_id: string | null }> | null | undefined)
+          ?.map((r) => r.match_team_id)
+          .filter((id): id is string => Boolean(id)) ??
+          []
+      )
+    );
+
+    if (matchTeamIds.length === 0) {
+      return [];
+    }
+
+    const { data: mts, error: mtsError } = await supabaseServer
+      .from('match_teams')
+      .select('match_id')
+      .in('id', matchTeamIds);
+
+    if (mtsError) {
+      return [];
+    }
+
+    matchIds = Array.from(
+      new Set(
+        (mts as Array<{ match_id: string | null }> | null | undefined)
+          ?.map((r) => r.match_id)
+          .filter((id): id is string => Boolean(id)) ??
+          []
+      )
+    );
+
+    if (matchIds.length === 0) {
+      return [];
+    }
+  }
+
+  let query = supabaseServer
     .from("matches")
     .select(
       `
@@ -245,8 +298,22 @@ export async function getMatches(groupId: string) {
         )
       `
     )
-    .eq("group_id", groupId)
-    .order("played_at", { ascending: false });
+    .eq("group_id", groupId);
+
+  if (filters?.from) {
+    // played_at is timestamptz; date string works as inclusive lower bound.
+    query = query.gte('played_at', `${filters.from}T00:00:00.000Z`);
+  }
+
+  if (filters?.to) {
+    query = query.lte('played_at', `${filters.to}T23:59:59.999Z`);
+  }
+
+  if (matchIds) {
+    query = query.in('id', matchIds);
+  }
+
+  const { data, error } = await query.order("played_at", { ascending: false });
 
   if (error || !data) {
     return [];
