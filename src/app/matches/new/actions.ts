@@ -34,6 +34,8 @@ export async function createMatch(
   const team2Player1 = String(formData.get("team2_player1") ?? "").trim();
   const team2Player2 = String(formData.get("team2_player2") ?? "").trim();
 
+  const mvpPlayerId = String(formData.get("mvp_player_id") ?? "").trim();
+
   if (!groupId || !groupSlug || !date || !time || !createdBy) {
     return { error: "Faltan datos obligatorios del partido." };
   }
@@ -53,6 +55,10 @@ export async function createMatch(
   const uniquePlayers = new Set(players);
   if (uniquePlayers.size !== 4) {
     return { error: "Los jugadores deben ser únicos entre equipos." };
+  }
+
+  if (mvpPlayerId && !uniquePlayers.has(mvpPlayerId)) {
+    return { error: "El MVP debe ser uno de los jugadores del partido." };
   }
 
   const requiredSets = Math.floor(bestOf / 2) + 1;
@@ -114,6 +120,7 @@ export async function createMatch(
       best_of: bestOf,
       created_by: createdBy,
       updated_by: createdBy,
+      mvp_player_id: mvpPlayerId || null,
     })
     .select("id")
     .single();
