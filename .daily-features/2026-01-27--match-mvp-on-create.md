@@ -1,6 +1,8 @@
 # Feature: MVP on Match Creation (UI)
 
-**Status:** APPROVED
+**Status:** IMPLEMENTED
+
+**Implemented in:** 5837ebd
 
 ## Why
 Right now MVP can only be set when editing an existing match. When we’re logging a match right after playing, it’s annoying to save → open edit → set MVP.
