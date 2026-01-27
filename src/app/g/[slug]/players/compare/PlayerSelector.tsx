@@ -22,6 +22,7 @@ export default function PlayerSelector({
 
   const handlePlayerAChange = (value: string) => {
     setSelectedPlayerA(value);
+    // Use `value` + current selectedPlayerB to avoid stale state during the same tick.
     if (value && selectedPlayerB && value !== selectedPlayerB) {
       router.push(
         `/g/${slug}/players/compare?playerA=${value}&playerB=${selectedPlayerB}`
@@ -31,6 +32,7 @@ export default function PlayerSelector({
 
   const handlePlayerBChange = (value: string) => {
     setSelectedPlayerB(value);
+    // Use `value` + current selectedPlayerA to avoid stale state during the same tick.
     if (selectedPlayerA && value && selectedPlayerA !== value) {
       router.push(
         `/g/${slug}/players/compare?playerA=${selectedPlayerA}&playerB=${value}`

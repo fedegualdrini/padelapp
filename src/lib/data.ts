@@ -26,6 +26,7 @@ type MatchEditRow = {
   best_of: number;
   created_by: string;
   updated_by?: string | null;
+  mvp_player_id?: string | null;
   match_teams: {
     team_number: number;
     id: string;
@@ -454,6 +455,7 @@ export async function getMatchEditData(groupId: string, id: string) {
         played_at,
         best_of,
         created_by,
+        mvp_player_id,
         match_teams (
           id,
           team_number,
@@ -504,6 +506,7 @@ export async function getMatchEditData(groupId: string, id: string) {
     time,
     bestOf: match.best_of,
     createdBy: match.created_by,
+    mvpPlayerId: match.mvp_player_id ?? null,
     teamPlayers,
     setScores,
   };

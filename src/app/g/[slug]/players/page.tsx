@@ -7,8 +7,6 @@ type PlayersPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-const isIsoDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
-
 export default async function PlayersPage({ params, searchParams }: PlayersPageProps) {
   const { slug } = await params;
   const sp = (await searchParams) ?? {};
@@ -16,8 +14,15 @@ export default async function PlayersPage({ params, searchParams }: PlayersPageP
   const qRaw = sp.q;
   const statusRaw = sp.status;
 
-  const q = typeof qRaw === 'string' ? qRaw : undefined;
-  const status = typeof statusRaw === 'string' ? (statusRaw as any) : undefined;
+  const q = typeof qRaw === "string" ? qRaw : undefined;
+
+  const allowedStatuses = ["all", "usual", "invite"] as const;
+  type AllowedStatus = (typeof allowedStatuses)[number];
+
+  const status =
+    typeof statusRaw === "string" && allowedStatuses.includes(statusRaw as AllowedStatus)
+      ? (statusRaw as AllowedStatus)
+      : undefined;
 
   const group = await getGroupBySlug(slug);
   if (!group) {
