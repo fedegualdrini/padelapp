@@ -1,6 +1,6 @@
 # Feature: Weekly Event Attendance UI
 
-**Status:** APPROVED
+**Status:** IMPLEMENTED (commit: 4ffff67)
 
 ## Why
 The database already has a complete attendance planning system (weekly_events, event_occurrences, attendance, whatsapp_identities tables) designed for WhatsApp bot integration, but there's no web UI for it. Groups need a way to:
