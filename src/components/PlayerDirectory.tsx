@@ -1,3 +1,4 @@
+import Link from "next/link";
 import AddPlayerForm from '@/app/g/[slug]/players/AddPlayerForm';
 import EditPlayerForm from '@/app/g/[slug]/players/EditPlayerForm';
 import FormIndicator from '@/components/FormIndicator';
@@ -72,6 +73,12 @@ export default function PlayerDirectory({
         className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4"
       >
         <div className="flex items-center gap-2">
+          <Link
+            href={`/g/${groupSlug}/players/${player.id}`}
+            className="font-display text-lg text-[var(--ink)] hover:text-[var(--accent)] hover:underline"
+          >
+            {player.name}
+          </Link>
           <EditPlayerForm
             playerId={player.id}
             initialName={player.name}

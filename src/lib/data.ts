@@ -1127,6 +1127,255 @@ export type HeadToHeadStats = {
   }>;
 };
 
+export async function getPlayerById(groupId: string, playerId: string) {
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from("players")
+    .select("id, name, status")
+    .eq("id", playerId)
+    .eq("group_id", groupId)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as PlayerRow;
+}
+
+export type PartnerStat = {
+  partnerId: string;
+  partnerName: string;
+  partnerStatus: string;
+  matchesPlayed: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+};
+
+export async function getPlayerPartnerStats(
+  groupId: string,
+  playerId: string
+): Promise<PartnerStat[]> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Get all players in the group for name resolution
+  const players = await getPlayers(groupId);
+  const playerMap = new Map(players.map((p) => [p.id, p]));
+
+  // Find all matches where the player participated
+  const { data: playerMatches, error: matchError } = await supabaseServer
+    .from("match_team_players")
+    .select(
+      `
+      match_team_id,
+      match_teams!inner (
+        match_id,
+        team_number,
+        match_team_players!inner (
+          player_id
+        )
+      )
+    `
+    )
+    .eq("player_id", playerId);
+
+  if (matchError || !playerMatches || playerMatches.length === 0) {
+    return [];
+  }
+
+  // Build partner stats
+  const partnerStats = new Map<
+    string,
+    { wins: number; losses: number; matches: number }
+  >();
+
+  for (const row of playerMatches) {
+    const matchTeam = Array.isArray(row.match_teams)
+      ? row.match_teams[0]
+      : row.match_teams;
+    if (!matchTeam?.match_id) continue;
+
+    // Get teammates for this match
+    const teammates = Array.isArray(matchTeam.match_team_players)
+      ? matchTeam.match_team_players
+      : [matchTeam.match_team_players];
+
+    const partnerRow = teammates.find((t: { player_id: string }) => t.player_id !== playerId);
+    if (!partnerRow) continue;
+
+    const partnerId = partnerRow.player_id;
+
+    // Get match result to determine win/loss
+    const { data: matchResult, error: resultError } = await supabaseServer
+      .from("v_player_match_results")
+      .select("is_win")
+      .eq("match_id", matchTeam.match_id)
+      .eq("player_id", playerId)
+      .single();
+
+    if (resultError || !matchResult) continue;
+
+    const stats = partnerStats.get(partnerId) || { wins: 0, losses: 0, matches: 0 };
+    stats.matches++;
+    if (matchResult.is_win) {
+      stats.wins++;
+    } else {
+      stats.losses++;
+    }
+    partnerStats.set(partnerId, stats);
+  }
+
+  // Convert to array and sort by matches played
+  return Array.from(partnerStats.entries())
+    .map(([partnerId, stats]) => {
+      const partner = playerMap.get(partnerId);
+      return {
+        partnerId,
+        partnerName: partner?.name ?? "Unknown",
+        partnerStatus: partner?.status ?? "usual",
+        matchesPlayed: stats.matches,
+        wins: stats.wins,
+        losses: stats.losses,
+        winRate: stats.matches > 0 ? stats.wins / stats.matches : 0,
+      };
+    })
+    .sort((a, b) => b.matchesPlayed - a.matchesPlayed)
+    .slice(0, 5);
+}
+
+export type RecentMatch = {
+  id: string;
+  playedAt: string;
+  opponentTeam: string;
+  partnerName: string | null;
+  result: "win" | "loss";
+  score: string;
+};
+
+export async function getPlayerRecentMatches(
+  groupId: string,
+  playerId: string,
+  limit: number = 10
+): Promise<RecentMatch[]> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Get recent matches with results using the enriched view
+  const { data: matchResults, error } = await supabaseServer
+    .from("v_player_match_results_enriched")
+    .select("match_id, is_win, played_at")
+    .eq("player_id", playerId)
+    .eq("group_id", groupId)
+    .order("played_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !matchResults || matchResults.length === 0) {
+    return [];
+  }
+
+  const matches: RecentMatch[] = [];
+
+  for (const result of matchResults) {
+    // Get match details
+    const { data: matchData, error: matchError } = await supabaseServer
+      .from("matches")
+      .select(
+        `
+        id,
+        played_at,
+        match_teams (
+          team_number,
+          match_team_players (
+            player_id,
+            players ( name )
+          )
+        ),
+        sets (
+          set_number,
+          set_scores ( team1_games, team2_games )
+        )
+      `
+      )
+      .eq("id", result.match_id)
+      .eq("group_id", groupId)
+      .single();
+
+    if (matchError || !matchData) continue;
+
+    // Find which team the player was on
+    let partnerName: string | null = null;
+    const opponentTeamNames: string[] = [];
+
+    for (const team of matchData.match_teams || []) {
+      const teamPlayers = Array.isArray(team.match_team_players)
+        ? team.match_team_players
+        : [team.match_team_players];
+
+      const playerOnTeam = teamPlayers.find(
+        (tp: { player_id: string }) => tp.player_id === playerId
+      );
+
+      if (playerOnTeam) {
+        // Find partner
+        const partner = teamPlayers.find(
+          (tp: { player_id: string }) => tp.player_id !== playerId
+        );
+        if (partner?.players) {
+          const playerData = Array.isArray(partner.players)
+            ? partner.players[0]
+            : partner.players;
+          partnerName = playerData?.name ?? null;
+        }
+      } else {
+        // This is the opponent team
+        for (const tp of teamPlayers) {
+          if (tp.players) {
+            const playerData = Array.isArray(tp.players)
+              ? tp.players[0]
+              : tp.players;
+            if (playerData?.name) {
+              opponentTeamNames.push(playerData.name);
+            }
+          }
+        }
+      }
+    }
+
+    // Calculate score
+    const sets = Array.isArray(matchData.sets) ? matchData.sets : [];
+    const sortedSets = sets.sort((a: { set_number: number }, b: { set_number: number }) => a.set_number - b.set_number);
+
+    const setScores: string[] = [];
+
+    for (const set of sortedSets) {
+      const scores = Array.isArray(set.set_scores)
+        ? set.set_scores[0]
+        : set.set_scores;
+      if (scores) {
+        const t1Games = scores.team1_games;
+        const t2Games = scores.team2_games;
+        setScores.push(`${t1Games}-${t2Games}`);
+      }
+    }
+
+    const playedAt = new Date(matchData.played_at).toLocaleDateString("es-AR", {
+      month: "short",
+      day: "2-digit",
+    });
+
+    matches.push({
+      id: matchData.id,
+      playedAt,
+      opponentTeam: opponentTeamNames.join(" / ") || "Unknown",
+      partnerName,
+      result: result.is_win ? "win" : "loss",
+      score: setScores.join(", ") || "Sin resultado",
+    });
+  }
+
+  return matches;
+}
+
 export async function getHeadToHeadStats(
   groupId: string,
   playerAId: string,
