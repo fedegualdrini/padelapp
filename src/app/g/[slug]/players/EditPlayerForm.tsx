@@ -43,7 +43,6 @@ export default function EditPlayerForm({
   return (
     <div className="mt-1">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-base font-semibold text-[var(--ink)]">{name}</p>
         {!isEditing ? (
           <button
             type="button"

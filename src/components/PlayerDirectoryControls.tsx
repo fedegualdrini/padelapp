@@ -70,7 +70,7 @@ export default function PlayerDirectoryControls() {
           applyUrl(next, urlStatus);
         }}
         placeholder="Buscar jugador..."
-        className="w-full rounded-full border border-[color:var(--card-border)] bg-white/70 px-4 py-2 text-sm text-[var(--ink)] sm:w-72"
+        className="w-full rounded-full border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-4 py-2 text-sm text-[var(--ink)] sm:w-72"
       />
     </div>
   );
