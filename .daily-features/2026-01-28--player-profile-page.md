@@ -1,6 +1,6 @@
 # Feature: Player Profile Page
 
-**Status:** PROPOSED
+**Status:** APPROVED
 
 ## Why
 Currently, player information is scattered across the app: basic stats appear in the Players directory, match history can be filtered on the Matches page, and ELO history is only visible in the group-wide Ranking chart. A dedicated player profile page would provide a unified view of a player's journey—showing their match history, ELO progression, partner chemistry, and personal stats all in one place. This creates a more engaging experience and makes it easier to track individual improvement over time.
