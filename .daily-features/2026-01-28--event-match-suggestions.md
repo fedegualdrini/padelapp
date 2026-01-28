@@ -1,6 +1,6 @@
 # Feature: Event Match Suggestions
 
-**Status:** PROPOSED
+**Status:** APPROVED
 
 ## Why
 Currently, the app has two separate workflows:
