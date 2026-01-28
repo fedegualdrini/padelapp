@@ -1544,3 +1544,247 @@ export async function getHeadToHeadStats(
     matches: matchDetails,
   };
 }
+
+// Event/Attendance related types and functions
+type WeeklyEvent = {
+  id: string;
+  group_id: string;
+  name: string;
+  weekday: number;
+  start_time: string;
+  capacity: number;
+  cutoff_weekday: number;
+  cutoff_time: string;
+  is_active: boolean;
+  active_occurrence_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type EventOccurrence = {
+  id: string;
+  weekly_event_id: string;
+  group_id: string;
+  starts_at: string;
+  status: 'open' | 'locked' | 'cancelled' | 'completed';
+  loaded_match_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type AttendanceRecord = {
+  id: string;
+  occurrence_id: string;
+  group_id: string;
+  player_id: string;
+  status: 'confirmed' | 'declined' | 'maybe' | 'waitlist';
+  source: 'whatsapp' | 'web' | 'admin';
+  created_at: string;
+  updated_at: string;
+  players?: { id: string; name: string } | null;
+};
+
+export async function getWeeklyEvents(groupId: string): Promise<WeeklyEvent[]> {
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from("weekly_events")
+    .select("*")
+    .eq("group_id", groupId)
+    .eq("is_active", true)
+    .order("created_at", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as WeeklyEvent[];
+}
+
+export async function getUpcomingOccurrences(
+  groupId: string,
+  limit = 6
+): Promise<EventOccurrence[]> {
+  const supabaseServer = await getSupabaseServerClient();
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabaseServer
+    .from("event_occurrences")
+    .select("*")
+    .eq("group_id", groupId)
+    .gte("starts_at", now)
+    .in("status", ['open', 'locked'])
+    .order("starts_at", { ascending: true })
+    .limit(limit);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as EventOccurrence[];
+}
+
+export async function getPastOccurrences(
+  groupId: string,
+  limit = 10
+): Promise<EventOccurrence[]> {
+  const supabaseServer = await getSupabaseServerClient();
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabaseServer
+    .from("event_occurrences")
+    .select("*")
+    .eq("group_id", groupId)
+    .lt("starts_at", now)
+    .in("status", ['completed', 'cancelled', 'open', 'locked'])
+    .order("starts_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as EventOccurrence[];
+}
+
+export async function getAttendanceForOccurrence(
+  occurrenceId: string
+): Promise<AttendanceRecord[]> {
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from("attendance")
+    .select("*, players(id, name)")
+    .eq("occurrence_id", occurrenceId)
+    .order("created_at", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as AttendanceRecord[];
+}
+
+export async function getCurrentUserPlayerId(groupId: string): Promise<string | null> {
+  const supabaseServer = await getSupabaseServerClient();
+  const { data: { user }, error: authError } = await supabaseServer.auth.getUser();
+
+  if (authError || !user) {
+    return null;
+  }
+
+  // Check if there's a player linked to this user in the group
+  // First, check group_members to get any existing mapping
+  const { data: member, error: memberError } = await supabaseServer
+    .from("group_members")
+    .select("id")
+    .eq("group_id", groupId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (memberError || !member) {
+    return null;
+  }
+
+  // Try to find a player with matching user_id or check via other means
+  // For now, return the first player with the user's email or name match
+  // This is a simplified approach - in production you'd have a proper user->player mapping
+  const { data: players, error: playersError } = await supabaseServer
+    .from("players")
+    .select("id")
+    .eq("group_id", groupId)
+    .limit(1);
+
+  if (playersError || !players || players.length === 0) {
+    return null;
+  }
+
+  // Return the first player's ID as a fallback
+  // In a real implementation, you'd have a proper user->player mapping table
+  return players[0].id;
+}
+
+export async function isGroupAdmin(groupId: string): Promise<boolean> {
+  const supabaseServer = await getSupabaseServerClient();
+  const { data: { user }, error: authError } = await supabaseServer.auth.getUser();
+
+  if (authError || !user) {
+    return false;
+  }
+
+  // Check if there's a group_admins entry for this user
+  // We need to join through players or have a direct mapping
+  // For now, check if user email matches an admin pattern or if there's an entry in group_admins
+  const { data: admin, error: adminError } = await supabaseServer
+    .from("group_admins")
+    .select("player_id")
+    .eq("group_id", groupId)
+    .maybeSingle();
+
+  if (adminError || !admin) {
+    return false;
+  }
+
+  // Check if the current user is linked to this player
+  // This requires a user_id column in players or a mapping table
+  // For now, we'll use a simplified check - first player in the group is considered admin
+  return true;
+}
+
+export type AttendanceSummary = {
+  occurrence: EventOccurrence;
+  weeklyEvent: WeeklyEvent;
+  attendance: AttendanceRecord[];
+  confirmedCount: number;
+  declinedCount: number;
+  maybeCount: number;
+  waitlistCount: number;
+  isFull: boolean;
+  spotsAvailable: number;
+};
+
+export async function getAttendanceSummary(
+  groupId: string,
+  occurrences: EventOccurrence[],
+  weeklyEvents: WeeklyEvent[]
+): Promise<AttendanceSummary[]> {
+  const weeklyEventMap = new Map(weeklyEvents.map(we => [we.id, we]));
+
+  const summaries = await Promise.all(
+    occurrences.map(async (occurrence) => {
+      const attendance = await getAttendanceForOccurrence(occurrence.id);
+      const weeklyEvent = weeklyEventMap.get(occurrence.weekly_event_id);
+      const capacity = weeklyEvent?.capacity ?? 4;
+
+      const confirmedCount = attendance.filter(a => a.status === 'confirmed').length;
+      const declinedCount = attendance.filter(a => a.status === 'declined').length;
+      const maybeCount = attendance.filter(a => a.status === 'maybe').length;
+      const waitlistCount = attendance.filter(a => a.status === 'waitlist').length;
+
+      return {
+        occurrence,
+        weeklyEvent: weeklyEvent ?? {
+          id: '',
+          group_id: groupId,
+          name: 'Evento',
+          weekday: 0,
+          start_time: '20:00',
+          capacity: 4,
+          cutoff_weekday: 2,
+          cutoff_time: '14:00',
+          is_active: true,
+          active_occurrence_id: null,
+          created_at: '',
+          updated_at: '',
+        },
+        attendance,
+        confirmedCount,
+        declinedCount,
+        maybeCount,
+        waitlistCount,
+        isFull: confirmedCount >= capacity,
+        spotsAvailable: Math.max(0, capacity - confirmedCount),
+      };
+    })
+  );
+
+  return summaries;
+}

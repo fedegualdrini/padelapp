@@ -1,0 +1,518 @@
+"use client";
+
+import { useState } from "react";
+import { updateAttendance, createWeeklyEvent, generateOccurrences, AttendanceStatus } from "./actions";
+
+type WeeklyEvent = {
+  id: string;
+  group_id: string;
+  name: string;
+  weekday: number;
+  start_time: string;
+  capacity: number;
+  cutoff_weekday: number;
+  cutoff_time: string;
+  is_active: boolean;
+  active_occurrence_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type EventOccurrence = {
+  id: string;
+  weekly_event_id: string;
+  group_id: string;
+  starts_at: string;
+  status: 'open' | 'locked' | 'cancelled' | 'completed';
+  loaded_match_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type AttendanceRecord = {
+  id: string;
+  occurrence_id: string;
+  group_id: string;
+  player_id: string;
+  status: 'confirmed' | 'declined' | 'maybe' | 'waitlist';
+  source: 'whatsapp' | 'web' | 'admin';
+  created_at: string;
+  updated_at: string;
+  players?: { id: string; name: string } | null;
+};
+
+type AttendanceSummary = {
+  occurrence: EventOccurrence;
+  weeklyEvent: WeeklyEvent;
+  attendance: AttendanceRecord[];
+  confirmedCount: number;
+  declinedCount: number;
+  maybeCount: number;
+  waitlistCount: number;
+  isFull: boolean;
+  spotsAvailable: number;
+};
+
+type Player = {
+  id: string;
+  name: string;
+  status: string;
+};
+
+type EventsClientProps = {
+  slug: string;
+  groupId: string;
+  weeklyEvents: WeeklyEvent[];
+  upcomingSummaries: AttendanceSummary[];
+  pastSummaries: AttendanceSummary[];
+  players: Player[];
+};
+
+const WEEKDAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+const STATUS_LABELS: Record<AttendanceStatus, { label: string; color: string }> = {
+  confirmed: { label: 'Confirmado', color: 'text-green-600 bg-green-100' },
+  declined: { label: 'No va', color: 'text-red-600 bg-red-100' },
+  maybe: { label: 'Tal vez', color: 'text-yellow-600 bg-yellow-100' },
+  waitlist: { label: 'Lista de espera', color: 'text-gray-600 bg-gray-100' },
+};
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('es-AR', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export default function EventsClient({
+  slug,
+  weeklyEvents,
+  upcomingSummaries,
+  pastSummaries,
+  players,
+}: EventsClientProps) {
+  const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showPastEvents, setShowPastEvents] = useState(false);
+
+  async function handleAttendance(occurrenceId: string, playerId: string, status: AttendanceStatus) {
+    setLoading(`${occurrenceId}-${playerId}`);
+    setError(null);
+    try {
+      await updateAttendance(slug, occurrenceId, playerId, status);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error updating attendance');
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function handleCreateEvent(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading('create');
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      name: formData.get('name') as string,
+      weekday: parseInt(formData.get('weekday') as string, 10),
+      startTime: formData.get('startTime') as string,
+      capacity: parseInt(formData.get('capacity') as string, 10),
+      cutoffWeekday: parseInt(formData.get('cutoffWeekday') as string, 10),
+      cutoffTime: formData.get('cutoffTime') as string,
+    };
+
+    try {
+      await createWeeklyEvent(slug, data);
+      setShowCreateForm(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error creating event');
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function handleGenerateOccurrences(weeklyEventId: string) {
+    setLoading(`generate-${weeklyEventId}`);
+    setError(null);
+    try {
+      await generateOccurrences(slug, weeklyEventId, 4);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error generating occurrences');
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  const playerMap = new Map(players.map(p => [p.id, p]));
+
+  return (
+    <div className="flex flex-col gap-8">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-display text-2xl text-[var(--ink)]">Eventos</h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Gestiona la asistencia a los partidos semanales
+          </p>
+        </div>
+        <button
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          className="rounded-full bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5"
+        >
+          {showCreateForm ? 'Cancelar' : 'Nuevo evento'}
+        </button>
+      </div>
+
+      {/* Error message */}
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {/* Create event form */}
+      {showCreateForm && (
+        <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+          <h3 className="mb-4 font-display text-lg text-[var(--ink)]">Crear evento semanal</h3>
+          <form onSubmit={handleCreateEvent} className="flex flex-col gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--ink)]">Nombre</label>
+                <input
+                  name="name"
+                  type="text"
+                  defaultValue="Jueves 20:00"
+                  required
+                  className="w-full rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--ink)]">Día de la semana</label>
+                <select
+                  name="weekday"
+                  defaultValue="4"
+                  required
+                  className="w-full rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                >
+                  {WEEKDAYS.map((day, i) => (
+                    <option key={i} value={i}>{day}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--ink)]">Hora</label>
+                <input
+                  name="startTime"
+                  type="time"
+                  defaultValue="20:00"
+                  required
+                  className="w-full rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--ink)]">Capacidad</label>
+                <input
+                  name="capacity"
+                  type="number"
+                  min="2"
+                  max="20"
+                  defaultValue="4"
+                  required
+                  className="w-full rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--ink)]">Cierre inscripción (día)</label>
+                <select
+                  name="cutoffWeekday"
+                  defaultValue="2"
+                  required
+                  className="w-full rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                >
+                  {WEEKDAYS.map((day, i) => (
+                    <option key={i} value={i}>{day}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--ink)]">Cierre inscripción (hora)</label>
+                <input
+                  name="cutoffTime"
+                  type="time"
+                  defaultValue="14:00"
+                  required
+                  className="w-full rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={loading === 'create'}
+                className="rounded-full bg-[var(--accent)] px-6 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {loading === 'create' ? 'Creando...' : 'Crear evento'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Weekly Events Configuration */}
+      {weeklyEvents.length > 0 && (
+        <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+          <h3 className="mb-4 font-display text-lg text-[var(--ink)]">Eventos configurados</h3>
+          <div className="flex flex-col gap-3">
+            {weeklyEvents.map(event => (
+              <div key={event.id} className="flex items-center justify-between rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4">
+                <div>
+                  <p className="font-semibold text-[var(--ink)]">{event.name}</p>
+                  <p className="text-sm text-[var(--muted)]">
+                    {WEEKDAYS[event.weekday]} {event.start_time.slice(0, 5)} • Capacidad: {event.capacity}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleGenerateOccurrences(event.id)}
+                  disabled={loading === `generate-${event.id}`}
+                  className="rounded-full border border-[var(--accent)] px-4 py-1.5 text-sm font-medium text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white disabled:opacity-50"
+                >
+                  {loading === `generate-${event.id}` ? 'Generando...' : 'Generar fechas'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming Occurrences */}
+      <div>
+        <h3 className="mb-4 font-display text-xl text-[var(--ink)]">Próximos eventos</h3>
+        {upcomingSummaries.length === 0 ? (
+          <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-8 text-center shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+            <p className="text-[var(--muted)]">No hay eventos próximos</p>
+            {weeklyEvents.length > 0 && (
+              <p className="mt-2 text-sm text-[var(--muted)]">
+                Genera fechas usando el botón &quot;Generar fechas&quot; arriba
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {upcomingSummaries.map(summary => (
+              <OccurrenceCard
+                key={summary.occurrence.id}
+                summary={summary}
+                players={players}
+                playerMap={playerMap}
+                loading={loading}
+                onAttendance={handleAttendance}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Past Occurrences */}
+      {pastSummaries.length > 0 && (
+        <div>
+          <button
+            onClick={() => setShowPastEvents(!showPastEvents)}
+            className="mb-4 flex items-center gap-2 font-display text-xl text-[var(--ink)] hover:text-[var(--accent)]"
+          >
+            <span>Eventos pasados</span>
+            <span className="text-sm">{showPastEvents ? '▲' : '▼'}</span>
+          </button>
+          {showPastEvents && (
+            <div className="grid gap-4 md:grid-cols-2">
+              {pastSummaries.map(summary => (
+                <OccurrenceCard
+                  key={summary.occurrence.id}
+                  summary={summary}
+                  players={players}
+                  playerMap={playerMap}
+                  loading={loading}
+                  onAttendance={handleAttendance}
+                  isPast
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface OccurrenceCardProps {
+  summary: AttendanceSummary;
+  players: Player[];
+  playerMap: Map<string, Player>;
+  loading: string | null;
+  onAttendance: (occurrenceId: string, playerId: string, status: AttendanceStatus) => void;
+  isPast?: boolean;
+}
+
+function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, isPast }: OccurrenceCardProps) {
+  const [selectedPlayer, setSelectedPlayer] = useState<string>(players[0]?.id ?? '');
+
+  const confirmedPlayers = summary.attendance.filter(a => a.status === 'confirmed');
+  const maybePlayers = summary.attendance.filter(a => a.status === 'maybe');
+  const waitlistPlayers = summary.attendance.filter(a => a.status === 'waitlist');
+
+  const currentPlayerStatus = summary.attendance.find(a => a.player_id === selectedPlayer)?.status;
+
+  return (
+    <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+      {/* Header */}
+      <div className="mb-4 flex items-start justify-between">
+        <div>
+          <p className="font-display text-lg text-[var(--ink)]">
+            {summary.weeklyEvent.name}
+          </p>
+          <p className="text-sm text-[var(--muted)]">
+            {formatDate(summary.occurrence.starts_at)}
+          </p>
+        </div>
+        <div className="text-right">
+          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+            summary.isFull
+              ? 'bg-red-100 text-red-700'
+              : summary.spotsAvailable <= 2
+              ? 'bg-yellow-100 text-yellow-700'
+              : 'bg-green-100 text-green-700'
+          }`}>
+            {summary.isFull ? 'Completo' : `${summary.spotsAvailable} lugares`}
+          </span>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="mb-4 grid grid-cols-4 gap-2 text-center">
+        <div className="rounded-lg bg-green-50 p-2">
+          <p className="text-lg font-bold text-green-700">{summary.confirmedCount}</p>
+          <p className="text-xs text-green-600">Van</p>
+        </div>
+        <div className="rounded-lg bg-red-50 p-2">
+          <p className="text-lg font-bold text-red-700">{summary.declinedCount}</p>
+          <p className="text-xs text-red-600">No van</p>
+        </div>
+        <div className="rounded-lg bg-yellow-50 p-2">
+          <p className="text-lg font-bold text-yellow-700">{summary.maybeCount}</p>
+          <p className="text-xs text-yellow-600">Tal vez</p>
+        </div>
+        <div className="rounded-lg bg-gray-50 p-2">
+          <p className="text-lg font-bold text-gray-700">{summary.waitlistCount}</p>
+          <p className="text-xs text-gray-600">Espera</p>
+        </div>
+      </div>
+
+      {/* Attendance lists */}
+      {confirmedPlayers.length > 0 && (
+        <div className="mb-3">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-green-600">Confirmados</p>
+          <div className="flex flex-wrap gap-1">
+            {confirmedPlayers.map(a => (
+              <span key={a.id} className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">
+                {a.players?.name ?? playerMap.get(a.player_id)?.name ?? 'Desconocido'}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {maybePlayers.length > 0 && (
+        <div className="mb-3">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-yellow-600">Tal vez</p>
+          <div className="flex flex-wrap gap-1">
+            {maybePlayers.map(a => (
+              <span key={a.id} className="rounded-full bg-yellow-100 px-2 py-1 text-xs text-yellow-800">
+                {a.players?.name ?? playerMap.get(a.player_id)?.name ?? 'Desconocido'}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {waitlistPlayers.length > 0 && (
+        <div className="mb-3">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Lista de espera</p>
+          <div className="flex flex-wrap gap-1">
+            {waitlistPlayers.map(a => (
+              <span key={a.id} className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">
+                {a.players?.name ?? playerMap.get(a.player_id)?.name ?? 'Desconocido'}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Action buttons */}
+      {!isPast && (
+        <div className="mt-4 border-t border-[color:var(--card-border)] pt-4">
+          <div className="mb-3">
+            <label className="mb-1 block text-sm text-[var(--muted)]">Jugador</label>
+            <select
+              value={selectedPlayer}
+              onChange={(e) => setSelectedPlayer(e.target.value)}
+              className="w-full rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            >
+              {players.filter(p => p.status === 'usual').map(player => (
+                <option key={player.id} value={player.id}>{player.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {currentPlayerStatus && (
+            <p className="mb-2 text-sm text-[var(--muted)]">
+              Tu estado: <span className={STATUS_LABELS[currentPlayerStatus].color + ' px-2 py-0.5 rounded-full'}>
+                {STATUS_LABELS[currentPlayerStatus].label}
+              </span>
+            </p>
+          )}
+
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={() => onAttendance(summary.occurrence.id, selectedPlayer, 'confirmed')}
+              disabled={loading === `${summary.occurrence.id}-${selectedPlayer}`}
+              className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                currentPlayerStatus === 'confirmed'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+              } disabled:opacity-50`}
+            >
+              {loading === `${summary.occurrence.id}-${selectedPlayer}` ? '...' : 'Voy'}
+            </button>
+            <button
+              onClick={() => onAttendance(summary.occurrence.id, selectedPlayer, 'maybe')}
+              disabled={loading === `${summary.occurrence.id}-${selectedPlayer}`}
+              className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                currentPlayerStatus === 'maybe'
+                  ? 'bg-yellow-500 text-white'
+                  : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+              } disabled:opacity-50`}
+            >
+              Tal vez
+            </button>
+            <button
+              onClick={() => onAttendance(summary.occurrence.id, selectedPlayer, 'declined')}
+              disabled={loading === `${summary.occurrence.id}-${selectedPlayer}`}
+              className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                currentPlayerStatus === 'declined'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-red-100 text-red-700 hover:bg-red-200'
+              } disabled:opacity-50`}
+            >
+              No voy
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
