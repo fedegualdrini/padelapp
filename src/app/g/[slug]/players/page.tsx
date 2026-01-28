@@ -1,6 +1,7 @@
-import { getGroupBySlug, getPlayers, getPlayerStats } from "@/lib/data";
+import { getGroupBySlug, getPlayers, getPlayerStats, getPlayerEloChange } from "@/lib/data";
 import { notFound } from "next/navigation";
 import PlayerDirectory from "@/components/PlayerDirectory";
+import { parsePeriodFromParams } from "@/components/PeriodSelector";
 
 type PlayersPageProps = {
   params: Promise<{ slug: string }>;
@@ -24,6 +25,9 @@ export default async function PlayersPage({ params, searchParams }: PlayersPageP
       ? (statusRaw as AllowedStatus)
       : undefined;
 
+  const period = parsePeriodFromParams(new URLSearchParams(sp as Record<string, string>));
+  const { preset, startDate, endDate } = period.preset === 'custom' ? period : { preset: period.preset, startDate: undefined, endDate: undefined };
+
   const group = await getGroupBySlug(slug);
   if (!group) {
     notFound();
@@ -31,7 +35,7 @@ export default async function PlayersPage({ params, searchParams }: PlayersPageP
 
   const [players, stats] = await Promise.all([
     getPlayers(group.id),
-    getPlayerStats(group.id),
+    getPlayerStats(group.id, startDate, endDate),
   ]);
 
   return (
@@ -42,6 +46,7 @@ export default async function PlayersPage({ params, searchParams }: PlayersPageP
       stats={stats}
       q={q}
       status={status}
+      period={period}
     />
   );
 }

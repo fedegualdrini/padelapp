@@ -1,12 +1,19 @@
 import { getGroupBySlug, getPairAggregates, getPlayers } from "@/lib/data";
 import { notFound } from "next/navigation";
+import PeriodSelector, { parsePeriodFromParams } from "@/components/PeriodSelector";
 
 type PairsPageProps = {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default async function PairsPage({ params }: PairsPageProps) {
+export default async function PairsPage({ params, searchParams }: PairsPageProps) {
   const { slug } = await params;
+  const sp = (await searchParams) ?? {};
+
+  const period = parsePeriodFromParams(new URLSearchParams(sp as Record<string, string>));
+  const { preset, startDate, endDate } = period.preset === 'custom' ? period : { preset: period.preset, startDate: undefined, endDate: undefined };
+
   const group = await getGroupBySlug(slug);
 
   // Layout already verifies group exists and user is a member
@@ -15,7 +22,7 @@ export default async function PairsPage({ params }: PairsPageProps) {
   }
 
   const [pairStats, players] = await Promise.all([
-    getPairAggregates(group.id),
+    getPairAggregates(group.id, undefined, startDate, endDate),
     getPlayers(group.id),
   ]);
   const playerById = new Map(players.map((player) => [player.id, player.name]));
@@ -27,12 +34,15 @@ export default async function PairsPage({ params }: PairsPageProps) {
           Química
         </p>
         <h2 className="font-display text-2xl text-[var(--ink)]">Parejas</h2>
+        <PeriodSelector />
       </div>
 
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
         {pairStats.length === 0 ? (
           <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4 text-sm text-[var(--muted)]">
-            Sin estadísticas de parejas.
+            {period.preset !== 'all-time'
+              ? 'Sin estadísticas de parejas en este período.'
+              : 'Sin estadísticas de parejas.'}
           </div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">

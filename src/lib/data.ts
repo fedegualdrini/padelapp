@@ -527,23 +527,95 @@ export const getPlayers = cache(async (groupId: string) => {
   return data as PlayerRow[];
 });
 
-export async function getPlayerStats(groupId: string) {
+export async function getPlayerStats(
+  groupId: string,
+  startDate?: string,
+  endDate?: string
+) {
   const supabaseServer = await getSupabaseServerClient();
-  const { data, error } = await supabaseServer
-    .from("mv_player_stats_v2")
-    .select("player_id, matches_played, wins, losses, undecided, win_rate")
+
+  // If no date filter, use the materialized view for better performance
+  if (!startDate && !endDate) {
+    const { data, error } = await supabaseServer
+      .from("mv_player_stats_v2")
+      .select("player_id, matches_played, wins, losses, undecided, win_rate")
+      .eq("group_id", groupId);
+
+    if (error || !data) {
+      return [];
+    }
+
+    return data;
+  }
+
+  // With date filter, calculate stats on-the-fly from the enriched view
+  let query = supabaseServer
+    .from("v_player_match_participation_enriched")
+    .select("player_id, is_win")
     .eq("group_id", groupId);
 
-  if (error || !data) {
+  if (startDate) {
+    query = query.gte("played_at", `${startDate}T00:00:00.000Z`);
+  }
+
+  if (endDate) {
+    query = query.lte("played_at", `${endDate}T23:59:59.999Z`);
+  }
+
+  const { data: matches, error } = await query;
+
+  if (error || !matches) {
     return [];
   }
 
-  return data;
+  // Group by player and calculate stats
+  const statsByPlayer = new Map<
+    string,
+    {
+      player_id: string;
+      matches_played: number;
+      wins: number;
+      losses: number;
+      undecided: number;
+      win_rate: number;
+    }
+  >();
+
+  matches.forEach((match) => {
+    const existing = statsByPlayer.get(match.player_id) ?? {
+      player_id: match.player_id,
+      matches_played: 0,
+      wins: 0,
+      losses: 0,
+      undecided: 0,
+      win_rate: 0,
+    };
+
+    existing.matches_played += 1;
+
+    if (match.is_win === true) {
+      existing.wins += 1;
+    } else if (match.is_win === false) {
+      existing.losses += 1;
+    } else {
+      existing.undecided += 1;
+    }
+
+    const totalDecided = existing.wins + existing.losses;
+    existing.win_rate =
+      totalDecided > 0 ? existing.wins / totalDecided : 0;
+
+    statsByPlayer.set(match.player_id, existing);
+  });
+
+  return Array.from(statsByPlayer.values());
 }
 
 export async function getPairAggregates(
   groupId: string,
-  players?: PlayerRow[]
+  players?: PlayerRow[],
+  startDate?: string,
+  endDate?: string
 ) {
   const supabaseServer = await getSupabaseServerClient();
   const resolvedPlayers = players ?? (await getPlayers(groupId));
@@ -551,22 +623,100 @@ export async function getPairAggregates(
     return [];
   }
   const playerIds = new Set(resolvedPlayers.map((player) => player.id));
-  const { data, error } = await supabaseServer
-    .from("mv_pair_aggregates")
-    .select(
-      "group_id, player_a_id, player_b_id, matches_played, wins, losses, win_rate"
-    )
-    .eq("group_id", groupId)
-    .order("matches_played", { ascending: false });
 
-  if (error || !data) {
+  // If no date filter, use the materialized view for better performance
+  if (!startDate && !endDate) {
+    const { data, error } = await supabaseServer
+      .from("mv_pair_aggregates")
+      .select(
+        "group_id, player_a_id, player_b_id, matches_played, wins, losses, win_rate"
+      )
+      .eq("group_id", groupId)
+      .order("matches_played", { ascending: false });
+
+    if (error || !data) {
+      return [];
+    }
+
+    return data.filter(
+      (pair) =>
+        playerIds.has(pair.player_a_id) && playerIds.has(pair.player_b_id)
+    );
+  }
+
+  // With date filter, query directly from mv_pair_stats and join with matches
+  let query = supabaseServer
+    .from("mv_pair_stats")
+    .select(`
+      player_a_id,
+      player_b_id,
+      is_win,
+      matches!inner(played_at, group_id)
+    `)
+    .eq("matches.group_id", groupId);
+
+  if (startDate) {
+    query = query.gte("matches.played_at", `${startDate}T00:00:00.000Z`);
+  }
+
+  if (endDate) {
+    query = query.lte("matches.played_at", `${endDate}T23:59:59.999Z`);
+  }
+
+  const { data: pairMatches, error } = await query;
+
+  if (error || !pairMatches) {
     return [];
   }
 
-  return data.filter(
-    (pair) =>
-      playerIds.has(pair.player_a_id) && playerIds.has(pair.player_b_id)
-  );
+  // Group by pair and calculate stats
+  const statsByPair = new Map<
+    string,
+    {
+      group_id: string;
+      player_a_id: string;
+      player_b_id: string;
+      matches_played: number;
+      wins: number;
+      losses: number;
+      win_rate: number;
+    }
+  >();
+
+  pairMatches.forEach((pm) => {
+    const pairKey = `${pm.player_a_id}-${pm.player_b_id}`;
+    const existing = statsByPair.get(pairKey) ?? {
+      group_id: groupId,
+      player_a_id: pm.player_a_id,
+      player_b_id: pm.player_b_id,
+      matches_played: 0,
+      wins: 0,
+      losses: 0,
+      win_rate: 0,
+    };
+
+    existing.matches_played += 1;
+
+    if (pm.is_win) {
+      existing.wins += 1;
+    } else {
+      existing.losses += 1;
+    }
+
+    existing.win_rate =
+      existing.matches_played > 0
+        ? existing.wins / existing.matches_played
+        : 0;
+
+    statsByPair.set(pairKey, existing);
+  });
+
+  return Array.from(statsByPair.values())
+    .filter(
+      (pair) =>
+        playerIds.has(pair.player_a_id) && playerIds.has(pair.player_b_id)
+    )
+    .sort((a, b) => b.matches_played - a.matches_played);
 }
 
 export async function getUsualPairs(groupId: string, limit = 6) {
@@ -832,14 +982,29 @@ type EloRatingRow = {
   matches: { played_at?: string; group_id?: string } | null;
 };
 
-export async function getEloTimeline(groupId: string) {
+export async function getEloTimeline(
+  groupId: string,
+  startDate?: string,
+  endDate?: string
+) {
   const supabaseServer = await getSupabaseServerClient();
+
+  let query = supabaseServer
+    .from("elo_ratings")
+    .select("player_id, rating, created_at, matches(played_at, group_id)")
+    .eq("matches.group_id", groupId);
+
+  if (startDate) {
+    query = query.gte("matches.played_at", `${startDate}T00:00:00.000Z`);
+  }
+
+  if (endDate) {
+    query = query.lte("matches.played_at", `${endDate}T23:59:59.999Z`);
+  }
+
   const [players, ratingsResult] = await Promise.all([
     getPlayers(groupId),
-    supabaseServer
-      .from("elo_ratings")
-      .select("player_id, rating, created_at, matches(played_at, group_id)")
-      .eq("matches.group_id", groupId)
+    query
       .order("played_at", { foreignTable: "matches", ascending: true })
       .order("created_at", { ascending: true }),
   ]);
@@ -865,6 +1030,47 @@ export async function getEloTimeline(groupId: string) {
   }
 
   return Array.from(seriesByPlayer.values());
+}
+
+export async function getPlayerEloChange(
+  groupId: string,
+  playerId: string,
+  startDate?: string,
+  endDate?: string
+) {
+  const supabaseServer = await getSupabaseServerClient();
+
+  let query = supabaseServer
+    .from("elo_ratings")
+    .select("player_id, rating, created_at, matches(played_at, group_id)")
+    .eq("player_id", playerId)
+    .eq("matches.group_id", groupId);
+
+  if (startDate) {
+    query = query.gte("matches.played_at", `${startDate}T00:00:00.000Z`);
+  }
+
+  if (endDate) {
+    query = query.lte("matches.played_at", `${endDate}T23:59:59.999Z`);
+  }
+
+  const { data, error } = await query
+    .order("played_at", { foreignTable: "matches", ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error || !data || data.length === 0) {
+    return { startElo: null, endElo: null, change: null };
+  }
+
+  const ratings = data as unknown as EloRatingRow[];
+  const startElo = ratings[0].rating;
+  const endElo = ratings[ratings.length - 1].rating;
+
+  return {
+    startElo,
+    endElo,
+    change: endElo - startElo,
+  };
 }
 
 export type PlayerForm = {

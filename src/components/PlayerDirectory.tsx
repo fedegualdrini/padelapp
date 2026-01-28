@@ -3,6 +3,7 @@ import AddPlayerForm from '@/app/g/[slug]/players/AddPlayerForm';
 import EditPlayerForm from '@/app/g/[slug]/players/EditPlayerForm';
 import FormIndicator from '@/components/FormIndicator';
 import PlayerDirectoryControls from '@/components/PlayerDirectoryControls';
+import PeriodSelector, { type PeriodRange } from '@/components/PeriodSelector';
 
 type Player = { id: string; name: string; status: string };
 
@@ -32,6 +33,7 @@ export default function PlayerDirectory({
   stats,
   q,
   status,
+  period,
 }: {
   groupId: string;
   groupSlug: string;
@@ -39,6 +41,7 @@ export default function PlayerDirectory({
   stats: PlayerStat[];
   q?: string;
   status?: StatusFilter;
+  period?: PeriodRange;
 }) {
   const effectiveStatus: StatusFilter = ['all', 'usual', 'invite'].includes(status ?? 'all')
     ? (status ?? 'all')
@@ -111,7 +114,10 @@ export default function PlayerDirectory({
           Sumá jugadores habituales e invitados.
         </p>
 
-        <PlayerDirectoryControls />
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <PlayerDirectoryControls />
+          <PeriodSelector />
+        </div>
 
         <div className="mt-4">
           <AddPlayerForm groupId={groupId} groupSlug={groupSlug} />
