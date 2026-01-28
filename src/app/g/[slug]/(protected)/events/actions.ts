@@ -251,3 +251,96 @@ export async function generateOccurrences(
   revalidatePath(`/g/${slug}/events`);
   return { created: occurrences.length };
 }
+
+export async function createMatchFromOccurrence(
+  slug: string,
+  occurrenceId: string,
+  teamAPlayerIds: string[],
+  teamBPlayerIds: string[],
+  createdBy: string
+) {
+  const group = await getGroupBySlug(slug);
+  if (!group) throw new Error("Group not found");
+
+  const member = await isGroupMember(group.id);
+  if (!member) throw new Error("Not a group member");
+
+  const supabase = await createSupabaseServerClient();
+
+  // Create the match
+  const now = new Date();
+  const { data: match, error: matchError } = await supabase
+    .from("matches")
+    .insert({
+      group_id: group.id,
+      played_at: now.toISOString(),
+      best_of: 3,
+      created_by: createdBy,
+      updated_by: createdBy,
+    })
+    .select("id")
+    .single();
+
+  if (matchError || !match) {
+    throw new Error("No se pudo crear el partido");
+  }
+
+  // Create teams
+  const { data: teams, error: teamsError } = await supabase
+    .from("match_teams")
+    .insert([
+      { match_id: match.id, team_number: 1, updated_by: createdBy },
+      { match_id: match.id, team_number: 2, updated_by: createdBy },
+    ])
+    .select("id, team_number");
+
+  if (teamsError || !teams) {
+    throw new Error("No se pudieron crear los equipos");
+  }
+
+  const team1Id = teams.find((team) => team.team_number === 1)?.id;
+  const team2Id = teams.find((team) => team.team_number === 2)?.id;
+
+  if (!team1Id || !team2Id) {
+    throw new Error("Faltan equipos del partido");
+  }
+
+  // Assign players to teams
+  const { error: mtpError } = await supabase
+    .from("match_team_players")
+    .insert([
+      { match_team_id: team1Id, player_id: teamAPlayerIds[0], updated_by: createdBy },
+      { match_team_id: team1Id, player_id: teamAPlayerIds[1], updated_by: createdBy },
+      { match_team_id: team2Id, player_id: teamBPlayerIds[0], updated_by: createdBy },
+      { match_team_id: team2Id, player_id: teamBPlayerIds[1], updated_by: createdBy },
+    ]);
+
+  if (mtpError) {
+    throw new Error("No se pudieron asignar jugadores a los equipos");
+  }
+
+  // Link the match to the occurrence
+  const { error: updateError } = await supabase
+    .from("event_occurrences")
+    .update({
+      loaded_match_id: match.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", occurrenceId);
+
+  if (updateError) {
+    throw new Error("No se pudo vincular el partido al evento");
+  }
+
+  // Refresh stats views
+  const { error: refreshError } = await supabase.rpc("refresh_stats_views");
+  if (refreshError) {
+    console.error("refresh_stats_views failed", { refreshError });
+  }
+
+  revalidatePath(`/g/${slug}/events`);
+  revalidatePath(`/g/${slug}/matches`);
+  revalidatePath(`/g/${slug}/ranking`);
+  
+  return { matchId: match.id };
+}

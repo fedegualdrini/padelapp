@@ -1788,3 +1788,108 @@ export async function getAttendanceSummary(
 
   return summaries;
 }
+
+export type PlayerWithElo = {
+  id: string;
+  name: string;
+  elo: number;
+};
+
+export async function getConfirmedPlayersWithElo(
+  occurrenceId: string
+): Promise<PlayerWithElo[]> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Get confirmed players for the occurrence
+  const { data: attendance, error: attendanceError } = await supabaseServer
+    .from("attendance")
+    .select("player_id, players(id, name)")
+    .eq("occurrence_id", occurrenceId)
+    .eq("status", "confirmed");
+
+  if (attendanceError || !attendance || attendance.length === 0) {
+    return [];
+  }
+
+  const playerIds: string[] = [];
+  const players: { id: string; name: string }[] = [];
+
+  attendance.forEach((a) => {
+    playerIds.push(a.player_id);
+    
+    // Extract player name from the joined players relation
+    let playerName = "Unknown";
+    if (a.players) {
+      if (Array.isArray(a.players)) {
+        playerName = a.players[0]?.name || "Unknown";
+      } else {
+        // Type assertion to bypass TypeScript control flow limitation
+        const playerObj = a.players as { id: string; name: string };
+        playerName = playerObj.name || "Unknown";
+      }
+    }
+
+    players.push({
+      id: a.player_id,
+      name: playerName,
+    });
+  });
+
+  if (playerIds.length === 0) {
+    return [];
+  }
+
+  // Get latest ELO rating for each player
+  const { data: ratings, error: ratingsError } = await supabaseServer
+    .from("elo_ratings")
+    .select("player_id, rating, created_at")
+    .in("player_id", playerIds)
+    .order("created_at", { ascending: false });
+
+  if (ratingsError || !ratings) {
+    // Return players with default ELO of 1000
+    return players.map((p) => ({ id: p.id, name: p.name, elo: 1000 }));
+  }
+
+  // Get the latest ELO for each player
+  const latestEloByPlayer = new Map<string, number>();
+  ratings.forEach((row) => {
+    if (!latestEloByPlayer.has(row.player_id)) {
+      latestEloByPlayer.set(row.player_id, row.rating);
+    }
+  });
+
+  return players.map((p) => ({
+    id: p.id,
+    name: p.name,
+    elo: latestEloByPlayer.get(p.id) ?? 1000,
+  }));
+}
+
+export type SuggestedTeams = {
+  teamA: PlayerWithElo[];
+  teamB: PlayerWithElo[];
+  teamAElo: number;
+  teamBElo: number;
+};
+
+export function balanceTeams(players: PlayerWithElo[]): SuggestedTeams {
+  // Sort players by ELO (descending)
+  const sortedPlayers = [...players].sort((a, b) => b.elo - a.elo);
+
+  // Simple balancing algorithm: pair highest with lowest
+  // Team A: [0], [3]
+  // Team B: [1], [2]
+  const teamA = [sortedPlayers[0], sortedPlayers[3]];
+  const teamB = [sortedPlayers[1], sortedPlayers[2]];
+
+  const teamAElo = teamA.reduce((sum, p) => sum + p.elo, 0);
+  const teamBElo = teamB.reduce((sum, p) => sum + p.elo, 0);
+
+  return {
+    teamA,
+    teamB,
+    teamAElo,
+    teamBElo,
+  };
+}

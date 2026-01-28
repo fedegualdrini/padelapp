@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { updateAttendance, createWeeklyEvent, generateOccurrences, AttendanceStatus } from "./actions";
+import { getConfirmedPlayersWithElo, balanceTeams, type PlayerWithElo, type SuggestedTeams } from "@/lib/data";
+import TeamSuggestionModal from "./TeamSuggestionModal";
 
 type WeeklyEvent = {
   id: string;
@@ -95,10 +98,22 @@ export default function EventsClient({
   pastSummaries,
   players,
 }: EventsClientProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showPastEvents, setShowPastEvents] = useState(false);
+  
+  // Modal state
+  const [modalState, setModalState] = useState<{
+    show: boolean;
+    occurrenceId: string;
+    teams: SuggestedTeams | null;
+  }>({
+    show: false,
+    occurrenceId: "",
+    teams: null,
+  });
 
   async function handleAttendance(occurrenceId: string, playerId: string, status: AttendanceStatus) {
     setLoading(`${occurrenceId}-${playerId}`);
@@ -147,6 +162,44 @@ export default function EventsClient({
     } finally {
       setLoading(null);
     }
+  }
+
+  async function handleCreateMatch(occurrenceId: string) {
+    setLoading(`match-${occurrenceId}`);
+    setError(null);
+    try {
+      const playersWithElo = await getConfirmedPlayersWithElo(occurrenceId);
+      if (playersWithElo.length !== 4) {
+        throw new Error("Se necesitan 4 jugadores confirmados");
+      }
+      const teams = balanceTeams(playersWithElo);
+      setModalState({
+        show: true,
+        occurrenceId,
+        teams,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error fetching players');
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  function handleCloseModal() {
+    setModalState({
+      show: false,
+      occurrenceId: "",
+      teams: null,
+    });
+  }
+
+  function handleMatchCreated(matchId: string) {
+    setModalState({
+      show: false,
+      occurrenceId: "",
+      teams: null,
+    });
+    router.push(`/g/${slug}/matches/${matchId}`);
   }
 
   const playerMap = new Map(players.map(p => [p.id, p]));
@@ -312,6 +365,8 @@ export default function EventsClient({
                 playerMap={playerMap}
                 loading={loading}
                 onAttendance={handleAttendance}
+                onCreateMatch={handleCreateMatch}
+                slug={slug}
               />
             ))}
           </div>
@@ -339,11 +394,25 @@ export default function EventsClient({
                   loading={loading}
                   onAttendance={handleAttendance}
                   isPast
+                  slug={slug}
                 />
               ))}
             </div>
           )}
         </div>
+      )}
+
+      {/* Team Suggestion Modal */}
+      {modalState.show && modalState.teams && (
+        <TeamSuggestionModal
+          occurrenceId={modalState.occurrenceId}
+          slug={slug}
+          initialTeams={modalState.teams}
+          onClose={handleCloseModal}
+          onSuccess={handleMatchCreated}
+          onError={setError}
+          createdBy={players[0]?.id ?? ""}
+        />
       )}
     </div>
   );
@@ -355,10 +424,12 @@ interface OccurrenceCardProps {
   playerMap: Map<string, Player>;
   loading: string | null;
   onAttendance: (occurrenceId: string, playerId: string, status: AttendanceStatus) => void;
+  onCreateMatch?: (occurrenceId: string) => void;
   isPast?: boolean;
+  slug: string;
 }
 
-function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, isPast }: OccurrenceCardProps) {
+function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, onCreateMatch, isPast, slug }: OccurrenceCardProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<string>(players[0]?.id ?? '');
 
   const confirmedPlayers = summary.attendance.filter(a => a.status === 'confirmed');
@@ -476,7 +547,7 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, is
             </p>
           )}
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 mb-3">
             <button
               onClick={() => onAttendance(summary.occurrence.id, selectedPlayer, 'confirmed')}
               disabled={loading === `${summary.occurrence.id}-${selectedPlayer}`}
@@ -511,6 +582,26 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, is
               No voy
             </button>
           </div>
+
+          {/* Create match button */}
+          {summary.confirmedCount >= 4 && !summary.occurrence.loaded_match_id && onCreateMatch && (
+            <button
+              onClick={() => onCreateMatch(summary.occurrence.id)}
+              disabled={loading === `match-${summary.occurrence.id}`}
+              className="w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50"
+            >
+              {loading === `match-${summary.occurrence.id}` ? 'Cargando...' : 'Crear partido'}
+            </button>
+          )}
+          
+          {summary.occurrence.loaded_match_id && (
+            <a
+              href={`/g/${slug}/matches/${summary.occurrence.loaded_match_id}`}
+              className="block w-full rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-4 py-2.5 text-center text-sm font-medium text-[var(--ink)] transition hover:border-[var(--accent)]"
+            >
+              Ver partido creado
+            </a>
+          )}
         </div>
       )}
     </div>
