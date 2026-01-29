@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { TradingViewRankingLayout } from "@/components/TradingViewRankingLayout";
 import { getEloTimeline, getGroupBySlug } from "@/lib/data";
 import PeriodSelector, { parsePeriodFromParams } from "@/components/PeriodSelector";
@@ -33,7 +34,9 @@ export default async function RankingPage({ params, searchParams }: RankingPageP
         <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
           Seguimiento histórico de ELO por jugador.
         </p>
-        <PeriodSelector />
+        <Suspense fallback={<div className="h-10 rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-solid)]" />}>
+          <PeriodSelector />
+        </Suspense>
       </div>
 
       <TradingViewRankingLayout data={timeline} />
