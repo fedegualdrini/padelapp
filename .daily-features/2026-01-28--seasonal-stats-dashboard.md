@@ -1,6 +1,6 @@
 # Feature: Seasonal Stats Dashboard
 
-**Status:** APPROVED
+**Status:** IMPLEMENTED (commit: 42e52e9)
 
 ## Why
 Currently, all stats in the app show all-time data. While valuable for tracking overall progress, players and groups often want to analyze recent performance to understand current form, identify trends, or see who's been playing well lately. A seasonal/period stats view would add context to rankings and help answer questions like "Who's been the best player this month?" or "Is this pair improving over time?"

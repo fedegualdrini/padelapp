@@ -12,7 +12,10 @@
     "test:db": "node scripts/test-db-reset.mjs",
     "test:e2e": "playwright test",
     "test": "npx run-s typecheck lint test:unit test:db test:e2e",
-    "test:with-timeout": "./scripts/test-with-timeout.sh"
+    "test:with-timeout": "./scripts/test-with-timeout.sh",
+    "gateway:check": "./scripts/check-gateway-health.sh",
+    "gateway:retry": "./scripts/retry-cron-op.sh",
+    "cron:update": "./scripts/safe-cron-update.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
