@@ -1,6 +1,6 @@
 # Feature: Win/Loss Streaks Tracking
 
-**Status:** APPROVED
+**Status:** IMPLEMENTED (commit: 643e605)
 
 ## Why
 While players can see their overall stats and recent matches, there's no easy way to track winning or losing streaks over time. Streaks are a powerful metric for understanding a player's current form—someone on a 5-game winning streak is playing differently than someone who's lost their last 3. This adds a fun gamification element and can help with team balancing decisions (e.g., "Fede's on a hot streak, let's give him a slightly weaker partner this week").
