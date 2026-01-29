@@ -1992,7 +1992,5 @@ export async function getAttendanceSummary(
     })
   );
 
-
-
-// Fix: Add missing closing braces
+  return summaries;
 }
