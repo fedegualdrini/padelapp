@@ -8,8 +8,8 @@ import {
   getPlayerPartnerStats,
   getPlayerRecentMatches,
   getPlayerRecentForm,
-  getPlayerStreaks,
 } from "@/lib/data";
+import { getPlayerStreaks } from "@/lib/streaks";
 import MiniEloChart from "./MiniEloChart";
 import StreakHistoryChart from "./StreakHistoryChart";
 

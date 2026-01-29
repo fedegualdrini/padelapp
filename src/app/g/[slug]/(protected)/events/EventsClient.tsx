@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateAttendance, createWeeklyEvent, generateOccurrences, AttendanceStatus } from "./actions";
-import { getConfirmedPlayersWithElo, balanceTeams, type PlayerWithElo, type SuggestedTeams } from "@/lib/data";
+import { getConfirmedPlayersWithElo, balanceTeams, type PlayerWithElo, type SuggestedTeams } from "./actions";
 import TeamSuggestionModal from "./TeamSuggestionModal";
 
 type WeeklyEvent = {

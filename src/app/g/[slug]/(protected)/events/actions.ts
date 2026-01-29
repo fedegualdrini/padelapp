@@ -344,3 +344,91 @@ export async function createMatchFromOccurrence(
   
   return { matchId: match.id };
 }
+
+// Team balancing functions
+export type PlayerWithElo = {
+  id: string;
+  name: string;
+  elo: number;
+};
+
+export type SuggestedTeams = {
+  team1: PlayerWithElo[];
+  team2: PlayerWithElo[];
+  team1AvgElo: number;
+  team2AvgElo: number;
+  balanceScore: number;
+};
+
+export async function getConfirmedPlayersWithElo(
+  occurrenceId: string
+): Promise<PlayerWithElo[]> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data: attendance, error: attendanceError } = await supabase
+    .from("attendance")
+    .select("player_id, players(id, name)")
+    .eq("occurrence_id", occurrenceId)
+    .eq("status", "confirmed");
+
+  if (attendanceError || !attendance || attendance.length === 0) {
+    return [];
+  }
+
+  const playerIds: string[] = [];
+  const players: { id: string; name: string }[] = [];
+
+  attendance.forEach((a) => {
+    playerIds.push(a.player_id);
+    const player = Array.isArray(a.players) ? a.players[0] : a.players;
+    if (player) {
+      players.push({ id: a.player_id, name: player.name });
+    }
+  });
+
+  const { data: ratings, error: ratingsError } = await supabase
+    .from("elo_ratings")
+    .select("player_id, rating")
+    .in("player_id", playerIds)
+    .order("created_at", { ascending: false });
+
+  if (ratingsError || !ratings) {
+    return players.map((p) => ({ ...p, elo: 1000 }));
+  }
+
+  const latestEloByPlayer = new Map<string, number>();
+  ratings.forEach((r) => {
+    if (!latestEloByPlayer.has(r.player_id)) {
+      latestEloByPlayer.set(r.player_id, r.rating);
+    }
+  });
+
+  return players.map((p) => ({
+    ...p,
+    elo: latestEloByPlayer.get(p.id) ?? 1000,
+  }));
+}
+
+export async function balanceTeams(players: PlayerWithElo[]): SuggestedTeams {
+  if (players.length < 4) {
+    throw new Error("Need at least 4 players to balance teams");
+  }
+
+  const sorted = [...players].sort((a, b) => b.elo - a.elo);
+  
+  const team1 = [sorted[0], sorted[3]];
+  const team2 = [sorted[1], sorted[2]];
+  
+  const team1AvgElo = (team1[0].elo + team1[1].elo) / 2;
+  const team2AvgElo = (team2[0].elo + team2[1].elo) / 2;
+  
+  const balanceScore = 100 - Math.abs(team1AvgElo - team2AvgElo) / 10;
+
+  return {
+    team1,
+    team2,
+    team1AvgElo,
+    team2AvgElo,
+    balanceScore: Math.max(0, Math.min(100, balanceScore)),
+  };
+}

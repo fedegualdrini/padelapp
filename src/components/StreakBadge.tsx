@@ -1,4 +1,4 @@
-import { getPlayerStreaks } from "@/lib/data";
+import { getPlayerStreaks } from "@/lib/streaks";
 
 type StreakBadgeProps = {
   groupId: string;
