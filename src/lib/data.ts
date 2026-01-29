@@ -1196,6 +1196,132 @@ export async function getPlayerRecentForm(
   };
 }
 
+export type StreakHistoryItem = {
+  streak: number;
+  type: "win" | "loss";
+  startMatchId: string;
+  endMatchId: string;
+  startDate: string;
+  endDate: string;
+};
+
+export type PlayerStreaks = {
+  currentStreak: number; // positive for wins, negative for losses, 0 for neutral
+  longestWinStreak: number;
+  longestLossStreak: number;
+  streakHistory: StreakHistoryItem[];
+};
+
+export async function getPlayerStreaks(
+  groupId: string,
+  playerId: string
+): Promise<PlayerStreaks> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Get all matches for the player in chronological order (oldest first)
+  const { data: matchResults, error } = await supabaseServer
+    .from("v_player_match_results_enriched")
+    .select("match_id, is_win, played_at")
+    .eq("player_id", playerId)
+    .eq("group_id", groupId)
+    .order("played_at", { ascending: true });
+
+  if (error || !matchResults || matchResults.length === 0) {
+    return {
+      currentStreak: 0,
+      longestWinStreak: 0,
+      longestLossStreak: 0,
+      streakHistory: [],
+    };
+  }
+
+  // Calculate streaks
+  let currentStreak = 0;
+  let longestWinStreak = 0;
+  let longestLossStreak = 0;
+  const streakHistory: StreakHistoryItem[] = [];
+
+  let currentStreakType: "win" | "loss" | null = null;
+  let currentStreakCount = 0;
+  let currentStreakStart: { matchId: string; date: string } | null = null;
+
+  for (let i = 0; i < matchResults.length; i++) {
+    const match = matchResults[i];
+    const isWin = match.is_win;
+
+    if (currentStreakType === null) {
+      // First match
+      currentStreakType = isWin ? "win" : "loss";
+      currentStreakCount = 1;
+      currentStreakStart = { matchId: match.match_id, date: match.played_at };
+    } else if (
+      (currentStreakType === "win" && isWin) ||
+      (currentStreakType === "loss" && !isWin)
+    ) {
+      // Streak continues
+      currentStreakCount++;
+    } else {
+      // Streak broken - save the completed streak
+      if (currentStreakStart && currentStreakCount >= 2) {
+        streakHistory.push({
+          streak: currentStreakCount,
+          type: currentStreakType,
+          startMatchId: currentStreakStart.matchId,
+          endMatchId: matchResults[i - 1].match_id,
+          startDate: currentStreakStart.date,
+          endDate: matchResults[i - 1].played_at,
+        });
+      }
+
+      // Update longest streaks
+      if (currentStreakType === "win") {
+        longestWinStreak = Math.max(longestWinStreak, currentStreakCount);
+      } else {
+        longestLossStreak = Math.max(longestLossStreak, currentStreakCount);
+      }
+
+      // Start new streak
+      currentStreakType = isWin ? "win" : "loss";
+      currentStreakCount = 1;
+      currentStreakStart = { matchId: match.match_id, date: match.played_at };
+    }
+  }
+
+  // Handle the final streak
+  if (currentStreakStart && currentStreakCount > 0 && currentStreakType) {
+    const lastMatch = matchResults[matchResults.length - 1];
+
+    // Update longest streaks
+    if (currentStreakType === "win") {
+      longestWinStreak = Math.max(longestWinStreak, currentStreakCount);
+    } else {
+      longestLossStreak = Math.max(longestLossStreak, currentStreakCount);
+    }
+
+    // Set current streak (positive for wins, negative for losses)
+    currentStreak = currentStreakType === "win" ? currentStreakCount : -currentStreakCount;
+
+    // Add to history if significant streak
+    if (currentStreakCount >= 2) {
+      streakHistory.push({
+        streak: currentStreakCount,
+        type: currentStreakType,
+        startMatchId: currentStreakStart.matchId,
+        endMatchId: lastMatch.match_id,
+        startDate: currentStreakStart.date,
+        endDate: lastMatch.played_at,
+      });
+    }
+  }
+
+  return {
+    currentStreak,
+    longestWinStreak,
+    longestLossStreak,
+    streakHistory,
+  };
+}
+
 export type MatchPrediction = {
   team1: {
     playerIds: [string, string];

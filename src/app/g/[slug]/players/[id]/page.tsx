@@ -8,8 +8,10 @@ import {
   getPlayerPartnerStats,
   getPlayerRecentMatches,
   getPlayerRecentForm,
+  getPlayerStreaks,
 } from "@/lib/data";
 import MiniEloChart from "./MiniEloChart";
+import StreakHistoryChart from "./StreakHistoryChart";
 
 type PlayerProfilePageProps = {
   params: Promise<{ slug: string; id: string }>;
@@ -30,12 +32,13 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
   }
 
   // Fetch all profile data in parallel
-  const [stats, eloTimeline, partnerStats, recentMatches, recentForm] = await Promise.all([
+  const [stats, eloTimeline, partnerStats, recentMatches, recentForm, streaks] = await Promise.all([
     getPlayerStats(group.id),
     getEloTimeline(group.id),
     getPlayerPartnerStats(group.id, id),
     getPlayerRecentMatches(group.id, id, 15),
     getPlayerRecentForm(group.id, id, 10),
+    getPlayerStreaks(group.id, id),
   ]);
 
   const playerStats = stats.find((s) => s.player_id === id);
@@ -105,22 +108,62 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
           </div>
         </div>
 
-        {/* Streak */}
-        {recentForm?.streak && (
-          <div className="mt-4 flex items-center gap-2">
-            <span className="text-sm text-[var(--muted)]">Racha actual:</span>
-            <span
-              className={`rounded-full px-3 py-1 text-sm font-semibold ${
-                recentForm.streak.type === "win"
-                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                  : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
-              }`}
-            >
-              {recentForm.streak.type === "win" ? "🔥" : "❄️"} {recentForm.streak.count}{" "}
-              {recentForm.streak.type === "win" ? "victorias" : "derrotas"}
-            </span>
+        {/* Streak Overview */}
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {/* Current Streak */}
+          <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4">
+            <p className="text-xs uppercase tracking-wider text-[var(--muted)]">Racha actual</p>
+            {streaks.currentStreak !== 0 ? (
+              <div className="mt-1 flex items-center gap-2">
+                <span className="text-2xl">{streaks.currentStreak > 0 ? "🔥" : "❄️"}</span>
+                <span
+                  className={`font-display text-2xl ${
+                    streaks.currentStreak > 0 ? "text-orange-600" : "text-blue-600"
+                  }`}
+                >
+                  {Math.abs(streaks.currentStreak)}
+                </span>
+                <span className="text-sm text-[var(--muted)]">
+                  {streaks.currentStreak > 0 ? "victorias" : "derrotas"}
+                </span>
+              </div>
+            ) : (
+              <p className="mt-1 text-sm text-[var(--muted)]">Sin racha activa</p>
+            )}
           </div>
-        )}
+
+          {/* Longest Win Streak */}
+          <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4">
+            <p className="text-xs uppercase tracking-wider text-[var(--muted)]">Mejor racha ganadora</p>
+            {streaks.longestWinStreak > 0 ? (
+              <div className="mt-1 flex items-center gap-2">
+                <span className="text-2xl">🏆</span>
+                <span className="font-display text-2xl text-emerald-600">
+                  {streaks.longestWinStreak}
+                </span>
+                <span className="text-sm text-[var(--muted)]">victorias</span>
+              </div>
+            ) : (
+              <p className="mt-1 text-sm text-[var(--muted)]">Sin victorias</p>
+            )}
+          </div>
+
+          {/* Longest Loss Streak */}
+          <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4">
+            <p className="text-xs uppercase tracking-wider text-[var(--muted)]">Peor racha perdedora</p>
+            {streaks.longestLossStreak > 0 ? (
+              <div className="mt-1 flex items-center gap-2">
+                <span className="text-2xl">📉</span>
+                <span className="font-display text-2xl text-rose-600">
+                  {streaks.longestLossStreak}
+                </span>
+                <span className="text-sm text-[var(--muted)]">derrotas</span>
+              </div>
+            ) : (
+              <p className="mt-1 text-sm text-[var(--muted)]">Sin derrotas</p>
+            )}
+          </div>
+        </div>
       </section>
 
       {/* ELO Chart */}
@@ -182,6 +225,16 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
           </div>
         )}
       </section>
+
+      {/* Streak History */}
+      {streaks.streakHistory.length > 0 && (
+        <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+          <h3 className="font-display text-lg text-[var(--ink)]">Historial de rachas</h3>
+          <div className="mt-4">
+            <StreakHistoryChart streakHistory={streaks.streakHistory} />
+          </div>
+        </section>
+      )}
 
       {/* Partner Stats */}
       {partnerStats.length > 0 && (

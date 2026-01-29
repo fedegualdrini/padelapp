@@ -2,6 +2,7 @@ import Link from "next/link";
 import AddPlayerForm from '@/app/g/[slug]/players/AddPlayerForm';
 import EditPlayerForm from '@/app/g/[slug]/players/EditPlayerForm';
 import FormIndicator from '@/components/FormIndicator';
+import StreakBadge from '@/components/StreakBadge';
 import PlayerDirectoryControls from '@/components/PlayerDirectoryControls';
 import PeriodSelector, { type PeriodRange } from '@/components/PeriodSelector';
 
@@ -75,7 +76,7 @@ export default function PlayerDirectory({
         key={player.id}
         className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Link
             href={`/g/${groupSlug}/players/${player.id}`}
             className="font-display text-lg text-[var(--ink)] hover:text-[var(--accent)] hover:underline"
@@ -89,6 +90,7 @@ export default function PlayerDirectory({
             groupSlug={groupSlug}
           />
           <FormIndicator groupId={groupId} playerId={player.id} />
+          <StreakBadge groupId={groupId} playerId={player.id} />
         </div>
 
         {stat ? (
