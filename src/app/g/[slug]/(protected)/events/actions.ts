@@ -353,8 +353,8 @@ export type PlayerWithElo = {
 };
 
 export type SuggestedTeams = {
-  team1: PlayerWithElo[];
-  team2: PlayerWithElo[];
+  teamA: PlayerWithElo[];
+  teamB: PlayerWithElo[];
   team1AvgElo: number;
   team2AvgElo: number;
   balanceScore: number;
@@ -425,8 +425,8 @@ export async function balanceTeams(players: PlayerWithElo[]): SuggestedTeams {
   const balanceScore = 100 - Math.abs(team1AvgElo - team2AvgElo) / 10;
 
   return {
-    team1,
-    team2,
+    teamA: team1,
+    teamB: team2,
     team1AvgElo,
     team2AvgElo,
     balanceScore: Math.max(0, Math.min(100, balanceScore)),
