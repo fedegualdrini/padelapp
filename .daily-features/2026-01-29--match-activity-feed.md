@@ -1,6 +1,6 @@
 # Feature: Match Activity Feed
 
-**Status:** APPROVED
+**Status:** IMPLEMENTED (commit: 6e22ba6)
 
 ## Why
 
@@ -50,8 +50,8 @@ Each activity item should be human-readable with relative timestamps ("hace 5 mi
 
 ## Success Criteria
 
-- [ ] Activity feed visible on group home page
-- [ ] Shows at least 10 recent activities
-- [ ] Each activity has clear description, actor, and timestamp
-- [ ] Links work to relevant matches/players
-- [ ] Responsive design matches existing UI
+- [x] Activity feed visible on group home page
+- [x] Shows at least 10 recent activities
+- [x] Each activity has clear description, actor, and timestamp
+- [x] Links work to relevant matches/players
+- [x] Responsive design matches existing UI
