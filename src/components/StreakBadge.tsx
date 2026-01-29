@@ -1,4 +1,8 @@
-import { getPlayerStreaks } from "@/lib/streaks";
+"use client";
+
+import { useEffect, useState } from "react";
+import { fetchPlayerStreaksAction } from "@/lib/streaks-actions";
+import type { PlayerStreaks } from "@/lib/streaks";
 
 type StreakBadgeProps = {
   groupId: string;
@@ -6,12 +10,32 @@ type StreakBadgeProps = {
   minStreak?: number;
 };
 
-export default async function StreakBadge({
+export default function StreakBadge({
   groupId,
   playerId,
   minStreak = 2,
 }: StreakBadgeProps) {
-  const streaks = await getPlayerStreaks(groupId, playerId);
+  const [streaks, setStreaks] = useState<PlayerStreaks | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadStreaks() {
+      try {
+        const data = await fetchPlayerStreaksAction(groupId, playerId);
+        setStreaks(data);
+      } catch (error) {
+        console.error("Failed to load streaks:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadStreaks();
+  }, [groupId, playerId]);
+
+  if (isLoading || !streaks) {
+    return null;
+  }
 
   // Only show badge if streak meets minimum threshold
   if (Math.abs(streaks.currentStreak) < minStreak) {

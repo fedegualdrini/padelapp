@@ -11,7 +11,7 @@
 - Query params: `playerA` and `playerB` (implemented), spec mentions `player1` and `player2` but implementation uses A/B naming
 
 ## Commit SHA
-(To be added after commit)
+4faa364
 
 ## Why
 Players love to know how they stack up against specific opponents. While the app shows individual stats and match history, there's no dedicated way to compare two players directly—seeing their head-to-head record, who wins when they face each other, and how their performance compares across key metrics. This feature would add another competitive and analytical layer to the app, letting players settle debates like "Who's actually better between Juan and me?" or "How do I fare against the group's top players?"
