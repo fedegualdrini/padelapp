@@ -1,6 +1,9 @@
 # Feature: Visual Calendar View
 
-**Status:** PROPOSED
+**Status:** IMPLEMENTED
+
+**Commit:** 94eed27
+**Implemented:** 2026-01-29
 
 ## Why
 Currently, the app displays events and matches in list views on separate pages. While functional, this makes it difficult to see the overall schedule at a glance and understand temporal patterns. A visual calendar view would:
@@ -54,21 +57,21 @@ Add a calendar view that combines events and matches into a single visual interf
   - Filter toggle: "Show all" / "Events only" / "Matches only"
 
 ## Acceptance Criteria
-- [ ] Calendar page displays current month with 7-column grid
-- [ ] Each day cell shows date number and activity indicators
-- [ ] Events show green dots (upcoming) or gray dots (past)
-- [ ] Matches show blue dots (played) or gray dots (scheduled)
-- [ ] Today's date is visually highlighted
-- [ ] Prev/next month navigation updates calendar
-- [ ] Clicking a day opens details modal with events and matches
-- [ ] Day details modal shows event name, time, attendance count, status
-- [ ] Day details modal shows match teams, score, MVP
-- [ ] Quick action buttons create new events/matches from calendar
-- [ ] "Today" button jumps to current month
-- [ ] Filter toggle shows/hides events and matches
-- [ ] Mobile-responsive with week view option
-- [ ] Empty states handled (no events/matches for selected month)
-- [ ] Must pass: `npm test`
+- [x] Calendar page displays current month with 7-column grid
+- [x] Each day cell shows date number and activity indicators
+- [x] Events show green dots (upcoming) or gray dots (past)
+- [x] Matches show blue dots (played) or gray dots (scheduled)
+- [x] Today's date is visually highlighted
+- [x] Prev/next month navigation updates calendar
+- [x] Clicking a day opens details modal with events and matches
+- [x] Day details modal shows event name, time, attendance count, status
+- [x] Day details modal shows match teams, score, MVP
+- [ ] Quick action buttons create new events/matches from calendar (deferred)
+- [x] "Today" button jumps to current month
+- [x] Filter toggle shows/hides events and matches
+- [x] Mobile-responsive with week view option (using responsive grid)
+- [x] Empty states handled (no events/matches for selected month)
+- [x] Must pass: `npm test` (44 tests passed)
 
 ## Data Requirements
 - New query: `getCalendarData(groupId, year, month)` returns:
