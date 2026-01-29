@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { updateAttendance, createWeeklyEvent, generateOccurrences, AttendanceStatus } from "./actions";
 import { getConfirmedPlayersWithElo, balanceTeams, type PlayerWithElo, type SuggestedTeams } from "./actions";
 import TeamSuggestionModal from "./TeamSuggestionModal";
@@ -99,9 +99,10 @@ export default function EventsClient({
   players,
 }: EventsClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(searchParams.get('create') === 'true');
   const [showPastEvents, setShowPastEvents] = useState(false);
   
   // Modal state

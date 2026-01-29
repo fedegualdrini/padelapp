@@ -29,6 +29,7 @@ export default function AddPlayerForm({ groupId, groupSlug }: AddPlayerFormProps
   return (
     <form
       ref={formRef}
+      id="add-player"
       action={formAction}
       className="flex flex-wrap items-center gap-2"
     >

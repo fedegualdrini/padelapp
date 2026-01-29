@@ -84,13 +84,13 @@ export default function QuickActionsFAB({ slug }: QuickActionsFABProps) {
     {
       icon: <Calendar size={18} />,
       label: "Crear evento",
-      href: `${basePath}/events/new`,
+      href: `${basePath}/events?create=true`,
       ariaLabel: "Crear nuevo evento",
     },
     {
       icon: <UserPlus size={18} />,
       label: "Nuevo jugador",
-      href: `${basePath}/players/new`,
+      href: `${basePath}/players#add-player`,
       ariaLabel: "Agregar nuevo jugador",
     },
     {

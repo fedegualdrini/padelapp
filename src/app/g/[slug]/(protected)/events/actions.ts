@@ -206,23 +206,39 @@ export async function generateOccurrences(
   // Generate occurrences for the next N weeks
   const occurrences = [];
   const now = new Date();
-  
-  for (let i = 0; i < weeksAhead; i++) {
-    const occurrenceDate = new Date(now);
-    occurrenceDate.setDate(now.getDate() + (i * 7));
-    
-    // Adjust to the correct weekday
-    const currentDay = occurrenceDate.getDay();
-    const targetDay = weeklyEvent.weekday;
-    const daysToAdd = (targetDay - currentDay + 7) % 7;
-    occurrenceDate.setDate(occurrenceDate.getDate() + daysToAdd);
-    
-    // Set the time
+
+  // Start from now and increment properly
+  let occurrenceDate = new Date(now);
+
+  // First find the next occurrence of the target weekday
+  const currentDay = occurrenceDate.getDay();
+  const targetDay = weeklyEvent.weekday;
+
+  // Calculate days to add to reach target weekday
+  let daysToAdd = (targetDay - currentDay + 7) % 7;
+  if (daysToAdd === 0) {
+    // If today is the target weekday, check if we've already passed the event time
     const [hours, minutes] = weeklyEvent.start_time.split(':');
     occurrenceDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
-    
-    // Skip if the date is in the past
-    if (occurrenceDate < now) continue;
+    if (occurrenceDate < now) {
+      daysToAdd = 7; // Move to next week if today's time has passed
+    }
+  }
+
+  // Set initial occurrence date
+  occurrenceDate.setDate(occurrenceDate.getDate() + daysToAdd);
+
+  // Generate N occurrences, each 7 days apart
+  for (let i = 0; i < weeksAhead; i++) {
+    // Set the time for each occurrence
+    const [hours, minutes] = weeklyEvent.start_time.split(':');
+    occurrenceDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+
+    // Skip if date is in the past (safety check)
+    if (occurrenceDate < now) {
+      occurrenceDate.setDate(occurrenceDate.getDate() + 7);
+      continue;
+    }
 
     occurrences.push({
       weekly_event_id: weeklyEventId,
@@ -230,6 +246,9 @@ export async function generateOccurrences(
       starts_at: occurrenceDate.toISOString(),
       status: 'open' as const,
     });
+
+    // Move to next week for next iteration
+    occurrenceDate.setDate(occurrenceDate.getDate() + 7);
   }
 
   if (occurrences.length === 0) {

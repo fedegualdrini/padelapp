@@ -2,6 +2,7 @@ import Link from "next/link";
 import MatchCard from "@/components/MatchCard";
 import StatCard from "@/components/StatCard";
 import ActivityFeed from "@/components/ActivityFeed";
+import QuickActionsFAB from "@/components/QuickActionsFAB";
 import { getEloLeaderboard, getGroupBySlug, getPulseStats, getRecentActivity, getRecentMatches, getTopStats } from "@/lib/data";
 import { notFound } from "next/navigation";
 
@@ -127,35 +128,12 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-            <h3 className="font-display text-xl text-[var(--ink)]">
-              Acciones rápidas
-            </h3>
-            <div className="mt-4 flex flex-col gap-3 text-sm font-semibold">
-              <Link
-                href={`/g/${slug}/matches/new`}
-                className="rounded-full bg-[var(--accent)] px-4 py-2 text-center text-white"
-              >
-                Cargar partido
-              </Link>
-              <Link
-                href={`/g/${slug}/players`}
-                className="rounded-full border border-[var(--ink)]/10 bg-[color:var(--card-solid)] px-4 py-2 text-center text-[var(--ink)]"
-              >
-                Administrar jugadores
-              </Link>
-              <Link
-                href={`/g/${slug}/pairs`}
-                className="rounded-full border border-[var(--ink)]/10 bg-[color:var(--card-solid)] px-4 py-2 text-center text-[var(--ink)]"
-              >
-                Ver parejas
-              </Link>
-            </div>
-          </div>
-
           <ActivityFeed activities={recentActivity} />
         </div>
       </section>
     </div>
+
+    {/* Add QuickActionsFAB */}
+    <QuickActionsFAB slug={slug} />
   );
 }
