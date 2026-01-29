@@ -172,7 +172,7 @@ export default function EventsClient({
       if (playersWithElo.length !== 4) {
         throw new Error("Se necesitan 4 jugadores confirmados");
       }
-      const teams = balanceTeams(playersWithElo);
+      const teams = await balanceTeams(playersWithElo);
       setModalState({
         show: true,
         occurrenceId,
