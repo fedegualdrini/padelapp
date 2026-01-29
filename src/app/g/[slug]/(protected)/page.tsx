@@ -1,7 +1,8 @@
 import Link from "next/link";
 import MatchCard from "@/components/MatchCard";
 import StatCard from "@/components/StatCard";
-import { getEloLeaderboard, getGroupBySlug, getPulseStats, getRecentMatches, getTopStats } from "@/lib/data";
+import ActivityFeed from "@/components/ActivityFeed";
+import { getEloLeaderboard, getGroupBySlug, getPulseStats, getRecentActivity, getRecentMatches, getTopStats } from "@/lib/data";
 import { notFound } from "next/navigation";
 
 type GroupPageProps = {
@@ -17,11 +18,12 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
     notFound();
   }
 
-  const [topStats, recentMatches, pulse, leaderboard] = await Promise.all([
+  const [topStats, recentMatches, pulse, leaderboard, recentActivity] = await Promise.all([
     getTopStats(group.id),
     getRecentMatches(group.id, 3),
     getPulseStats(group.id),
     getEloLeaderboard(group.id),
+    getRecentActivity(group.id, 10),
   ]);
 
   return (
@@ -150,6 +152,8 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
               </Link>
             </div>
           </div>
+
+          <ActivityFeed activities={recentActivity} />
         </div>
       </section>
     </div>

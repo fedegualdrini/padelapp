@@ -1994,3 +1994,154 @@ export async function getAttendanceSummary(
 
   return summaries;
 }
+
+// Activity feed types
+export type ActivityItem = {
+  id: string;
+  type: 'match_created' | 'match_edited' | 'mvp_assigned' | 'player_added';
+  description: string;
+  actor: string;
+  changedAt: string;
+  entityId?: string;
+  entityUrl?: string;
+};
+
+export async function getRecentActivity(groupId: string, limit: number = 15): Promise<ActivityItem[]> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Query audit_log entries for this group by joining with matches and players
+  // We need to filter by group_id, so we need to check both matches and players tables
+  const { data: matchActivities, error: matchError } = await supabaseServer
+    .from('audit_log')
+    .select(`
+      id,
+      entity_type,
+      entity_id,
+      action,
+      before_json,
+      after_json,
+      changed_by,
+      changed_at,
+      matches!inner (group_id)
+    `)
+    .eq('entity_type', 'matches')
+    .eq('matches.group_id', groupId)
+    .order('changed_at', { ascending: false })
+    .limit(limit);
+
+  const { data: playerActivities, error: playerError } = await supabaseServer
+    .from('audit_log')
+    .select(`
+      id,
+      entity_type,
+      entity_id,
+      action,
+      before_json,
+      after_json,
+      changed_by,
+      changed_at,
+      players!inner (group_id)
+    `)
+    .eq('entity_type', 'players')
+    .eq('players.group_id', groupId)
+    .order('changed_at', { ascending: false })
+    .limit(limit);
+
+  if (matchError && playerError) {
+    return [];
+  }
+
+  const activities: ActivityItem[] = [];
+
+  // Process match activities
+  if (matchActivities && !matchError) {
+    for (const activity of matchActivities) {
+      const type = determineActivityType(activity);
+      const description = buildActivityDescription(activity);
+      const entityId = activity.entity_id;
+      const entityUrl = `/g/${slugFromId(groupId)}/matches/${entityId}`;
+
+      activities.push({
+        id: activity.id,
+        type,
+        description,
+        actor: activity.changed_by || 'Desconocido',
+        changedAt: activity.changed_at,
+        entityId,
+        entityUrl,
+      });
+    }
+  }
+
+  // Process player activities
+  if (playerActivities && !playerError) {
+    for (const activity of playerActivities) {
+      if (activity.action === 'INSERT') {
+        const afterJson = activity.after_json as Record<string, unknown> | null;
+        const name = afterJson?.name || 'Jugador';
+        activities.push({
+          id: activity.id,
+          type: 'player_added',
+          description: `Agregó a ${name}`,
+          actor: activity.changed_by || 'Desconocido',
+          changedAt: activity.changed_at,
+        });
+      }
+    }
+  }
+
+  // Sort all activities by date and limit
+  activities.sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime());
+  return activities.slice(0, limit);
+}
+
+function determineActivityType(activity: Record<string, unknown>): 'match_created' | 'match_edited' | 'mvp_assigned' {
+  if (activity.action === 'INSERT') {
+    return 'match_created';
+  }
+
+  if (activity.action === 'UPDATE') {
+    const before = activity.before_json as Record<string, unknown> | null;
+    const after = activity.after_json as Record<string, unknown> | null;
+
+    // Check if MVP changed
+    if (before?.mvp_player_id !== after?.mvp_player_id && after?.mvp_player_id) {
+      return 'mvp_assigned';
+    }
+
+    return 'match_edited';
+  }
+
+  return 'match_edited';
+}
+
+function buildActivityDescription(activity: Record<string, unknown>): string {
+  if (activity.action === 'INSERT') {
+    return 'Creó un partido';
+  }
+
+  if (activity.action === 'UPDATE') {
+    const before = activity.before_json as Record<string, unknown> | null;
+    const after = activity.after_json as Record<string, unknown> | null;
+
+    // Check if MVP changed
+    if (before?.mvp_player_id !== after?.mvp_player_id && after?.mvp_player_id) {
+      return 'Asignó MVP';
+    }
+
+    return 'Editó un partido';
+  }
+
+  return 'Editó un partido';
+}
+
+async function slugFromId(groupId: string): Promise<string> {
+  const supabaseServer = await getSupabaseServerClient();
+  const { data } = await supabaseServer
+    .from('groups')
+    .select('slug')
+    .eq('id', groupId)
+    .single();
+
+  return data?.slug || 'g';
+}
