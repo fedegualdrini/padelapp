@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { TradingViewRankingLayout } from "@/components/TradingViewRankingLayout";
 import { getEloTimeline, getGroupBySlug } from "@/lib/data";
-import PeriodSelector, { parsePeriodFromParams } from "@/components/PeriodSelector";
+import { parsePeriodFromParams } from "@/lib/period";
+import PeriodSelector from "@/components/PeriodSelector";
 
 type RankingPageProps = {
   params: Promise<{ slug: string }>;
