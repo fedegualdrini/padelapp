@@ -2145,3 +2145,236 @@ async function slugFromId(groupId: string): Promise<string> {
 
   return data?.slug || 'g';
 }
+
+// Calendar data types
+export type CalendarEvent = {
+  id: string;
+  name: string;
+  date: string;
+  time: string;
+  status: 'open' | 'locked' | 'cancelled' | 'completed';
+  attendanceCount: number;
+  capacity: number;
+};
+
+export type CalendarMatch = {
+  id: string;
+  date: string;
+  team1: string;
+  team2: string;
+  score1: number | null;
+  score2: number | null;
+  mvpPlayerId: string | null;
+};
+
+export type CalendarDayData = {
+  date: string;
+  events: CalendarEvent[];
+  matches: CalendarMatch[];
+};
+
+export type CalendarData = {
+  year: number;
+  month: number;
+  days: CalendarDayData[];
+};
+
+export async function getCalendarData(
+  groupId: string,
+  year: number,
+  month: number
+): Promise<CalendarData> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Calculate date range for the month
+  const startDate = new Date(year, month, 1);
+  const endDate = new Date(year, month + 1, 0, 23, 59, 59);
+
+  const startDateStr = startDate.toISOString().slice(0, 10);
+  const endDateStr = endDate.toISOString().slice(0, 10);
+
+  // Fetch events for the month
+  const { data: occurrences, error: occurrencesError } = await supabaseServer
+    .from('event_occurrences')
+    .select(`
+      id,
+      starts_at,
+      status,
+      weekly_events (
+        name,
+        capacity
+      )
+    `)
+    .eq('group_id', groupId)
+    .gte('starts_at', `${startDateStr}T00:00:00.000Z`)
+    .lte('starts_at', `${endDateStr}T23:59:59.999Z`)
+    .order('starts_at', { ascending: true });
+
+  // Fetch matches for the month
+  const { data: matches, error: matchesError } = await supabaseServer
+    .from('matches')
+    .select(`
+      id,
+      played_at,
+      mvp_player_id,
+      match_teams (
+        team_number,
+        match_team_players (
+          player_id,
+          players (name)
+        )
+      ),
+      sets (
+        set_number,
+        set_scores (team1_games, team2_games)
+      )
+    `)
+    .eq('group_id', groupId)
+    .gte('played_at', `${startDateStr}T00:00:00.000Z`)
+    .lte('played_at', `${endDateStr}T23:59:59.999Z`)
+    .order('played_at', { ascending: true });
+
+  // Get attendance counts for all events
+  let eventsByOccurrence: Map<string, CalendarEvent> = new Map();
+
+  if (!occurrencesError && occurrences) {
+    for (const occ of occurrences) {
+      const weeklyEvent = Array.isArray(occ.weekly_events)
+        ? occ.weekly_events[0]
+        : occ.weekly_events;
+      const capacity = weeklyEvent?.capacity ?? 4;
+
+      // Get attendance for this occurrence
+      const { data: attendance, error: attendanceError } = await supabaseServer
+        .from('attendance')
+        .select('status')
+        .eq('occurrence_id', occ.id);
+
+      const attendanceCount = attendance && !attendanceError
+        ? attendance.filter(a => a.status === 'confirmed').length
+        : 0;
+
+      const dateObj = new Date(occ.starts_at);
+      const dateStr = dateObj.toISOString().slice(0, 10);
+      const timeStr = dateObj.toISOString().slice(11, 16);
+
+      eventsByOccurrence.set(occ.id, {
+        id: occ.id,
+        name: weeklyEvent?.name || 'Evento',
+        date: dateStr,
+        time: timeStr,
+        status: occ.status as 'open' | 'locked' | 'cancelled' | 'completed',
+        attendanceCount,
+        capacity,
+      });
+    }
+  }
+
+  // Process matches
+  let calendarMatches: CalendarMatch[] = [];
+
+  if (!matchesError && matches) {
+    for (const match of matches) {
+      const dateObj = new Date(match.played_at);
+      const dateStr = dateObj.toISOString().slice(0, 10);
+
+      // Sort teams by team_number
+      const teams = Array.isArray(match.match_teams)
+        ? [...match.match_teams].sort((a, b) => a.team_number - b.team_number)
+        : [match.match_teams];
+
+      const team1Players = teams[0]?.match_team_players
+        ?.map(mtp => {
+          const player = Array.isArray(mtp?.players) ? mtp.players[0] : mtp?.players;
+          return player?.name || '';
+        })
+        .filter(Boolean)
+        .join(' / ') || 'Equipo 1';
+
+      const team2Players = teams[1]?.match_team_players
+        ?.map(mtp => {
+          const player = Array.isArray(mtp?.players) ? mtp.players[0] : mtp?.players;
+          return player?.name || '';
+        })
+        .filter(Boolean)
+        .join(' / ') || 'Equipo 2';
+
+      // Calculate total scores
+      const sets = Array.isArray(match.sets)
+        ? [...match.sets].sort((a, b) => a.set_number - b.set_number)
+        : [match.sets];
+
+      let totalScore1 = 0;
+      let totalScore2 = 0;
+
+      for (const set of sets) {
+        const scores = Array.isArray(set?.set_scores) ? set.set_scores[0] : set?.set_scores;
+        if (scores) {
+          totalScore1 += scores.team1_games || 0;
+          totalScore2 += scores.team2_games || 0;
+        }
+      }
+
+      calendarMatches.push({
+        id: match.id,
+        date: dateStr,
+        team1: team1Players,
+        team2: team2Players,
+        score1: totalScore1 || null,
+        score2: totalScore2 || null,
+        mvpPlayerId: match.mvp_player_id || null,
+      });
+    }
+  }
+
+  // Build day-by-day data
+  const daysData: CalendarDayData[] = [];
+  const today = new Date();
+  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+
+  // Get first day of month (0 = Sunday, 6 = Saturday)
+  const firstDay = startDate.getDay();
+
+  // Pad with empty days for alignment
+  for (let i = 0; i < firstDay; i++) {
+    daysData.push({
+      date: '',
+      events: [],
+      matches: [],
+    });
+  }
+
+  // Fill in actual days
+  const daysInMonth = endDate.getDate();
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+    // Find events for this day
+    const dayEvents: CalendarEvent[] = [];
+    eventsByOccurrence.forEach((event) => {
+      if (event.date === dateStr) {
+        dayEvents.push(event);
+      }
+    });
+
+    // Find matches for this day
+    const dayMatches: CalendarMatch[] = [];
+    calendarMatches.forEach((match) => {
+      if (match.date === dateStr) {
+        dayMatches.push(match);
+      }
+    });
+
+    daysData.push({
+      date: dateStr,
+      events: dayEvents,
+      matches: dayMatches,
+    });
+  }
+
+  return {
+    year,
+    month,
+    days: daysData,
+  };
+}

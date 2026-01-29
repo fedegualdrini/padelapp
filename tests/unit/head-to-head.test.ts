@@ -93,8 +93,8 @@ describe('Head-to-Head Stats Logic', () => {
     it('should determine player winner based on team assignment', () => {
       const team1SetWins = 2;
       const team2SetWins = 1;
-      const playerATeamNum = 1;
-      const playerBTeamNum = 2;
+      const playerATeamNum: number = 1;
+      const playerBTeamNum: number = 2;
 
       const playerAWon =
         (playerATeamNum === 1 && team1SetWins > team2SetWins) ||
