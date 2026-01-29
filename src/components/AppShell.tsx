@@ -1,6 +1,7 @@
 import Link from "next/link";
 import NavBar from "@/components/NavBar";
 import ThemeToggle from "@/components/ThemeToggle";
+import QuickActionsFAB from "@/components/QuickActionsFAB";
 
 type AppShellProps = {
   groupName: string;
@@ -66,6 +67,8 @@ export default function AppShell({ groupName, slug, children, showNavigation = t
       >
         {children}
       </main>
+
+      {showNavigation && <QuickActionsFAB slug={slug} />}
     </div>
   );
 }

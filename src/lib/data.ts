@@ -2235,7 +2235,7 @@ export async function getCalendarData(
     .order('played_at', { ascending: true });
 
   // Get attendance counts for all events
-  let eventsByOccurrence: Map<string, CalendarEvent> = new Map();
+  const eventsByOccurrence: Map<string, CalendarEvent> = new Map();
 
   if (!occurrencesError && occurrences) {
     for (const occ of occurrences) {
@@ -2271,7 +2271,7 @@ export async function getCalendarData(
   }
 
   // Process matches
-  let calendarMatches: CalendarMatch[] = [];
+  const calendarMatches: CalendarMatch[] = [];
 
   if (!matchesError && matches) {
     for (const match of matches) {
