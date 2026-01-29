@@ -409,7 +409,7 @@ export async function getConfirmedPlayersWithElo(
   }));
 }
 
-export async function balanceTeams(players: PlayerWithElo[]): SuggestedTeams {
+export async function balanceTeams(players: PlayerWithElo[]): Promise<SuggestedTeams> {
   if (players.length < 4) {
     throw new Error("Need at least 4 players to balance teams");
   }
