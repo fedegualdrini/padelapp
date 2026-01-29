@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { PlayerWithElo, SuggestedTeams } from "@/lib/data";
+import type { PlayerWithElo, SuggestedTeams } from "./actions";
 import { createMatchFromOccurrence } from "./actions";
 
 type TeamSuggestionModalProps = {
