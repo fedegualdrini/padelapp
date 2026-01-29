@@ -1,10 +1,14 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import AddPlayerForm from '@/app/g/[slug]/players/AddPlayerForm';
 import EditPlayerForm from '@/app/g/[slug]/players/EditPlayerForm';
 import FormIndicator from '@/components/FormIndicator';
 import StreakBadge from '@/components/StreakBadge';
 import PlayerDirectoryControls from '@/components/PlayerDirectoryControls';
 import PeriodSelector, { type PeriodRange } from '@/components/PeriodSelector';
+import ComparePlayersDialog from '@/components/ComparePlayersDialog';
 
 type Player = { id: string; name: string; status: string };
 
@@ -44,6 +48,7 @@ export default function PlayerDirectory({
   status?: StatusFilter;
   period?: PeriodRange;
 }) {
+  const [isCompareDialogOpen, setIsCompareDialogOpen] = useState(false);
   const effectiveStatus: StatusFilter = ['all', 'usual', 'invite'].includes(status ?? 'all')
     ? (status ?? 'all')
     : 'all';
@@ -109,48 +114,67 @@ export default function PlayerDirectory({
   };
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-        <h2 className="font-display text-2xl text-[var(--ink)]">Jugadores</h2>
-        <p className="mt-2 text-sm text-[var(--muted)]">
-          Sumá jugadores habituales e invitados.
-        </p>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <PlayerDirectoryControls />
-          <PeriodSelector />
-        </div>
-
-        <div className="mt-4">
-          <AddPlayerForm groupId={groupId} groupSlug={groupSlug} />
-        </div>
-      </section>
-
-      {effectiveStatus === 'invite' ? null : (
+    <>
+      <div className="space-y-6">
         <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-          <h3 className="font-display text-lg text-[var(--ink)]">Habituales</h3>
-          {usuals.length === 0 ? (
-            <p className="mt-4 text-sm text-[var(--muted)]">Sin resultados.</p>
-          ) : (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {usuals.map(renderCard)}
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="font-display text-2xl text-[var(--ink)]">Jugadores</h2>
+              <p className="mt-2 text-sm text-[var(--muted)]">
+                Sumá jugadores habituales e invitados.
+              </p>
             </div>
-          )}
-        </section>
-      )}
+            <button
+              onClick={() => setIsCompareDialogOpen(true)}
+              className="rounded-xl bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent)]/90"
+            >
+              Comparar jugadores
+            </button>
+          </div>
 
-      {effectiveStatus === 'usual' ? null : (
-        <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-          <h3 className="font-display text-lg text-[var(--ink)]">Invitados</h3>
-          {invites.length === 0 ? (
-            <p className="mt-4 text-sm text-[var(--muted)]">Sin resultados.</p>
-          ) : (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {invites.map(renderCard)}
-            </div>
-          )}
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <PlayerDirectoryControls />
+            <PeriodSelector />
+          </div>
+
+          <div className="mt-4">
+            <AddPlayerForm groupId={groupId} groupSlug={groupSlug} />
+          </div>
         </section>
-      )}
-    </div>
+
+        {effectiveStatus === 'invite' ? null : (
+          <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+            <h3 className="font-display text-lg text-[var(--ink)]">Habituales</h3>
+            {usuals.length === 0 ? (
+              <p className="mt-4 text-sm text-[var(--muted)]">Sin resultados.</p>
+            ) : (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {usuals.map(renderCard)}
+              </div>
+            )}
+          </section>
+        )}
+
+        {effectiveStatus === 'usual' ? null : (
+          <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+            <h3 className="font-display text-lg text-[var(--ink)]">Invitados</h3>
+            {invites.length === 0 ? (
+              <p className="mt-4 text-sm text-[var(--muted)]">Sin resultados.</p>
+            ) : (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {invites.map(renderCard)}
+              </div>
+            )}
+          </section>
+        )}
+      </div>
+
+      <ComparePlayersDialog
+        players={filteredPlayers}
+        groupSlug={groupSlug}
+        isOpen={isCompareDialogOpen}
+        onClose={() => setIsCompareDialogOpen(false)}
+      />
+    </>
   );
 }
