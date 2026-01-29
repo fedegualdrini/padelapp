@@ -1,6 +1,7 @@
 import { getGroupBySlug, getPairAggregates, getPlayers } from "@/lib/data";
 import { notFound } from "next/navigation";
-import PeriodSelector, { parsePeriodFromParams } from "@/components/PeriodSelector";
+import { parsePeriodFromParams } from "@/lib/period";
+import PeriodSelector from "@/components/PeriodSelector";
 
 type PairsPageProps = {
   params: Promise<{ slug: string }>;

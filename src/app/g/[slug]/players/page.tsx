@@ -1,7 +1,7 @@
 import { getGroupBySlug, getPlayers, getPlayerStats, getPlayerEloChange } from "@/lib/data";
 import { notFound } from "next/navigation";
 import PlayerDirectory from "@/components/PlayerDirectory";
-import { parsePeriodFromParams } from "@/components/PeriodSelector";
+import { parsePeriodFromParams } from "@/lib/period";
 
 type PlayersPageProps = {
   params: Promise<{ slug: string }>;
