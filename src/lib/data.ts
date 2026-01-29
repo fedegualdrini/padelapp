@@ -1196,6 +1196,23 @@ export async function getPlayerRecentForm(
   };
 }
 
+export type MatchPrediction = {
+  team1: {
+    playerIds: [string, string];
+    playerNames: [string, string];
+    avgElo: number;
+    winProbability: number;
+  };
+  team2: {
+    playerIds: [string, string];
+    playerNames: [string, string];
+    avgElo: number;
+    winProbability: number;
+  };
+  predictedWinner: 1 | 2;
+  confidence: "low" | "medium" | "high";
+};
+
 export async function predictMatchOutcome(
   groupId: string,
   team1PlayerIds: [string, string],
