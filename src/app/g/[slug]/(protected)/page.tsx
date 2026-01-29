@@ -133,7 +133,6 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
       </section>
     </div>
 
-    {/* Add QuickActionsFAB */}
     <QuickActionsFAB slug={slug} />
   );
 }
