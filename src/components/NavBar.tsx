@@ -8,6 +8,7 @@ const links = [
   { href: "/matches", label: "Partidos" },
   { href: "/matches/new", label: "Nuevo partido" },
   { href: "/events", label: "Eventos" },
+  { href: "/venues", label: "Canchas" },
   { href: "/ranking", label: "Ranking" },
   { href: "/players", label: "Jugadores" },
   { href: "/pairs", label: "Parejas" },

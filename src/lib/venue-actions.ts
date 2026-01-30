@@ -7,6 +7,7 @@
 // ============================================================================
 
 import { revalidatePath } from 'next/cache';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import {
   createVenue as createVenueData,
   updateVenue as updateVenueData,
@@ -193,6 +194,112 @@ export async function submitVenueRating(
     return { success: true, rating };
   } catch (error) {
     console.error('Error submitting rating:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to submit rating',
+    };
+  }
+}
+
+/**
+ * Submit a venue rating by slugs
+ */
+export async function submitVenueRatingBySlugs({
+  venueSlug,
+  groupSlug,
+  court_quality,
+  lighting,
+  comfort,
+  amenities,
+  accessibility,
+  atmosphere,
+  review_text,
+}: {
+  venueSlug: string;
+  groupSlug: string;
+  court_quality: number;
+  lighting: number;
+  comfort: number;
+  amenities: number;
+  accessibility: number;
+  atmosphere: number;
+  review_text?: string;
+}): Promise<{ success: boolean; rating?: VenueRating; error?: string }> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    
+    // Get group ID from slug
+    const { data: group, error: groupError } = await supabase
+      .from('groups')
+      .select('id')
+      .eq('slug', groupSlug)
+      .single();
+    
+    if (groupError || !group) {
+      throw new Error('Group not found');
+    }
+    
+    // Get venue ID from slug
+    const { data: venue, error: venueError } = await supabase
+      .from('venues')
+      .select('id')
+      .eq('slug', venueSlug)
+      .eq('group_id', group.id)
+      .single();
+    
+    if (venueError || !venue) {
+      throw new Error('Venue not found');
+    }
+    
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Not authenticated');
+    }
+    
+    // Check if user already has a rating
+    const { data: existingRating } = await supabase
+      .from('venue_ratings')
+      .select('id')
+      .eq('venue_id', venue.id)
+      .eq('player_id', user.id)
+      .single();
+    
+    const ratingInput: VenueRatingCreateInput = {
+      venue_id: venue.id,
+      player_id: user.id,
+      group_id: group.id,
+      court_quality,
+      lighting,
+      comfort,
+      amenities,
+      accessibility,
+      atmosphere,
+      review_text,
+    };
+    
+    let rating;
+    if (existingRating) {
+      // Update existing rating
+      rating = await updateVenueRatingData(existingRating.id, {
+        court_quality,
+        lighting,
+        comfort,
+        amenities,
+        accessibility,
+        atmosphere,
+        review_text,
+      });
+    } else {
+      // Create new rating
+      rating = await createVenueRatingData(ratingInput);
+    }
+    
+    revalidatePath(`/g/${groupSlug}/venues/${venueSlug}`);
+    revalidatePath(`/g/${groupSlug}/venues`);
+    return { success: true, rating };
+  } catch (error) {
+    console.error('Error submitting rating by slugs:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to submit rating',

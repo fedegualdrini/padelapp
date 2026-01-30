@@ -1,7 +1,7 @@
 # Feature: Smart Court & Venue Rating System
 
-**STATUS:** IMPLEMENTED  
-**Commit:** e6e895cd465c222a04adb033f8db93e03973b965  
+**STATUS:** IMPLEMENTED (v1 Core Features)  
+**Implementation:** See [2026-01-30--smart-court-venue-rating-system--IMPLEMENTATION.md](./2026-01-30--smart-court-venue-rating-system--IMPLEMENTATION.md)  
 **Date:** 2026-01-30
 
 ## Summary
