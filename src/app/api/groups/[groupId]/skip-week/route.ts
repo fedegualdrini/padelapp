@@ -3,8 +3,9 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST(
   request: Request,
-  { params }: { params: { groupId: string } }
+  { params }: { params: Promise<{ groupId: string }> }
 ) {
+  const { groupId } = await params;
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -12,7 +13,7 @@ export async function POST(
   }
 
   const { data: result, error } = await supabase.rpc('skip_week', {
-    p_group_id: params.groupId,
+    p_group_id: groupId,
     p_player_id: user.id,
   });
 
