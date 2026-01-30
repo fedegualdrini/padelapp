@@ -1,6 +1,8 @@
 # Feature: Match Prediction Confidence
 
-**Status:** PROPOSED
+**Status:** IMPLEMENTED
+
+**Commit:** dea47a4
 
 ## Why
 The app already calculates ELO-based match predictions, but currently only shows a basic "Team A favored" message without context. Players want to understand:
