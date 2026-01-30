@@ -134,8 +134,8 @@
         {"players": ["player-003", "player-004"], "score": "4-6, 2-6", "winner": false}
       ],
       "elo_changes": {
-        "player-001": +15,
-        "player-002": +12,
+        "player-001": 15,
+        "player-002": 12,
         "player-003": -15,
         "player-004": -12
       }
@@ -150,7 +150,7 @@
         {"players": ["player-003"], "score": "3-6, 1-6", "winner": false}
       ],
       "elo_changes": {
-        "player-001": +20,
+        "player-001": 20,
         "player-003": -20
       }
     },
@@ -164,8 +164,8 @@
         {"players": ["player-007", "player-008"], "score": "4-6, 6-4, 5-7", "winner": false}
       ],
       "elo_changes": {
-        "player-004": +18,
-        "player-006": +15,
+        "player-004": 18,
+        "player-006": 15,
         "player-007": -18,
         "player-008": -15
       }
@@ -191,7 +191,7 @@
         {"players": ["player-006"], "score": "2-6, 3-6", "winner": false}
       ],
       "elo_changes": {
-        "player-002": +18,
+        "player-002": 18,
         "player-006": -18
       }
     }
@@ -201,18 +201,18 @@
       "player_id": "player-001",
       "history": [
         {"date": "2024-01-15", "elo": 1200, "change": 0},
-        {"date": "2024-01-22", "elo": 1215, "change": +15},
-        {"date": "2024-01-24", "elo": 1220, "change": +5},
-        {"date": "2024-01-26", "elo": 1240, "change": +20},
-        {"date": "2024-01-28", "elo": 1255, "change": +15}
+        {"date": "2024-01-22", "elo": 1215, "change": 15},
+        {"date": "2024-01-24", "elo": 1220, "change": 5},
+        {"date": "2024-01-26", "elo": 1240, "change": 20},
+        {"date": "2024-01-28", "elo": 1255, "change": 15}
       ]
     },
     {
       "player_id": "player-002",
       "history": [
         {"date": "2024-01-10", "elo": 1350, "change": 0},
-        {"date": "2024-01-22", "elo": 1368, "change": +18},
-        {"date": "2024-01-28", "elo": 1380, "change": +12}
+        {"date": "2024-01-22", "elo": 1368, "change": 18},
+        {"date": "2024-01-28", "elo": 1380, "change": 12}
       ]
     }
   ]
