@@ -1,19 +1,37 @@
 "use client";
 
 import { useState } from "react";
+import RacketForm from "@/components/RacketForm";
+import type { RacketInput } from "@/lib/racket-types";
 
-export function AddRacketButton() {
-  const handleClick = () => {
-    (window as { openAddRacketModal?: boolean }).openAddRacketModal = true;
+interface AddRacketButtonProps {
+  onAddRacket: (data: RacketInput) => Promise<void>;
+}
+
+export function AddRacketButton({ onAddRacket }: AddRacketButtonProps) {
+  const [showModal, setShowModal] = useState(false);
+
+  const handleSubmit = async (data: RacketInput) => {
+    await onAddRacket(data);
+    setShowModal(false);
   };
 
   return (
-    <button
-      className="rounded-xl bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent)]/90"
-      onClick={handleClick}
-    >
-      + Add Racket
-    </button>
+    <>
+      <button
+        className="rounded-xl bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent)]/90"
+        onClick={() => setShowModal(true)}
+      >
+        + Add Racket
+      </button>
+      
+      {showModal && (
+        <RacketForm
+          onSubmit={handleSubmit}
+          onCancel={() => setShowModal(false)}
+        />
+      )}
+    </>
   );
 }
 

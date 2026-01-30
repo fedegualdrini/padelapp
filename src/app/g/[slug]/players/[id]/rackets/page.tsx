@@ -5,7 +5,9 @@ import {
   getPlayerRacketInsights,
 } from "@/lib/racket-data";
 import { getGroupBySlug } from "@/lib/data";
+import { actionCreateRacket } from "@/lib/racket-actions";
 import { AddRacketButton, CompareRacketsButton, RacketsList } from "./RacketClientComponents";
+import type { RacketInput } from "@/lib/racket-types";
 
 type PlayerRacketsPageProps = {
   params: Promise<{ slug: string; id: string }>;
@@ -43,6 +45,14 @@ export default async function PlayerRacketsPage({
     stats: r.stats,
   }));
 
+  async function handleAddRacket(data: RacketInput) {
+    "use server";
+    const result = await actionCreateRacket(id, data);
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
@@ -61,7 +71,7 @@ export default async function PlayerRacketsPage({
             Track and analyze your racket performance
           </p>
         </div>
-        <AddRacketButton />
+        <AddRacketButton onAddRacket={handleAddRacket} />
       </div>
 
       {/* Insights */}
