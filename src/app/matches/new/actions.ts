@@ -3,6 +3,7 @@
 // (removed) previously used next/server.after
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { calculateMatchPrediction } from "./prediction-actions";
 
 const isValidSetScore = (team1: number, team2: number) => {
   const valid =
@@ -202,6 +203,35 @@ export async function createMatch(
 
   if (scoresError) {
     return { error: "No se pudieron guardar los marcadores." };
+  }
+
+  // Calculate and store prediction
+  try {
+    const team1Ids = [team1Player1, team1Player2];
+    const team2Ids = [team2Player1, team2Player2];
+    const prediction = await calculateMatchPrediction(groupId, team1Ids, team2Ids);
+
+    // Determine who won
+    const predictedWinner = prediction.teamAWinProb > 0.5 ? 1 : 2;
+    const actualWinner = team1Wins > team2Wins ? 1 : 2;
+    const predictionCorrect = predictedWinner === actualWinner;
+
+    // Update match with prediction data
+    const { error: predictionError } = await supabaseServer
+      .from("matches")
+      .update({
+        predicted_win_prob: prediction.teamAWinProb,
+        prediction_factors: prediction as Record<string, unknown>,
+        prediction_correct: predictionCorrect,
+      })
+      .eq("id", match.id);
+
+    if (predictionError) {
+      console.error("Failed to save prediction:", predictionError);
+    }
+  } catch (error) {
+    console.error("Failed to calculate prediction:", error);
+    // Don't fail the entire match creation if prediction fails
   }
 
   // Keep stats views in sync for pages that read from materialized views.

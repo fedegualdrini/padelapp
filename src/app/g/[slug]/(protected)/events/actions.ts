@@ -208,7 +208,7 @@ export async function generateOccurrences(
   const now = new Date();
 
   // Start from now and increment properly
-  let occurrenceDate = new Date(now);
+  const occurrenceDate = new Date(now);
 
   // First find the next occurrence of the target weekday
   const currentDay = occurrenceDate.getDay();

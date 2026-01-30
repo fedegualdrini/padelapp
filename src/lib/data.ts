@@ -10,6 +10,9 @@ type MatchRow = {
   best_of: number;
   created_by: string;
   updated_by?: string | null;
+  predicted_win_prob?: number | null;
+  prediction_factors?: PredictionFactors | null;
+  prediction_correct?: boolean | null;
   match_teams: {
     team_number: number;
     match_team_players: { players: { id: string; name: string } | null }[];
@@ -27,6 +30,9 @@ type MatchEditRow = {
   created_by: string;
   updated_by?: string | null;
   mvp_player_id?: string | null;
+  predicted_win_prob?: number | null;
+  prediction_factors?: PredictionFactors | null;
+  prediction_correct?: boolean | null;
   match_teams: {
     team_number: number;
     id: string;
@@ -296,6 +302,9 @@ export async function getMatches(
         best_of,
         created_by,
         updated_by,
+        predicted_win_prob,
+        prediction_factors,
+        prediction_correct,
         match_teams (
           team_number,
           match_team_players (
@@ -343,6 +352,9 @@ export async function getMatchById(groupId: string, id: string) {
         best_of,
         created_by,
         updated_by,
+        predicted_win_prob,
+        prediction_factors,
+        prediction_correct,
         match_teams (
           team_number,
           match_team_players (
@@ -456,6 +468,9 @@ export async function getMatchEditData(groupId: string, id: string) {
         best_of,
         created_by,
         mvp_player_id,
+        predicted_win_prob,
+        prediction_factors,
+        prediction_correct,
         match_teams (
           id,
           team_number,
@@ -2376,5 +2391,403 @@ export async function getCalendarData(
     year,
     month,
     days: daysData,
+  };
+}
+
+// ===== PREDICTION FUNCTIONS =====
+
+export type PredictionAccuracy = {
+  overallAccuracy: number;
+  accuracyByEloGap: { eloRange: string; accuracy: number; matches: number }[];
+  biggestUpsets: { matchId: string; underdogTeam: string; winProb: number; date: string }[];
+  trendOverTime: { date: string; accuracy: number }[];
+};
+
+export type PredictionFactor = {
+  name: string;
+  value: string;
+  weight: string;
+  impact: "team1" | "team2" | "neutral";
+};
+
+export type PredictionFactors = {
+  teamAWinProb: number;
+  teamBWinProb: number;
+  factors: PredictionFactor[];
+  confidenceLevel: "high" | "medium" | "low";
+};
+
+/**
+ * Get prediction accuracy statistics for a group
+ */
+export async function getPredictionAccuracy(groupId: string): Promise<PredictionAccuracy> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Get all completed matches with predictions
+  const { data: matches, error: matchesError } = await supabaseServer
+    .from("matches")
+    .select(`
+      id,
+      played_at,
+      predicted_win_prob,
+      prediction_correct,
+      match_teams (
+        team_number,
+        match_team_players (
+          players (
+            id,
+            elo_ratings (rating)
+          )
+        )
+      )
+    `)
+    .eq("group_id", groupId)
+    .not("predicted_win_prob", "is", null)
+    .not("prediction_correct", "is", null)
+    .order("played_at", { ascending: true });
+
+  if (matchesError || !matches) {
+    return {
+      overallAccuracy: 0,
+      accuracyByEloGap: [],
+      biggestUpsets: [],
+      trendOverTime: [],
+    };
+  }
+
+  // Calculate overall accuracy
+  const correctPredictions = matches.filter((m) => m.prediction_correct).length;
+  const totalPredictions = matches.length;
+  const overallAccuracy = totalPredictions > 0 ? (correctPredictions / totalPredictions) * 100 : 0;
+
+  // Group by ELO gap for accuracy by band
+  const eloGapBands: { [key: string]: { correct: number; total: number } } = {
+    "0-50": { correct: 0, total: 0 },
+    "51-100": { correct: 0, total: 0 },
+    "101-150": { correct: 0, total: 0 },
+    "151-200": { correct: 0, total: 0 },
+    "200+": { correct: 0, total: 0 },
+  };
+
+  const upsetMatches: { matchId: string; underdogTeam: string; winProb: number; date: string }[] = [];
+
+  for (const match of matches) {
+    // Calculate average ELO for each team
+    const team1 = match.match_teams?.find((t) => t.team_number === 1);
+    const team2 = match.match_teams?.find((t) => t.team_number === 2);
+
+    if (!team1 || !team2) continue;
+
+    const getTeamAvgElo = (team: { match_team_players?: { players?: { elo_ratings?: { rating: number }[] }[] }[] }) => {
+      const players = team.match_team_players || [];
+      const ratings = players
+        .map((p) => p.players?.[0]?.elo_ratings?.[0]?.rating || 1000)
+        .filter((r) => r > 0);
+      return ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 1000;
+    };
+
+    const team1AvgElo = getTeamAvgElo(team1);
+    const team2AvgElo = getTeamAvgElo(team2);
+    const eloGap = Math.abs(team1AvgElo - team2AvgElo);
+
+    // Determine band
+    let band = "200+";
+    if (eloGap <= 50) band = "0-50";
+    else if (eloGap <= 100) band = "51-100";
+    else if (eloGap <= 150) band = "101-150";
+    else if (eloGap <= 200) band = "151-200";
+
+    if (eloGapBands[band]) {
+      eloGapBands[band].total++;
+      if (match.prediction_correct) {
+        eloGapBands[band].correct++;
+      }
+    }
+
+    // Track upsets (underdog won)
+    const winProb = match.predicted_win_prob || 0.5;
+    const isUpset = match.prediction_correct === false && (winProb > 0.55 || winProb < 0.45);
+
+    if (isUpset && match.predicted_win_prob !== null) {
+      const underdogProb = match.predicted_win_prob > 0.5 ? 1 - match.predicted_win_prob : match.predicted_win_prob;
+      const team1Players = team1.match_team_players
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ?.map((p: any) => {
+          const player = Array.isArray(p.players) ? p.players[0] : p.players;
+          return player?.name || "";
+        })
+        .filter(Boolean)
+        .join(" / ") || "Team 1";
+      const team2Players = team2.match_team_players
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ?.map((p: any) => {
+          const player = Array.isArray(p.players) ? p.players[0] : p.players;
+          return player?.name || "";
+        })
+        .filter(Boolean)
+        .join(" / ") || "Team 2";
+
+      upsetMatches.push({
+        matchId: match.id,
+        underdogTeam: winProb > 0.5 ? team2Players : team1Players,
+        winProb: underdogProb,
+        date: match.played_at,
+      });
+    }
+  }
+
+  // Build accuracy by ELO gap array
+  const accuracyByEloGap = Object.entries(eloGapBands)
+    .filter(([_, stats]) => stats.total > 0)
+    .map(([eloRange, stats]) => ({
+      eloRange,
+      accuracy: (stats.correct / stats.total) * 100,
+      matches: stats.total,
+    }));
+
+  // Get biggest upsets (sort by lowest win probability)
+  const biggestUpsets = upsetMatches
+    .sort((a, b) => a.winProb - b.winProb)
+    .slice(0, 10);
+
+  // Build trend over time (rolling 10-match accuracy)
+  const trendOverTime: { date: string; accuracy: number }[] = [];
+  const windowSize = 10;
+
+  for (let i = windowSize; i < matches.length; i++) {
+    const windowMatches = matches.slice(i - windowSize, i);
+    const windowCorrect = windowMatches.filter((m) => m.prediction_correct).length;
+    trendOverTime.push({
+      date: matches[i].played_at.split("T")[0],
+      accuracy: (windowCorrect / windowSize) * 100,
+    });
+  }
+
+  return {
+    overallAccuracy: Math.round(overallAccuracy * 10) / 10,
+    accuracyByEloGap,
+    biggestUpsets,
+    trendOverTime,
+  };
+}
+
+/**
+ * Get prediction factors for a specific match
+ */
+export async function getPredictionFactors(matchId: string): Promise<PredictionFactors | null> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Get match with teams and players
+  const { data: match, error: matchError } = await supabaseServer
+    .from("matches")
+    .select(`
+      id,
+      group_id,
+      played_at,
+      predicted_win_prob,
+      prediction_factors,
+      match_teams (
+        team_number,
+        match_team_players (
+          players (
+            id,
+            elo_ratings (rating)
+          )
+        )
+      )
+    `)
+    .eq("id", matchId)
+    .single();
+
+  if (matchError || !match) {
+    return null;
+  }
+
+  // If prediction factors already stored, return them
+  if (match.prediction_factors) {
+    return match.prediction_factors as PredictionFactors;
+  }
+
+  // Otherwise calculate on-the-fly
+  const team1 = match.match_teams?.find((t) => t.team_number === 1);
+  const team2 = match.match_teams?.find((t) => t.team_number === 2);
+
+  if (!team1 || !team2) {
+    return null;
+  }
+
+  // Get player IDs
+  const team1PlayerIds = team1.match_team_players?.map((p) => {
+    const player = Array.isArray(p.players) ? p.players[0] : p.players;
+    return player?.id;
+  }).filter(Boolean) || [];
+  const team2PlayerIds = team2.match_team_players?.map((p) => {
+    const player = Array.isArray(p.players) ? p.players[0] : p.players;
+    return player?.id;
+  }).filter(Boolean) || [];
+
+  // Get average ELO ratings
+  const getTeamAvgElo = (team: { match_team_players?: { players?: { elo_ratings?: { rating: number }[] }[] }[] }) => {
+    const players = team.match_team_players || [];
+    const ratings = players
+      .map((p) => p.players?.[0]?.elo_ratings?.[0]?.rating || 1000)
+      .filter((r) => r > 0);
+    return ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 1000;
+  };
+
+  const team1AvgElo = getTeamAvgElo(team1);
+  const team2AvgElo = getTeamAvgElo(team2);
+
+  // Get recent form (last 5 matches win rate)
+  const getRecentForm = async (playerIds: string[]) => {
+    if (playerIds.length === 0) return 0.5;
+
+    const { data: playerMatches } = await supabaseServer
+      .from("v_player_match_results")
+      .select("is_win")
+      .in("player_id", playerIds)
+      .order("match_id", { ascending: false })
+      .limit(playerIds.length * 5);
+
+    if (!playerMatches || playerMatches.length === 0) return 0.5;
+
+    const wins = playerMatches.filter((m) => m.is_win).length;
+    return wins / playerMatches.length;
+  };
+
+  // Get head-to-head record
+  const getHeadToHead = async (team1Ids: string[], team2Ids: string[]) => {
+    if (team1Ids.length === 0 || team2Ids.length === 0) return 0.5;
+
+    const { data: matches } = await supabaseServer
+      .from("matches")
+      .select(`
+        id,
+        match_teams (
+          team_number,
+          match_team_players (
+            player_id
+          )
+        )
+      `)
+      .eq("group_id", match.group_id)
+      .lt("played_at", match.played_at)
+      .order("played_at", { ascending: false })
+      .limit(20);
+
+    if (!matches || matches.length === 0) return 0.5;
+
+    let team1Wins = 0;
+    let totalMatches = 0;
+
+    for (const m of matches) {
+      const t1 = m.match_teams?.find((t) => t.team_number === 1);
+      const t2 = m.match_teams?.find((t) => t.team_number === 2);
+
+      if (!t1 || !t2) continue;
+
+      const t1Players = t1.match_team_players?.map((p) => p.player_id).filter(Boolean) || [];
+      const t2Players = t2.match_team_players?.map((p) => p.player_id).filter(Boolean) || [];
+
+      // Check if same teams
+      const isSameConfig =
+        (team1Ids.every((id) => t1Players.includes(id)) && team2Ids.every((id) => t2Players.includes(id))) ||
+        (team1Ids.every((id) => t2Players.includes(id)) && team2Ids.every((id) => t1Players.includes(id)));
+
+      if (isSameConfig) {
+        totalMatches++;
+        // Check who won
+        const winner = await getMatchWinner(m.id);
+        if (winner === 1 && team1Ids.every((id) => t1Players.includes(id))) team1Wins++;
+        if (winner === 2 && team1Ids.every((id) => t2Players.includes(id))) team1Wins++;
+      }
+    }
+
+    return totalMatches > 0 ? team1Wins / totalMatches : 0.5;
+  };
+
+  // Get partnership synergy
+  const getPartnershipSynergy = async (playerIds: string[]) => {
+    if (playerIds.length !== 2) return 0.5;
+
+    const { data: pairStats } = await supabaseServer
+      .from("mv_pair_aggregates")
+      .select("win_rate, matches_played")
+      .or(`and(player_a_id.eq.${playerIds[0]},player_b_id.eq.${playerIds[1]}),and(player_a_id.eq.${playerIds[1]},player_b_id.eq.${playerIds[0]})`)
+      .single();
+
+    if (!pairStats || pairStats.matches_played < 3) return 0.5;
+    return pairStats.win_rate;
+  };
+
+  // Get current streak
+  const getCurrentStreak = async (playerIds: string[]) => {
+    if (playerIds.length === 0) return 0;
+
+    const { data: recentResults } = await supabaseServer
+      .from("v_player_match_results")
+      .select("is_win")
+      .in("player_id", playerIds)
+      .order("match_id", { ascending: false })
+      .limit(10);
+
+    if (!recentResults || recentResults.length === 0) return 0;
+
+    let streak = 0;
+    const lastResult = recentResults[0].is_win;
+
+    for (const result of recentResults) {
+      if (result.is_win === lastResult) {
+        streak += lastResult ? 1 : -1;
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  };
+
+  // Get match winner
+  const getMatchWinner = async (matchId: string): Promise<1 | 2 | null> => {
+    const { data: sets } = await supabaseServer
+      .from("v_match_team_set_wins")
+      .select("team_number, sets_won")
+      .eq("match_id", matchId)
+      .order("sets_won", { ascending: false })
+      .limit(1);
+
+    if (!sets || sets.length === 0) return null;
+    return sets[0].team_number as 1 | 2;
+  };
+
+  // Fetch all factors
+  const [team1Form, team2Form, headToHead, team1Synergy, team2Synergy, team1Streak, team2Streak] = await Promise.all([
+    getRecentForm(team1PlayerIds),
+    getRecentForm(team2PlayerIds),
+    getHeadToHead(team1PlayerIds, team2PlayerIds),
+    getPartnershipSynergy(team1PlayerIds),
+    getPartnershipSynergy(team2PlayerIds),
+    getCurrentStreak(team1PlayerIds),
+    getCurrentStreak(team2PlayerIds),
+  ]);
+
+  // Calculate prediction
+  const { calculateMatchPrediction } = await import("./elo-utils");
+  const prediction = calculateMatchPrediction(team1AvgElo, team2AvgElo, {
+    team1Form,
+    team2Form,
+    team1HeadToHead: headToHead,
+    team2HeadToHead: 1 - headToHead,
+    team1Streak,
+    team2Streak,
+    team1PartnershipRate: team1Synergy,
+    team2PartnershipRate: team2Synergy,
+  });
+
+  return {
+    teamAWinProb: prediction.team1WinProb,
+    teamBWinProb: prediction.team2WinProb,
+    factors: prediction.factors,
+    confidenceLevel: prediction.confidence,
   };
 }

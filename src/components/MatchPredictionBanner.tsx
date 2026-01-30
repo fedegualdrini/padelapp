@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getPlayerElos } from "@/app/matches/new/prediction-actions";
 import { calculateMatchPrediction } from "@/lib/elo-utils";
+import type { PredictionFactor } from "@/lib/elo-utils";
 
 type MatchPredictionBannerProps = {
   groupId: string;
@@ -31,6 +32,7 @@ export default function MatchPredictionBanner({
     Boolean(team2PlayerIds[1]);
 
   const [eloState, setEloState] = useState<EloState>(null);
+  const [showFactors, setShowFactors] = useState(false);
 
   const playerKey = useMemo(() => {
     // Stable key so the effect only runs when the ids *change*
@@ -106,13 +108,28 @@ export default function MatchPredictionBanner({
     }
   };
 
+  const getFactorIcon = (factor: PredictionFactor) => {
+    if (factor.impact === "team1") return "⬆️";
+    if (factor.impact === "team2") return "⬇️";
+    return "➡️";
+  };
+
   return (
     <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
           Predicción
         </p>
-        <p className="text-xs text-[var(--muted)]">{getConfidenceText()}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-[var(--muted)]">{getConfidenceText()}</p>
+          <button
+            type="button"
+            onClick={() => setShowFactors(!showFactors)}
+            className="text-xs text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+          >
+            {showFactors ? "Ocultar factores" : "Ver factores"}
+          </button>
+        </div>
       </div>
 
       <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
@@ -171,6 +188,36 @@ export default function MatchPredictionBanner({
           </p>
         </div>
       </div>
+
+      {showFactors && prediction.factors.length > 0 && (
+        <div className="mt-4 border-t border-[color:var(--card-border)] pt-3">
+          <p className="text-xs text-[var(--muted)] mb-2">Factores clave:</p>
+          <div className="space-y-1.5">
+            {prediction.factors.map((factor, idx) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between text-xs"
+              >
+                <span className="text-[var(--muted)]">{factor.name}</span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={
+                      factor.impact === "team1"
+                        ? "text-[var(--accent)]"
+                        : factor.impact === "team2"
+                        ? "text-[var(--gold)]"
+                        : "text-[var(--ink)]"
+                    }
+                  >
+                    {getFactorIcon(factor)} {factor.value}
+                  </span>
+                  <span className="text-[var(--muted)]">({factor.weight})</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <p className="mt-3 text-center text-xs text-[var(--muted)]">
         Basado en ratings ELO actuales
