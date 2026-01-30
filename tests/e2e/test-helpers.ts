@@ -108,7 +108,7 @@ export async function fillForm(
  */
 export async function submitForm(
   page: Page,
-  submitText: string = 'Submit' | 'Guardar' | 'Guardar' | 'Enviar' | 'Create' | 'Crear'
+  submitText: string = 'Submit'
 ): Promise<void> {
   const submitButton = page.getByRole('button', { name: submitText }).or(
     page.locator('input[type="submit"]')
