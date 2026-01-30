@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-type Group = { id: string; name: string; slug: string };
+export type Group = { id: string; name: string; slug: string };
 type PlayerRow = { id: string; name: string; status: string };
 
 type MatchRow = {
