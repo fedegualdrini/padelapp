@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import AchievementBadge from './AchievementBadge';
 
-type Achievement = {
+export type Achievement = {
   key: string;
   name: string;
   description: string;

@@ -982,7 +982,7 @@ export async function getEloLeaderboard(groupId: string, limit = 8) {
     .slice(0, limit);
 }
 
-type EloTimelinePoint = { date: string; rating: number };
+export type EloTimelinePoint = { date: string; rating: number };
 type EloTimelineSeries = {
   playerId: string;
   name: string;
@@ -2789,5 +2789,281 @@ export async function getPredictionFactors(matchId: string): Promise<PredictionF
     teamBWinProb: prediction.team2WinProb,
     factors: prediction.factors,
     confidenceLevel: prediction.confidence,
+  };
+}
+
+// Types for opponent records
+export type OpponentRecord = {
+  opponentId: string;
+  opponentName: string;
+  opponentStatus: "usual" | "invited";
+  wins: number;
+  losses: number;
+  winRate: number;
+  totalMatches: number;
+  lastPlayedAt: string;
+};
+
+// Get opponent records for a player
+export async function getOpponentRecord(
+  groupId: string,
+  playerId: string
+): Promise<OpponentRecord[]> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Get all matches where the player participated
+  const { data: playerMatches, error: matchError } = await supabaseServer
+    .from("v_player_match_results_enriched")
+    .select("match_id, is_win, played_at")
+    .eq("player_id", playerId)
+    .eq("group_id", groupId)
+    .order("played_at", { ascending: false });
+
+  if (matchError || !playerMatches || playerMatches.length === 0) {
+    return [];
+  }
+
+  const matchIds = playerMatches.map((m) => m.match_id);
+
+  // Get all players in those matches (teammates and opponents)
+  const { data: matchTeamPlayers, error: teamError } = await supabaseServer
+    .from("match_team_players")
+    .select(`
+      player_id,
+      match_teams!inner (
+        match_id,
+        team_number
+      )
+    `)
+    .in("match_id", matchIds);
+
+  if (teamError || !matchTeamPlayers) {
+    return [];
+  }
+
+  // Group by match to find teammates
+  const matchPlayerMap = new Map<string, Map<number, string[]>>();
+  matchTeamPlayers.forEach((row) => {
+    const matchTeam = Array.isArray(row.match_teams) ? row.match_teams[0] : row.match_teams;
+    if (!matchTeam?.match_id) return;
+
+    if (!matchPlayerMap.has(matchTeam.match_id)) {
+      matchPlayerMap.set(matchTeam.match_id, new Map());
+    }
+    const teamMap = matchPlayerMap.get(matchTeam.match_id)!;
+    if (!teamMap.has(matchTeam.team_number)) {
+      teamMap.set(matchTeam.team_number, []);
+    }
+    teamMap.get(matchTeam.team_number)!.push(row.player_id);
+  });
+
+  // For each match, find opponents (players on the other team)
+  const opponentIds = new Set<string>();
+  playerMatches.forEach((match) => {
+    const teamMap = matchPlayerMap.get(match.match_id);
+    if (!teamMap) return;
+
+    // Find which team the player was on
+    for (const [teamNum, players] of teamMap.entries()) {
+      if (players.includes(playerId)) {
+        // Opponents are on the other team
+        const otherTeamNum = teamNum === 1 ? 2 : 1;
+        const opponents = teamMap.get(otherTeamNum) || [];
+        opponents.forEach((oppId) => opponentIds.add(oppId));
+        break;
+      }
+    }
+  });
+
+  if (opponentIds.size === 0) {
+    return [];
+  }
+
+  // Get opponent names and statuses
+  const { data: opponents, error: oppError } = await supabaseServer
+    .from("players")
+    .select("id, name, status")
+    .eq("group_id", groupId)
+    .in("id", Array.from(opponentIds));
+
+  if (oppError || !opponents) {
+    return [];
+  }
+
+  // Calculate W-L record against each opponent
+  const opponentRecords: OpponentRecord[] = opponents.map((opp) => {
+    let wins = 0;
+    let losses = 0;
+    let lastPlayedAt = "";
+
+    playerMatches.forEach((match) => {
+      const teamMap = matchPlayerMap.get(match.match_id);
+      if (!teamMap) return;
+
+      // Check if this opponent was in the match
+      let wasOpponent = false;
+      for (const [teamNum, players] of teamMap.entries()) {
+        if (players.includes(playerId) && players.includes(opp.id)) {
+          // Same team - not an opponent
+          wasOpponent = false;
+          break;
+        }
+        if (players.includes(playerId)) {
+          const otherTeamNum = teamNum === 1 ? 2 : 1;
+          const otherTeamPlayers = teamMap.get(otherTeamNum) || [];
+          if (otherTeamPlayers.includes(opp.id)) {
+            wasOpponent = true;
+          }
+          break;
+        }
+      }
+
+      if (wasOpponent) {
+        if (match.is_win) {
+          wins++;
+        } else {
+          losses++;
+        }
+        if (!lastPlayedAt) {
+          lastPlayedAt = match.played_at;
+        }
+      }
+    });
+
+    const totalMatches = wins + losses;
+    return {
+      opponentId: opp.id,
+      opponentName: opp.name,
+      opponentStatus: opp.status === "usual" ? "usual" : "invited",
+      wins,
+      losses,
+      winRate: totalMatches > 0 ? wins / totalMatches : 0,
+      totalMatches,
+      lastPlayedAt,
+    };
+  });
+
+  // Sort by total matches (most frequent opponents first)
+  return opponentRecords.sort((a, b) => b.totalMatches - a.totalMatches);
+}
+
+// Types for win rate trend
+export type WinRateTrendPoint = {
+  period: string; // "2025-01", "Week 1", etc.
+  wins: number;
+  losses: number;
+  winRate: number;
+  totalMatches: number;
+};
+
+export type WinRateTrend = {
+  playerId: string;
+  playerName: string;
+  trend: WinRateTrendPoint[];
+  trendDirection: "up" | "down" | "neutral";
+};
+
+// Get win rate trend over time
+export async function getWinRateTrend(
+  groupId: string,
+  playerId: string,
+  period: "month" | "week" = "month"
+): Promise<WinRateTrend | null> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Get player name
+  const { data: player, error: playerError } = await supabaseServer
+    .from("players")
+    .select("id, name")
+    .eq("id", playerId)
+    .eq("group_id", groupId)
+    .single();
+
+  if (playerError || !player) {
+    return null;
+  }
+
+  // Get all matches with results
+  const { data: matchResults, error: matchError } = await supabaseServer
+    .from("v_player_match_results_enriched")
+    .select("match_id, is_win, played_at")
+    .eq("player_id", playerId)
+    .eq("group_id", groupId)
+    .order("played_at", { ascending: true });
+
+  if (matchError || !matchResults || matchResults.length === 0) {
+    return {
+      playerId: player.id,
+      playerName: player.name,
+      trend: [],
+      trendDirection: "neutral",
+    };
+  }
+
+  // Group by period
+  const trendMap = new Map<string, { wins: number; losses: number }>();
+
+  matchResults.forEach((match) => {
+    const date = new Date(match.played_at);
+    let periodKey: string;
+
+    if (period === "month") {
+      periodKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    } else {
+      // Week: "2025-W01"
+      const startOfYear = new Date(date.getFullYear(), 0, 1);
+      const weekNum = Math.ceil(
+        ((date.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7
+      );
+      periodKey = `${date.getFullYear()}-W${String(weekNum).padStart(2, "0")}`;
+    }
+
+    if (!trendMap.has(periodKey)) {
+      trendMap.set(periodKey, { wins: 0, losses: 0 });
+    }
+
+    const stats = trendMap.get(periodKey)!;
+    if (match.is_win) {
+      stats.wins++;
+    } else {
+      stats.losses++;
+    }
+  });
+
+  // Convert to array
+  const trend: WinRateTrendPoint[] = Array.from(trendMap.entries()).map(([period, stats]) => {
+    const totalMatches = stats.wins + stats.losses;
+    return {
+      period,
+      wins: stats.wins,
+      losses: stats.losses,
+      winRate: totalMatches > 0 ? stats.wins / totalMatches : 0,
+      totalMatches,
+    };
+  });
+
+  // Determine trend direction (compare last 3 periods vs previous 3)
+  let trendDirection: "up" | "down" | "neutral" = "neutral";
+  if (trend.length >= 6) {
+    const recentPeriods = trend.slice(-3);
+    const previousPeriods = trend.slice(-6, -3);
+
+    const recentAvgWinRate =
+      recentPeriods.reduce((sum, p) => sum + p.winRate, 0) / recentPeriods.length;
+    const previousAvgWinRate =
+      previousPeriods.reduce((sum, p) => sum + p.winRate, 0) / previousPeriods.length;
+
+    if (recentAvgWinRate > previousAvgWinRate + 0.05) {
+      trendDirection = "up";
+    } else if (recentAvgWinRate < previousAvgWinRate - 0.05) {
+      trendDirection = "down";
+    }
+  }
+
+  return {
+    playerId: player.id,
+    playerName: player.name,
+    trend,
+    trendDirection,
   };
 }
