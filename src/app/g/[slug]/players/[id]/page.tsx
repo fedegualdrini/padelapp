@@ -78,12 +78,20 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
             ELO actual: <span className="font-semibold text-[var(--ink)]">{currentElo}</span>
           </p>
         </div>
-        <Link
-          href={`/g/${slug}/players`}
-          className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
-        >
-          ← Volver a jugadores
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/g/${slug}/players/${id}/rackets`}
+            className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-4 py-2 text-sm font-semibold text-[var(--ink)] hover:bg-[color:var(--card-solid)]"
+          >
+            🏓 Mis Rackets
+          </Link>
+          <Link
+            href={`/g/${slug}/players`}
+            className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
+          >
+            ← Volver a jugadores
+          </Link>
+        </div>
       </div>
 
       {/* Stats Overview */}

@@ -5,6 +5,7 @@ import {
   getPlayerRacketInsights,
 } from "@/lib/racket-data";
 import { getGroupBySlug } from "@/lib/data";
+import { AddRacketButton, CompareRacketsButton, RacketsList } from "./RacketClientComponents";
 
 type PlayerRacketsPageProps = {
   params: Promise<{ slug: string; id: string }>;
@@ -39,6 +40,7 @@ export default async function PlayerRacketsPage({
     is_active: r.is_active,
     created_at: r.created_at,
     updated_at: r.updated_at,
+    stats: r.stats,
   }));
 
   return (
@@ -59,15 +61,10 @@ export default async function PlayerRacketsPage({
             Track and analyze your racket performance
           </p>
         </div>
-        <button
-          className="rounded-xl bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent)]/90"
-          onClick={() => {
-            // This will be handled by client component
-            (window as { openAddRacketModal?: boolean }).openAddRacketModal = true;
-          }}
-        >
-          + Add Racket
-        </button>
+        <AddRacketButton onClick={() => {
+          // This is handled by the modal system
+          (window as { openAddRacketModal?: boolean }).openAddRacketModal = true;
+        }} />
       </div>
 
       {/* Insights */}
@@ -173,75 +170,12 @@ export default async function PlayerRacketsPage({
               Your Rackets ({rackets.length})
             </h3>
             {rackets.length >= 2 && (
-              <button
-                className="rounded-xl border border-[color:var(--card-border)] px-3 py-1.5 text-sm font-semibold text-[var(--ink)] transition hover:border-[color:var(--card-border-strong)]"
-                onClick={() => {
-                  // This will be handled by client component
-                  (window as { openCompareRacketsModal?: boolean }).openCompareRacketsModal = true;
-                }}
-              >
-                Compare
-              </button>
+              <CompareRacketsButton onClick={() => {
+                (window as { openCompareRacketsModal?: boolean }).openCompareRacketsModal = true;
+              }} />
             )}
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {racketsWithStats.map((racketWithStats) => (
-              <div key={racketWithStats.id}>
-                {/* RacketCard will be a client component */}
-                <div
-                  className="cursor-pointer"
-                  onClick={() => {
-                    window.location.href = `/g/${slug}/players/${id}/rackets/${racketWithStats.id}`;
-                  }}
-                >
-                  {/* Placeholder - actual RacketCard component will be rendered client-side */}
-                  <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4">
-                    <h3 className="font-display text-lg font-semibold text-[var(--ink)]">
-                      {racketWithStats.brand} {racketWithStats.model}
-                    </h3>
-                    {racketWithStats.weight && (
-                      <p className="mt-0.5 text-xs text-[var(--muted)]">
-                        {racketWithStats.weight}g
-                      </p>
-                    )}
-                    {racketWithStats.stats && racketWithStats.stats.matches_played > 0 ? (
-                      <div className="mt-3 grid grid-cols-2 gap-3">
-                        <div className="rounded-xl bg-[color:var(--input-bg)] p-2.5">
-                          <p className="text-xs font-semibold text-[var(--muted)]">
-                            Win Rate
-                          </p>
-                          <p className="mt-1 font-display text-lg font-bold text-[var(--ink)]">
-                            {racketWithStats.stats.win_rate}%
-                          </p>
-                        </div>
-                        <div className="rounded-xl bg-[color:var(--input-bg)] p-2.5">
-                          <p className="text-xs font-semibold text-[var(--muted)]">
-                            ELO Change
-                          </p>
-                          <p
-                            className={`mt-1 font-display text-lg font-bold ${
-                              racketWithStats.stats.elo_change >= 0
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            {racketWithStats.stats.elo_change >= 0 ? "+" : ""}
-                            {racketWithStats.stats.elo_change}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mt-3 rounded-xl bg-[color:var(--input-bg)] p-3 text-center">
-                        <p className="text-sm text-[var(--muted)]">
-                          No matches played yet
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <RacketsList rackets={rackets} slug={slug} playerId={id} />
         </section>
       )}
     </div>
