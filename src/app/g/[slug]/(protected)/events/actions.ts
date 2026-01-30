@@ -207,36 +207,39 @@ export async function generateOccurrences(
   const occurrences = [];
   const now = new Date();
 
-  // Start from now and increment properly
-  const occurrenceDate = new Date(now);
-
-  // First find the next occurrence of the target weekday
-  const currentDay = occurrenceDate.getDay();
+  // Calculate the first occurrence date
+  const baseDate = new Date(now);
+  const currentDay = baseDate.getDay();
   const targetDay = weeklyEvent.weekday;
 
   // Calculate days to add to reach target weekday
   let daysToAdd = (targetDay - currentDay + 7) % 7;
+
+  // Check if today is the target weekday and if we've already passed the event time
   if (daysToAdd === 0) {
-    // If today is the target weekday, check if we've already passed the event time
     const [hours, minutes] = weeklyEvent.start_time.split(':');
-    occurrenceDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
-    if (occurrenceDate < now) {
-      daysToAdd = 7; // Move to next week if today's time has passed
+    const eventTimeToday = new Date(now);
+    eventTimeToday.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+    if (eventTimeToday <= now) {
+      daysToAdd = 7; // Move to next week if today's time has passed or is now
     }
   }
 
-  // Set initial occurrence date
-  occurrenceDate.setDate(occurrenceDate.getDate() + daysToAdd);
+  // Set the first occurrence date
+  baseDate.setDate(baseDate.getDate() + daysToAdd);
 
   // Generate N occurrences, each 7 days apart
   for (let i = 0; i < weeksAhead; i++) {
-    // Set the time for each occurrence
+    // Create a NEW Date object for each occurrence (don't reuse)
+    const occurrenceDate = new Date(baseDate);
+    occurrenceDate.setDate(baseDate.getDate() + (i * 7));
+
+    // Set the time
     const [hours, minutes] = weeklyEvent.start_time.split(':');
     occurrenceDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
 
     // Skip if date is in the past (safety check)
     if (occurrenceDate < now) {
-      occurrenceDate.setDate(occurrenceDate.getDate() + 7);
       continue;
     }
 
@@ -246,9 +249,6 @@ export async function generateOccurrences(
       starts_at: occurrenceDate.toISOString(),
       status: 'open' as const,
     });
-
-    // Move to next week for next iteration
-    occurrenceDate.setDate(occurrenceDate.getDate() + 7);
   }
 
   if (occurrences.length === 0) {
