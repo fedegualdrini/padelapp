@@ -258,5 +258,16 @@ export async function createMatch(
     }
   }
 
+  // Update weekly challenges progress
+  try {
+    await supabaseServer.rpc('update_weekly_progress', {
+      p_group_id: groupId,
+      p_match_id: match.id,
+    });
+  } catch (error) {
+    console.error('Failed to update weekly challenges progress:', error);
+    // Don't fail the match creation if weekly challenges update fails
+  }
+
   redirect(`/g/${groupSlug}/matches/${match.id}`);
 }

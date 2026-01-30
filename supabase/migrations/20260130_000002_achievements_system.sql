@@ -357,19 +357,16 @@ begin
   end if;
 
   -- Check Iron Player: Play 20 matches in a single month
-  with monthly_match_counts as (
-    select
-      date_trunc('month', m.played_at) as month,
-      count(*)::int as matches_count
-    from matches m
-    join match_teams mt on mt.match_id = m.id
-    join match_team_players mtp on mtp.match_team_id = mt.id
-    where m.group_id = p_group_id
-      and mtp.player_id = p_player_id
-    group by date_trunc('month', m.played_at)
-  )
   if exists(
-    select 1 from monthly_match_counts where matches_count >= 20
+    select 1 from (
+      select count(*)::int as matches_count
+      from matches m
+      join match_teams mt on mt.match_id = m.id
+      join match_team_players mtp on mtp.match_team_id = mt.id
+      where m.group_id = p_group_id
+        and mtp.player_id = p_player_id
+      group by date_trunc('month', m.played_at)
+    ) monthly_counts where matches_count >= 20
   ) and not exists(
     select 1 from achievements where player_id = p_player_id and achievement_key = 'iron_player'
   ) then

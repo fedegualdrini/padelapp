@@ -12,6 +12,7 @@ const links = [
   { href: "/players", label: "Jugadores" },
   { href: "/pairs", label: "Parejas" },
   { href: "/achievements", label: "Logros" },
+  { href: "/challenges", label: "Desafíos" },
 ];
 
 type NavBarProps = {
