@@ -37,11 +37,15 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    // Avoid reusing a stale dev server that may have started without the right env.
-    reuseExistingServer: false,
-    timeout: 180000, // 3 minutes - give dev server more time to start
-  },
+  // Conditionally start dev server only in local development (not CI/Vercel)
+  // In CI (Vercel, GitHub Actions), the build system handles the server
+  ...(process.env.CI ? {} : {
+    webServer: {
+      command: 'npm run dev',
+      url: 'http://localhost:3000',
+      // Avoid reusing a stale dev server that may have started without the right env.
+      reuseExistingServer: false,
+      timeout: 180000, // 3 minutes - give dev server more time to start
+    },
+  }),
 });
