@@ -1,6 +1,8 @@
 # Feature: Smart Court & Venue Rating System
 
-**STATUS:** PROPOSED
+**STATUS:** IMPLEMENTED  
+**Commit:** e6e895cd465c222a04adb033f8db93e03973b965  
+**Date:** 2026-01-30
 
 ## Summary
 A comprehensive venue and court rating system where group members can rate and review the courts they play at. Track venue quality, surface type, lighting conditions, amenities, and more. Build collective intelligence about where to play, helping groups make better decisions for events and matches. Include venue-based analytics to understand which venues yield better match experiences and attendance.
