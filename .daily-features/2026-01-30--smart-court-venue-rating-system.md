@@ -1,8 +1,53 @@
 # Feature: Smart Court & Venue Rating System
 
-**STATUS:** IMPLEMENTED (v1 Core Features)  
-**Implementation:** See [2026-01-30--smart-court-venue-rating-system--IMPLEMENTATION.md](./2026-01-30--smart-court-venue-rating-system--IMPLEMENTATION.md)  
+**STATUS:** IMPLEMENTED (v1 Core Features) ✅  
+**Commit:** d856542 (claudio branch)  
 **Date:** 2026-01-30
+
+## Implementation Summary
+
+Implemented comprehensive venue and court rating system including:
+
+### Core Features
+- ✅ Venue listing page (`/g/[slug]/venues`)
+- ✅ Venue detail page with full information
+- ✅ Multi-dimensional rating system (6 dimensions)
+- ✅ Rating submission form with star sliders
+- ✅ Aggregate ratings display with breakdown
+- ✅ Reviews section with player feedback
+
+### Backend
+- ✅ Database schema (venues, venue_ratings, venue_analytics)
+- ✅ RLS policies for group-scoped access
+- ✅ Server actions for rating submission
+- ✅ Materialized view for analytics
+
+### UI Components
+- ✅ VenueCard component with ratings and attributes
+- ✅ Rating form with interactive star controls
+- ✅ Button component (reusable)
+- ✅ Utils (className merging)
+
+### Testing
+- ✅ E2E tests created (8 tests)
+- ✅ Test data added to seed.sql
+- ✅ Test automation scripts created
+
+### Documentation
+- ✅ Implementation documentation
+- ✅ Testing pipeline documentation
+- ✅ QA documentation
+
+## Issues Fixed
+- ✅ Database trigger loop bug (stack depth error)
+- ✅ Missing test data in seed.sql
+- ✅ E2E tests not running before commits
+
+## Implementation Details
+
+See [2026-01-30--smart-court-venue-rating-system--IMPLEMENTATION.md](./2026-01-30--smart-court-venue-rating-system--IMPLEMENTATION.md) for full implementation details.
+
+**Testing Status**: See [TEST-SUITE-STATUS.md](./TEST-SUITE-STATUS.md) for current test suite status.
 
 ## Summary
 A comprehensive venue and court rating system where group members can rate and review the courts they play at. Track venue quality, surface type, lighting conditions, amenities, and more. Build collective intelligence about where to play, helping groups make better decisions for events and matches. Include venue-based analytics to understand which venues yield better match experiences and attendance.
