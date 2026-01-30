@@ -357,6 +357,23 @@ export async function createMatchFromOccurrence(
     console.error("refresh_stats_views failed", { refreshError });
   }
 
+  // Check achievements for all players in the match
+  const allPlayerIds = [...teamAPlayerIds, ...teamBPlayerIds];
+  for (const playerId of allPlayerIds) {
+    try {
+      await supabase.rpc('check_achievements', {
+        p_group_id: group.id,
+        p_player_id: playerId,
+      });
+      await supabase.rpc('check_special_achievements', {
+        p_group_id: group.id,
+        p_player_id: playerId,
+      });
+    } catch (error) {
+      console.error('Failed to check achievements for player:', playerId, error);
+    }
+  }
+
   revalidatePath(`/g/${slug}/events`);
   revalidatePath(`/g/${slug}/matches`);
   revalidatePath(`/g/${slug}/ranking`);

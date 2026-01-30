@@ -11,6 +11,7 @@ const links = [
   { href: "/ranking", label: "Ranking" },
   { href: "/players", label: "Jugadores" },
   { href: "/pairs", label: "Parejas" },
+  { href: "/achievements", label: "Logros" },
 ];
 
 type NavBarProps = {

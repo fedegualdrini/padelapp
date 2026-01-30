@@ -9,6 +9,7 @@ import StreakBadge from '@/components/StreakBadge';
 import PlayerDirectoryControls from '@/components/PlayerDirectoryControls';
 import PeriodSelector, { type PeriodRange } from '@/components/PeriodSelector';
 import ComparePlayersDialog from '@/components/ComparePlayersDialog';
+import PlayerAchievementsRow from '@/components/PlayerAchievementsRow';
 
 type Player = { id: string; name: string; status: string };
 
@@ -96,6 +97,10 @@ export default function PlayerDirectory({
           />
           <FormIndicator groupId={groupId} playerId={player.id} />
           <StreakBadge groupId={groupId} playerId={player.id} />
+        </div>
+
+        <div className="mt-1">
+          <PlayerAchievementsRow groupId={groupId} playerId={player.id} />
         </div>
 
         {stat ? (

@@ -10,8 +10,10 @@ import {
   getPlayerRecentForm,
 } from "@/lib/data";
 import { getPlayerStreaks } from "@/lib/streaks";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import MiniEloChart from "./MiniEloChart";
 import StreakHistoryChart from "./StreakHistoryChart";
+import AchievementsSection from "@/components/AchievementsSection";
 
 type PlayerProfilePageProps = {
   params: Promise<{ slug: string; id: string }>;
@@ -32,14 +34,19 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
   }
 
   // Fetch all profile data in parallel
-  const [stats, eloTimeline, partnerStats, recentMatches, recentForm, streaks] = await Promise.all([
+  const supabase = await createSupabaseServerClient();
+
+  const [stats, eloTimeline, partnerStats, recentMatches, recentForm, streaks, achievements] = await Promise.all([
     getPlayerStats(group.id),
     getEloTimeline(group.id),
     getPlayerPartnerStats(group.id, id),
     getPlayerRecentMatches(group.id, id, 15),
     getPlayerRecentForm(group.id, id, 10),
     getPlayerStreaks(group.id, id),
+    supabase.rpc('get_player_achievements', { p_group_id: group.id, p_player_id: id }),
   ]);
+
+  const achievementsData = achievements.data || { unlocked: [], locked: [] };
 
   const playerStats = stats.find((s) => s.player_id === id);
   const playerEloData = eloTimeline.find((e) => e.playerId === id);
@@ -165,6 +172,12 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
           </div>
         </div>
       </section>
+
+      {/* Achievements Section */}
+      <AchievementsSection
+        unlocked={achievementsData.unlocked}
+        locked={achievementsData.locked}
+      />
 
       {/* ELO Chart */}
       {playerEloData && playerEloData.points.length > 0 && (

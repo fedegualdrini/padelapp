@@ -1,6 +1,6 @@
 # Feature: Achievements and Badges System
 
-**Status:** PROPOSED
+**Status:** IN_PROGRESS
 
 ## Why
 Padel is as much about community and engagement as it is about competition. An achievements and badges system adds a gamification layer that drives participation, encourages players to reach new milestones, and creates friendly competition. Players love seeing visual representations of their accomplishments — whether it's their 100th match, a 10-game win streak, or being ranked #1 for a month.

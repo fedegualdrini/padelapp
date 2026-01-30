@@ -241,5 +241,22 @@ export async function createMatch(
     console.error("refresh_stats_views failed", { refreshError });
   }
 
+  // Check achievements for all players in the match
+  const playerIds = [team1Player1, team1Player2, team2Player1, team2Player2];
+  for (const playerId of playerIds) {
+    try {
+      await supabaseServer.rpc('check_achievements', {
+        p_group_id: groupId,
+        p_player_id: playerId,
+      });
+      await supabaseServer.rpc('check_special_achievements', {
+        p_group_id: groupId,
+        p_player_id: playerId,
+      });
+    } catch (error) {
+      console.error('Failed to check achievements for player:', playerId, error);
+    }
+  }
+
   redirect(`/g/${groupSlug}/matches/${match.id}`);
 }
