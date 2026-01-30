@@ -24,7 +24,7 @@ export default function PlayerPartnerships({
       try {
         setLoading(true);
         const response = await fetch(
-          `/api/partnerships/${playerId}/best-partners`
+          `/api/partnerships/player/${playerId}/best-partners`
         );
 
         if (!response.ok) {

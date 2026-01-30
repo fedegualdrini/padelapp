@@ -3,10 +3,10 @@ import { getPlayerBestPartners, refreshPartnershipsIfStale } from "@/lib/partner
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ playerId: string }> }
+  { params }: { params: Promise<{ player: string }> }
 ) {
   try {
-    const { playerId } = await params;
+    const { player: playerId } = await params;
 
     if (!playerId) {
       return NextResponse.json(
