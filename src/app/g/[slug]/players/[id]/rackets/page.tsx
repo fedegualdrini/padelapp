@@ -61,10 +61,7 @@ export default async function PlayerRacketsPage({
             Track and analyze your racket performance
           </p>
         </div>
-        <AddRacketButton onClick={() => {
-          // This is handled by the modal system
-          (window as { openAddRacketModal?: boolean }).openAddRacketModal = true;
-        }} />
+        <AddRacketButton />
       </div>
 
       {/* Insights */}
@@ -169,11 +166,7 @@ export default async function PlayerRacketsPage({
             <h3 className="font-display text-lg text-[var(--ink)]">
               Your Rackets ({rackets.length})
             </h3>
-            {rackets.length >= 2 && (
-              <CompareRacketsButton onClick={() => {
-                (window as { openCompareRacketsModal?: boolean }).openCompareRacketsModal = true;
-              }} />
-            )}
+            {rackets.length >= 2 && <CompareRacketsButton />}
           </div>
           <RacketsList rackets={rackets} slug={slug} playerId={id} />
         </section>

@@ -2,30 +2,30 @@
 
 import { useState } from "react";
 
-interface AddRacketButtonProps {
-  onClick: () => void;
-}
+export function AddRacketButton() {
+  const handleClick = () => {
+    (window as { openAddRacketModal?: boolean }).openAddRacketModal = true;
+  };
 
-export function AddRacketButton({ onClick }: AddRacketButtonProps) {
   return (
     <button
       className="rounded-xl bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent)]/90"
-      onClick={onClick}
+      onClick={handleClick}
     >
       + Add Racket
     </button>
   );
 }
 
-interface CompareRacketsButtonProps {
-  onClick: () => void;
-}
+export function CompareRacketsButton() {
+  const handleClick = () => {
+    (window as { openCompareRacketsModal?: boolean }).openCompareRacketsModal = true;
+  };
 
-export function CompareRacketsButton({ onClick }: CompareRacketsButtonProps) {
   return (
     <button
       className="rounded-xl border border-[color:var(--card-border)] px-3 py-1.5 text-sm font-semibold text-[var(--ink)] transition hover:border-[color:var(--card-border-strong)]"
-      onClick={onClick}
+      onClick={handleClick}
     >
       Compare
     </button>
