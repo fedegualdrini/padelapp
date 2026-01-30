@@ -1,0 +1,358 @@
+{
+  "description": "Test badges for E2E testing. Includes weekly, streak, and special achievement badges.",
+  "version": "1.0.0",
+  "badges": [
+    {
+      "id": "badge-001",
+      "name": "Primera Semana Completa",
+      "name_en": "First Week Complete",
+      "description": "Completaste todos los desafíos semanales en tu primera semana de participación.",
+      "description_en": "You completed all weekly challenges in your first week of participation.",
+      "type": "weekly_complete",
+      "icon": "🏅",
+      "color": "#FFD700",
+      "requirement": {
+        "type": "challenges_complete",
+        "value": 5,
+        "timeframe": "first_week"
+      },
+      "rarity": "common",
+      "xp_reward": 100,
+      "created_at": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "badge-002",
+      "name": "Racha de 2 Semanas",
+      "name_en": "2-Week Streak",
+      "description": "Completaste desafíos semanales por 2 semanas consecutivas.",
+      "description_en": "You completed weekly challenges for 2 consecutive weeks.",
+      "type": "streak",
+      "icon": "🔥",
+      "color": "#FF6B6B",
+      "requirement": {
+        "type": "consecutive_weeks",
+        "value": 2
+      },
+      "rarity": "common",
+      "xp_reward": 150,
+      "created_at": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "badge-003",
+      "name": "Racha de 4 Semanas",
+      "name_en": "4-Week Streak",
+      "description": "Completaste desafíos semanales por 4 semanas consecutivas.",
+      "description_en": "You completed weekly challenges for 4 consecutive weeks.",
+      "type": "streak",
+      "icon": "⚡",
+      "color": "#FF9500",
+      "requirement": {
+        "type": "consecutive_weeks",
+        "value": 4
+      },
+      "rarity": "uncommon",
+      "xp_reward": 300,
+      "created_at": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "badge-004",
+      "name": "Racha de 8 Semanas",
+      "name_en": "8-Week Streak",
+      "description": "Completaste desafíos semanales por 8 semanas consecutivas.",
+      "description_en": "You completed weekly challenges for 8 consecutive weeks.",
+      "type": "streak",
+      "icon": "💎",
+      "color": "#00D4FF",
+      "requirement": {
+        "type": "consecutive_weeks",
+        "value": 8
+      },
+      "rarity": "rare",
+      "xp_reward": 600,
+      "created_at": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "badge-005",
+      "name": "Racha de 12 Semanas",
+      "name_en": "12-Week Streak",
+      "description": "Completaste desafíos semanales por 12 semanas consecutivas.",
+      "description_en": "You completed weekly challenges for 12 consecutive weeks.",
+      "type": "streak",
+      "icon": "👑",
+      "color": "#9B59B6",
+      "requirement": {
+        "type": "consecutive_weeks",
+        "value": 12
+      },
+      "rarity": "legendary",
+      "xp_reward": 1000,
+      "created_at": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "badge-006",
+      "name": "Dominio Volumen",
+      "name_en": "Volume Mastery",
+      "description": "Ganaste el desafío de volumen 5 veces.",
+      "description_en": "You won the volume challenge 5 times.",
+      "type": "special",
+      "icon": "🎯",
+      "color": "#2ECC71",
+      "requirement": {
+        "type": "challenge_wins",
+        "challenge_type": "volume",
+        "value": 5
+      },
+      "rarity": "uncommon",
+      "xp_reward": 250,
+      "created_at": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "badge-007",
+      "name": "Dominio Calidad",
+      "name_en": "Quality Mastery",
+      "description": "Ganaste el desafío de calidad 5 veces.",
+      "description_en": "You won the quality challenge 5 times.",
+      "type": "special",
+      "icon": "⭐",
+      "color": "#F1C40F",
+      "requirement": {
+        "type": "challenge_wins",
+        "challenge_type": "quality",
+        "value": 5
+      },
+      "rarity": "uncommon",
+      "xp_reward": 250,
+      "created_at": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "badge-008",
+      "name": "Dominio Asistencia",
+      "name_en": "Attendance Mastery",
+      "description": "Ganaste el desafío de asistencia 5 veces.",
+      "description_en": "You won the attendance challenge 5 times.",
+      "type": "special",
+      "icon": "🏃",
+      "color": "#3498DB",
+      "requirement": {
+        "type": "challenge_wins",
+        "challenge_type": "attendance",
+        "value": 5
+      },
+      "rarity": "uncommon",
+      "xp_reward": 250,
+      "created_at": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "badge-009",
+      "name": "Colaborador",
+      "name_en": "Collaborator",
+      "description": "Añadiste 5 canchas nuevas al sistema.",
+      "description_en": "You added 5 new courts to the system.",
+      "type": "special",
+      "icon": "🏗️",
+      "color": "#E74C3C",
+      "requirement": {
+        "type": "venues_added",
+        "value": 5
+      },
+      "rarity": "rare",
+      "xp_reward": 500,
+      "created_at": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "badge-010",
+      "name": "Crítico Constructivo",
+      "name_en": "Constructive Critic",
+      "description": "Escribiste 20 reseñas de canchas.",
+      "description_en": "You wrote 20 court reviews.",
+      "type": "special",
+      "icon": "✍️",
+      "color": "#9B59B6",
+      "requirement": {
+        "type": "reviews_written",
+        "value": 20
+      },
+      "rarity": "rare",
+      "xp_reward": 400,
+      "created_at": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "badge-011",
+      "name": "Organizador",
+      "name_en": "Organizer",
+      "description": "Organizaste 10 eventos o partidos.",
+      "description_en": "You organized 10 events or matches.",
+      "type": "special",
+      "icon": "📅",
+      "color": "#1ABC9C",
+      "requirement": {
+        "type": "events_organized",
+        "value": 10
+      },
+      "rarity": "uncommon",
+      "xp_reward": 300,
+      "created_at": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "badge-012",
+      "name": "Pionero",
+      "name_en": "Pioneer",
+      "description": "Fuiste uno de los primeros 10 jugadores en unirte al grupo.",
+      "description_en": "You were one of the first 10 players to join the group.",
+      "type": "special",
+      "icon": "🚀",
+      "color": "#FFD700",
+      "requirement": {
+        "type": "early_adopter",
+        "value": 10
+      },
+      "rarity": "legendary",
+      "xp_reward": 1500,
+      "created_at": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "badge-013",
+      "name": "Campeón Semanal",
+      "name_en": "Weekly Champion",
+      "description": "Ganaste el ranking de desafíos semanales al menos una vez.",
+      "description_en": "You won the weekly challenges leaderboard at least once.",
+      "type": "special",
+      "icon": "🏆",
+      "color": "#FFD700",
+      "requirement": {
+        "type": "weekly_leaderboard_win",
+        "value": 1
+      },
+      "rarity": "rare",
+      "xp_reward": 500,
+      "created_at": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "badge-014",
+      "name": "Dominador de Semanas",
+      "name_en": "Week Dominator",
+      "description": "Ganaste el ranking de desafíos semanales 5 veces.",
+      "description_en": "You won the weekly challenges leaderboard 5 times.",
+      "type": "special",
+      "icon": "🎖️",
+      "color": "#C0392B",
+      "requirement": {
+        "type": "weekly_leaderboard_win",
+        "value": 5
+      },
+      "rarity": "legendary",
+      "xp_reward": 2000,
+      "created_at": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "badge-015",
+      "name": "Estrella Ascendente",
+      "name_en": "Rising Star",
+      "description": "Aumentaste tu ELO en más de 100 puntos en un mes.",
+      "description_en": "You increased your ELO by more than 100 points in a month.",
+      "type": "special",
+      "icon": "🌟",
+      "color": "#F39C12",
+      "requirement": {
+        "type": "elo_increase_month",
+        "value": 100
+      },
+      "rarity": "rare",
+      "xp_reward": 600,
+      "created_at": "2024-01-15T00:00:00Z"
+    }
+  ],
+  "earned_badges": [
+    {
+      "player_id": "player-001",
+      "badges": [
+        {
+          "badge_id": "badge-001",
+          "earned_at": "2024-01-20T00:00:00Z"
+        },
+        {
+          "badge_id": "badge-002",
+          "earned_at": "2024-01-27T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "player_id": "player-002",
+      "badges": [
+        {
+          "badge_id": "badge-001",
+          "earned_at": "2024-01-18T00:00:00Z"
+        },
+        {
+          "badge_id": "badge-002",
+          "earned_at": "2024-01-25T00:00:00Z"
+        },
+        {
+          "badge_id": "badge-003",
+          "earned_at": "2024-01-29T00:00:00Z"
+        },
+        {
+          "badge_id": "badge-011",
+          "earned_at": "2024-01-28T12:30:00Z"
+        }
+      ]
+    },
+    {
+      "player_id": "player-004",
+      "badges": [
+        {
+          "badge_id": "badge-001",
+          "earned_at": "2024-01-19T00:00:00Z"
+        },
+        {
+          "badge_id": "badge-002",
+          "earned_at": "2024-01-26T00:00:00Z"
+        },
+        {
+          "badge_id": "badge-006",
+          "earned_at": "2024-01-27T16:00:00Z"
+        }
+      ]
+    },
+    {
+      "player_id": "player-008",
+      "badges": [
+        {
+          "badge_id": "badge-001",
+          "earned_at": "2024-01-15T00:00:00Z"
+        },
+        {
+          "badge_id": "badge-002",
+          "earned_at": "2024-01-22T00:00:00Z"
+        },
+        {
+          "badge_id": "badge-003",
+          "earned_at": "2024-01-29T00:00:00Z"
+        },
+        {
+          "badge_id": "badge-009",
+          "earned_at": "2024-01-25T10:00:00Z"
+        },
+        {
+          "badge_id": "badge-011",
+          "earned_at": "2024-01-18T16:00:00Z"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_badges": 15,
+    "by_type": {
+      "weekly_complete": 1,
+      "streak": 4,
+      "special": 10
+    },
+    "by_rarity": {
+      "common": 2,
+      "uncommon": 5,
+      "rare": 5,
+      "legendary": 3
+    },
+    "total_xp_reward": 9150
+  }
+}
