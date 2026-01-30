@@ -14,6 +14,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import MiniEloChart from "./MiniEloChart";
 import StreakHistoryChart from "./StreakHistoryChart";
 import AchievementsSection from "@/components/AchievementsSection";
+import PlayerPartnerships from "@/components/PlayerPartnerships";
 
 type PlayerProfilePageProps = {
   params: Promise<{ slug: string; id: string }>;
@@ -178,6 +179,18 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
         unlocked={achievementsData.unlocked}
         locked={achievementsData.locked}
       />
+
+      {/* Partnerships Section */}
+      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+        <h3 className="font-display text-lg text-[var(--ink)]">Partnerships</h3>
+        <div className="mt-4">
+          <PlayerPartnerships
+            playerId={id}
+            groupSlug={slug}
+            playerName={player.name}
+          />
+        </div>
+      </section>
 
       {/* ELO Chart */}
       {playerEloData && playerEloData.points.length > 0 && (

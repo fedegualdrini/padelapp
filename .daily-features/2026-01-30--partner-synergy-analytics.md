@@ -1,5 +1,10 @@
 # Partner Synergy Analytics
 
+**STATUS:** IMPLEMENTED  
+**COMMIT:** 0479f4b3b0406d87e1570be0c90eaaed395bde70  
+**DATE:** 2026-01-30  
+**FEATURE:** Partnership analytics dashboard, best/worst partners, partnership detail views
+
 ## Summary
 Analyze and display which player pairs have the best chemistry when playing together on the same team. Calculate partnership metrics including win rate, average ELO change when paired, and common opponents beaten. Help groups make informed decisions about player rotations and team formation.
 

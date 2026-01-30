@@ -32,11 +32,20 @@ create index idx_achievements_key on achievements(achievement_key);
 create index idx_achievements_player_key on achievements(player_id, achievement_key);
 create index idx_achievement_definitions_category on achievement_definitions(category);
 
+-- Function to update player updated_at when achievement is unlocked
+create or replace function update_player_updated_on_achievement()
+returns trigger as $$
+begin
+  update players set updated_at = now() where id = new.player_id;
+  return new;
+end;
+$$ language plpgsql;
+
 -- Trigger to update player updated_at when achievement is unlocked
 create trigger player_updated_on_achievement
 after insert on achievements
 for each row
-execute procedure update_player_updated_at();
+execute function update_player_updated_on_achievement();
 
 -- Function: Get player's current stats for achievement evaluation
 create or replace function get_player_stats(p_group_id uuid, p_player_id uuid)
