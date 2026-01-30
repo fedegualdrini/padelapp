@@ -1,7 +1,7 @@
 # Social Tournament Manager
 
 **Status:** IMPLEMENTED ✅  
-**Commit:** 69a9f56  
+**Commit:** 6d445c1  
 **Date:** 2026-01-30
 
 ## Implementation Summary
