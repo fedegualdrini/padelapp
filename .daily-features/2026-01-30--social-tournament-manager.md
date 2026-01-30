@@ -1,5 +1,19 @@
 # Social Tournament Manager
 
+**Status:** IMPLEMENTED ✅  
+**Commit:** 69a9f56  
+**Date:** 2026-01-30
+
+## Implementation Summary
+- ✅ Database schema with 5 new tables (tournaments, participants, rounds, matches, standings)
+- ✅ RLS policies for security
+- ✅ RPC functions for tournament CRUD operations
+- ✅ Americano format partner rotation algorithm
+- ✅ TypeScript types and data fetching utilities
+- ✅ Server actions for tournament management
+
+**Note:** UI components (Phase 6.3-6.4) not yet implemented - backend API is ready.
+
 ## Summary
 A flexible tournament system for padel groups to organize and manage social tournaments, starting with the Americano format (rotating partners, individual scoring). This enables groups to host structured social events with automatic match pairings, partner rotation, and individual standings.
 
