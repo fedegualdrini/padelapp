@@ -1,9 +1,24 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { TradingViewChart } from "./TradingViewChart";
+import dynamic from "next/dynamic";
 import { RankingSidebar } from "./RankingSidebar";
 import type { FilterState } from "./FilterPanel";
+
+// FIX: Dynamically import heavy chart component to reduce initial bundle size
+const TradingViewChart = dynamic(
+  () => import("./TradingViewChart").then((mod) => ({ default: mod.TradingViewChart })),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center h-[500px] text-[var(--muted)]">
+        <div className="text-center">
+          <p className="text-sm font-medium">Loading chart...</p>
+        </div>
+      </div>
+    ),
+    ssr: false, // Chart uses browser APIs, disable SSR
+  }
+);
 
 type EloTimelinePoint = { date: string; rating: number };
 type EloTimelineSeries = {
@@ -69,14 +84,12 @@ export function TradingViewRankingLayout({
 
   // Add baseline point and extend to current date
   const timeFilteredData = useMemo(() => {
-    // Find the earliest and latest dates across ALL players
     const allDates = data.flatMap(s => s.points.map(p => new Date(p.date)));
     const now = new Date();
     const maxDate = allDates.length > 0
       ? new Date(Math.max(now.getTime(), ...allDates.map(d => d.getTime())))
       : now;
 
-    // Find the earliest match date and subtract 1 day for baseline
     const minDate = allDates.length > 0
       ? new Date(Math.min(...allDates.map(d => d.getTime())))
       : now;
@@ -84,18 +97,15 @@ export function TradingViewRankingLayout({
     baselineDate.setDate(baselineDate.getDate() - 1);
 
     return data.map((series) => {
-      // Always start with baseline point at ELO 1000, then add all player points
       const points = [
         { date: baselineDate.toISOString(), rating: 1000 },
         ...series.points,
       ];
 
-      // Add continuation to maxDate if the last point is before it
       if (points.length > 0) {
         const lastPoint = points[points.length - 1];
         const lastDate = new Date(lastPoint.date);
 
-        // If last point is before the max date, extend the line
         if (lastDate < maxDate) {
           points.push({ date: maxDate.toISOString(), rating: lastPoint.rating });
         }
@@ -112,12 +122,10 @@ export function TradingViewRankingLayout({
   const filteredData = useMemo(() => {
     let filtered = timeFilteredData;
 
-    // Status filter
     if (filters.status !== "all") {
       filtered = filtered.filter((series) => series.status === filters.status);
     }
 
-    // ELO range filter
     filtered = filtered.filter((series) => {
       if (series.points.length === 0) return false;
       const currentElo = series.points[series.points.length - 1].rating;
@@ -126,7 +134,6 @@ export function TradingViewRankingLayout({
       );
     });
 
-    // Active only filter
     if (filters.activeOnly) {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -138,13 +145,11 @@ export function TradingViewRankingLayout({
       });
     }
 
-    // Remove players with no data points
     filtered = filtered.filter((series) => series.points.length > 0);
 
     return filtered;
   }, [timeFilteredData, filters]);
 
-  // Debounced filter change
   const handleFiltersChange = useCallback((newFilters: FilterState) => {
     setFilters(newFilters);
   }, []);
