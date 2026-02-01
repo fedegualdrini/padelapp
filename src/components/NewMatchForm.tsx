@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent, useActionState } from "react";
+import { memo, useMemo, useState, type FormEvent, useActionState } from "react";
 import { createMatch } from "@/app/matches/new/actions";
 import MatchPredictionBanner from "./MatchPredictionBanner";
 
@@ -24,7 +24,9 @@ type NewMatchFormProps = {
   groupSlug: string;
 };
 
-export default function NewMatchForm({
+// FIX: Wrap with React.memo to prevent unnecessary re-renders
+// Component has expensive calculations (playerOptions, mvpOptions)
+function NewMatchForm({
   players,
   usualPairs,
   defaultDate,
@@ -441,3 +443,6 @@ export default function NewMatchForm({
     </form>
   );
 }
+
+// Export memoized version to prevent re-renders when parent changes but props don't
+export default memo(NewMatchForm);

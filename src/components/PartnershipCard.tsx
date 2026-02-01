@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import Link from "next/link";
 import type { Partnership } from "@/lib/partnership-types";
 import {
@@ -17,7 +17,10 @@ interface PartnershipCardProps {
   showSynergyScore?: boolean;
 }
 
-export default function PartnershipCard({
+// FIX: Wrap with React.memo - this component is rendered in lists
+// and has expensive calculations (synergyScore). Memo prevents re-render
+// when parent list changes but this card's props don't.
+function PartnershipCard({
   partnership,
   groupSlug,
   compact = false,
@@ -212,3 +215,6 @@ export default function PartnershipCard({
     </Link>
   );
 }
+
+// Export memoized version for list rendering performance
+export default memo(PartnershipCard);
