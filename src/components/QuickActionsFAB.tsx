@@ -154,37 +154,6 @@ export default function QuickActionsFAB({ slug }: QuickActionsFABProps) {
       >
         {isExpanded ? <X size={24} /> : <Plus size={24} />}
       </button>
-
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes fadeInLabel {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 0.9;
-          }
-        }
-
-        .animate-fade-in-up {
-          animation: fadeInUp 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-
-        .animate-fade-in-label {
-          animation: fadeInLabel 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-          animation-delay: 0.15s;
-        }
-      `}</style>
     </div>
   );
 }
