@@ -1,8 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import useSWR from "swr";
 import PartnershipCard from "./PartnershipCard";
 import type { PlayerPartnershipsResponse } from "@/lib/partnership-types";
+
+// SWR fetcher function
+const fetcher = async (url: string): Promise<PlayerPartnershipsResponse> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    if (response.status === 404) {
+      return { best_partners: [], worst_partners: [] };
+    }
+    throw new Error("Failed to fetch partnerships");
+  }
+  return response.json();
+};
 
 interface PlayerPartnershipsProps {
   playerId: string;
@@ -15,40 +27,23 @@ export default function PlayerPartnerships({
   groupSlug,
   playerName,
 }: PlayerPartnershipsProps) {
-  const [data, setData] = useState<PlayerPartnershipsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchPartnerships() {
-      try {
-        setLoading(true);
-        // FIX: Use query param instead of path param (API route has no dynamic segment)
-        const response = await fetch(
-          `/api/partnerships/player/best-partners?player=${encodeURIComponent(playerId)}`
-        );
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            setData(null);
-            return;
-          }
-          throw new Error("Failed to fetch partnerships");
-        }
-
-        const result = await response.json();
-        setData(result);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
+  // Use SWR for data fetching with caching and deduplication
+  const { data, error, isLoading } = useSWR(
+    playerId ? `/api/partnerships/player/best-partners?player=${encodeURIComponent(playerId)}` : null,
+    fetcher,
+    {
+      // Revalidate on focus (refresh data when user returns to tab)
+      revalidateOnFocus: true,
+      // Revalidate on reconnect (refresh when connection restored)
+      revalidateOnReconnect: true,
+      // Deduping interval - prevent duplicate requests within 2 seconds
+      dedupingInterval: 2000,
+      // Cache for 5 minutes (matches API cache headers)
+      refreshInterval: 5 * 60 * 1000,
     }
+  );
 
-    fetchPartnerships();
-  }, [playerId]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="animate-pulse">
         <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
@@ -63,7 +58,7 @@ export default function PlayerPartnerships({
   if (error) {
     return (
       <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
-        <p className="text-sm">Failed to load partnerships: {error}</p>
+        <p className="text-sm">Failed to load partnerships: {error.message}</p>
       </div>
     );
   }
