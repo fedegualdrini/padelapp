@@ -45,7 +45,6 @@ export const getPartnerships = cache(
 
     // Apply filters
     if (player_id) {
-      // Filter partnerships where player is either player1 or player2
       query = query.or(
         `player1_id.eq.${player_id},player2_id.eq.${player_id}`
       );
@@ -61,14 +60,7 @@ export const getPartnerships = cache(
     // Apply pagination
     query = query.range(offset, offset + limit - 1);
 
-    const { data, error } = await query;
-
-    if (error) {
-      console.error("Error fetching partnerships:", error);
-      return { partnerships: [], total: 0 };
-    }
-
-    // Get total count for pagination
+    // FIX: Build count query in parallel with main query
     let countQuery = supabaseServer
       .from("materialized_partnerships")
       .select("*", { count: "exact", head: true });
@@ -80,7 +72,16 @@ export const getPartnerships = cache(
     }
     countQuery = countQuery.gte("matches_played", min_matches);
 
-    const { count, error: countError } = await countQuery;
+    // Run both queries in parallel
+    const [{ data, error }, { count, error: countError }] = await Promise.all([
+      query,
+      countQuery,
+    ]);
+
+    if (error) {
+      console.error("Error fetching partnerships:", error);
+      return { partnerships: [], total: 0 };
+    }
 
     if (countError) {
       console.error("Error counting partnerships:", countError);
@@ -119,25 +120,28 @@ export const getPlayerBestPartners = cache(
   async (playerId: string): Promise<PlayerPartnershipsResponse | null> => {
     const supabaseServer = await getSupabaseServerClient();
 
-    // Get player info
-    const { data: playerData, error: playerError } = await supabaseServer
-      .from("players")
-      .select("name")
-      .eq("id", playerId)
-      .single();
+    // FIX: Run player info and partnerships queries in parallel
+    const [
+      { data: playerData, error: playerError },
+      { data: partnerships, error }
+    ] = await Promise.all([
+      supabaseServer
+        .from("players")
+        .select("name")
+        .eq("id", playerId)
+        .single(),
+      supabaseServer
+        .from("materialized_partnerships")
+        .select("*")
+        .or(`player1_id.eq.${playerId},player2_id.eq.${playerId}`)
+        .gte("matches_played", 3)
+        .order("win_rate", { ascending: false }),
+    ]);
 
     if (playerError || !playerData) {
       console.error("Error fetching player:", playerError);
       return null;
     }
-
-    // Get all partnerships for this player (min 3 matches)
-    const { data: partnerships, error } = await supabaseServer
-      .from("materialized_partnerships")
-      .select("*")
-      .or(`player1_id.eq.${playerId},player2_id.eq.${playerId}`)
-      .gte("matches_played", 3)
-      .order("win_rate", { ascending: false });
 
     if (error) {
       console.error("Error fetching player partnerships:", error);
@@ -176,15 +180,43 @@ export const getPartnershipDetail = cache(
   async (player1Id: string, player2Id: string): Promise<PartnershipDetail | null> => {
     const supabaseServer = await getSupabaseServerClient();
 
-    // Get player info for both players
-    const { data: playersData, error: playersError } = await supabaseServer
-      .from("players")
-      .select("id, name")
-      .in("id", [player1Id, player2Id]);
+    // FIX: Run all independent queries in parallel
+    const [
+      { data: playersData, error: playersError },
+      { data: partnershipData, error: partnershipError },
+      { data: matchHistory, error: historyError }
+    ] = await Promise.all([
+      supabaseServer
+        .from("players")
+        .select("id, name")
+        .in("id", [player1Id, player2Id]),
+      supabaseServer
+        .from("materialized_partnerships")
+        .select("*")
+        .eq("player1_id", player1Id)
+        .eq("player2_id", player2Id)
+        .single(),
+      supabaseServer.rpc(
+        "get_partnership_match_history",
+        {
+          p_player1_id: player1Id,
+          p_player2_id: player2Id,
+        }
+      ),
+    ]);
 
     if (playersError || !playersData || playersData.length !== 2) {
       console.error("Error fetching players:", playersError);
       return null;
+    }
+
+    if (partnershipError) {
+      console.error("Error fetching partnership:", partnershipError);
+      return null;
+    }
+
+    if (historyError) {
+      console.error("Error fetching match history:", historyError);
     }
 
     const player1 = playersData.find((p: { id: string; name: string }) => p.id === player1Id);
@@ -192,32 +224,6 @@ export const getPartnershipDetail = cache(
 
     if (!player1 || !player2) {
       return null;
-    }
-
-    // Get partnership stats from materialized view
-    const { data: partnershipData, error: partnershipError } = await supabaseServer
-      .from("materialized_partnerships")
-      .select("*")
-      .eq("player1_id", player1Id)
-      .eq("player2_id", player2Id)
-      .single();
-
-    if (partnershipError) {
-      console.error("Error fetching partnership:", partnershipError);
-      return null;
-    }
-
-    // Get match history with opponents
-    const { data: matchHistory, error: historyError } = await supabaseServer.rpc(
-      "get_partnership_match_history",
-      {
-        p_player1_id: player1Id,
-        p_player2_id: player2Id,
-      }
-    );
-
-    if (historyError) {
-      console.error("Error fetching match history:", historyError);
     }
 
     const partnership = partnershipData || {
