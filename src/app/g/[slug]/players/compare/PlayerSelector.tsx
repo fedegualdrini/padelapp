@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 type PlayerSelectorProps = {
   players: Array<{ id: string; name: string }>;
@@ -20,25 +20,34 @@ export default function PlayerSelector({
   const [selectedPlayerA, setSelectedPlayerA] = useState(playerA || "");
   const [selectedPlayerB, setSelectedPlayerB] = useState(playerB || "");
 
-  const handlePlayerAChange = (value: string) => {
+  // FIX: Use functional updates to avoid stale state
+  const handlePlayerAChange = useCallback((value: string) => {
     setSelectedPlayerA(value);
-    // Use `value` + current selectedPlayerB to avoid stale state during the same tick.
-    if (value && selectedPlayerB && value !== selectedPlayerB) {
-      router.push(
-        `/g/${slug}/players/compare?playerA=${value}&playerB=${selectedPlayerB}`
-      );
-    }
-  };
+    
+    // Read current state using functional update pattern
+    setSelectedPlayerB((currentB) => {
+      if (value && currentB && value !== currentB) {
+        router.push(
+          `/g/${slug}/players/compare?playerA=${value}&playerB=${currentB}`
+        );
+      }
+      return currentB;
+    });
+  }, [slug, router]);
 
-  const handlePlayerBChange = (value: string) => {
+  const handlePlayerBChange = useCallback((value: string) => {
     setSelectedPlayerB(value);
-    // Use `value` + current selectedPlayerA to avoid stale state during the same tick.
-    if (selectedPlayerA && value && selectedPlayerA !== value) {
-      router.push(
-        `/g/${slug}/players/compare?playerA=${selectedPlayerA}&playerB=${value}`
-      );
-    }
-  };
+    
+    // Read current state using functional update pattern  
+    setSelectedPlayerA((currentA) => {
+      if (currentA && value && currentA !== value) {
+        router.push(
+          `/g/${slug}/players/compare?playerA=${currentA}&playerB=${value}`
+        );
+      }
+      return currentA;
+    });
+  }, [slug, router]);
 
   return (
     <div className="mt-4 grid gap-4 sm:grid-cols-2">
