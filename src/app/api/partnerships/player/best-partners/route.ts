@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPlayerBestPartners, refreshPartnershipsIfStale } from "@/lib/partnership-data";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ player: string }> }
-) {
+export async function GET(request: NextRequest) {
   try {
-    const { player: playerId } = await params;
+    // Get player ID from query params (not route params - this route has no dynamic segment)
+    const { searchParams } = new URL(request.url);
+    const playerId = searchParams.get("player");
 
     if (!playerId) {
       return NextResponse.json(
@@ -33,7 +32,7 @@ export async function GET(
 
     return NextResponse.json(response, { headers });
   } catch (error) {
-    console.error("Error in GET /api/partnerships/[playerId]/best-partners:", error);
+    console.error("Error in GET /api/partnerships/player/best-partners:", error);
     return NextResponse.json(
       { error: "Failed to fetch player partnerships" },
       { status: 500 }

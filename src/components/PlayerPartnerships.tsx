@@ -23,8 +23,9 @@ export default function PlayerPartnerships({
     async function fetchPartnerships() {
       try {
         setLoading(true);
+        // FIX: Use query param instead of path param (API route has no dynamic segment)
         const response = await fetch(
-          `/api/partnerships/player/${playerId}/best-partners`
+          `/api/partnerships/player/best-partners?player=${encodeURIComponent(playerId)}`
         );
 
         if (!response.ok) {
