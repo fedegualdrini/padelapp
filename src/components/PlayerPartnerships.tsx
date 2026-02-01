@@ -4,17 +4,25 @@ import useSWR from "swr";
 import PartnershipCard from "./PartnershipCard";
 import type { PlayerPartnershipsResponse } from "@/lib/partnership-types";
 
-// SWR fetcher function
-const fetcher = async (url: string): Promise<PlayerPartnershipsResponse> => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    if (response.status === 404) {
-      return { best_partners: [], worst_partners: [] };
+// SWR fetcher function - accepts player info for 404 fallback
+const createFetcher = (playerId: string, playerName: string) => 
+  async (url: string): Promise<PlayerPartnershipsResponse> => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      if (response.status === 404) {
+        // Return empty response with required fields
+        return { 
+          player_id: playerId,
+          player_name: playerName,
+          best_partners: [], 
+          worst_partners: [],
+          total_partnerships: 0
+        };
+      }
+      throw new Error("Failed to fetch partnerships");
     }
-    throw new Error("Failed to fetch partnerships");
-  }
-  return response.json();
-};
+    return response.json();
+  };
 
 interface PlayerPartnershipsProps {
   playerId: string;
@@ -30,7 +38,7 @@ export default function PlayerPartnerships({
   // Use SWR for data fetching with caching and deduplication
   const { data, error, isLoading } = useSWR(
     playerId ? `/api/partnerships/player/best-partners?player=${encodeURIComponent(playerId)}` : null,
-    fetcher,
+    createFetcher(playerId, playerName),
     {
       // Revalidate on focus (refresh data when user returns to tab)
       revalidateOnFocus: true,
