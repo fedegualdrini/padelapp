@@ -279,6 +279,12 @@ export async function generateOccurrences(
       hint: (error as unknown as { hint?: string }).hint,
     });
 
+    const code = (error as unknown as { code?: string }).code;
+    if (code === "42501") {
+      throw new Error(
+        "No tienes permiso para generar fechas; comprueba que la base de datos esté actualizada."
+      );
+    }
     throw new Error(`No se pudieron generar fechas: ${error.message}`);
   }
 

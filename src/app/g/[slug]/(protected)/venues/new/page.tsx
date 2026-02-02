@@ -43,8 +43,8 @@ export default async function VenueNewPage({ params }: VenueNewPageProps) {
     }
 
     const supabase = await createSupabaseServerClient();
-    const { data: auth, error: authError } = await supabase.auth.getUser();
-    if (authError || !auth?.user) throw new Error("No hay sesión");
+    const { error: authError } = await supabase.auth.getUser();
+    if (authError) throw new Error("No hay sesión");
 
     const { data, error } = await supabase
       .from("venues")
@@ -57,8 +57,8 @@ export default async function VenueNewPage({ params }: VenueNewPageProps) {
         surface_type,
         indoor_outdoor,
         lighting,
-        created_by: auth.user.id,
-        // amenities defaults handled by DB defaults
+        created_by: null,
+        // venues.created_by references players(id); we don't map user -> player, so leave null
       })
       .select("slug")
       .single();
