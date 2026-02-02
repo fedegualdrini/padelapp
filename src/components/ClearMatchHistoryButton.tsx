@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { clearMatchHistory } from "@/app/g/[slug]/matches/actions";
+import { clearMatchHistory } from "@/app/g/[slug]/(protected)/matches/actions";
 
 type Props = {
   slug: string;

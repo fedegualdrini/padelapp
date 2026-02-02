@@ -2,7 +2,6 @@ import Link from "next/link";
 import MatchCard from "@/components/MatchCard";
 import StatCard from "@/components/StatCard";
 import ActivityFeed from "@/components/ActivityFeed";
-import QuickActionsFAB from "@/components/QuickActionsFAB";
 import { getEloLeaderboard, getGroupBySlug, getPulseStats, getRecentActivity, getRecentMatches, getTopStats } from "@/lib/data";
 import { notFound } from "next/navigation";
 
@@ -133,8 +132,6 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
           </div>
         </section>
       </div>
-
-      <QuickActionsFAB slug={slug} />
     </>
   );
 }

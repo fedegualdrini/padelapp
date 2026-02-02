@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import AddPlayerForm from '@/app/g/[slug]/players/AddPlayerForm';
-import EditPlayerForm from '@/app/g/[slug]/players/EditPlayerForm';
+import AddPlayerForm from "@/app/g/[slug]/(protected)/players/AddPlayerForm";
+import EditPlayerForm from "@/app/g/[slug]/(protected)/players/EditPlayerForm";
 import FormIndicator from '@/components/FormIndicator';
 import StreakBadge from '@/components/StreakBadge';
 import PlayerDirectoryControls from '@/components/PlayerDirectoryControls';

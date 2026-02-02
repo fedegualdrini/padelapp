@@ -68,7 +68,8 @@ body {
 .font-display {
   font-family: var(--font-display), "Times New Roman", serif;
 }
-/* QuickActionsFAB Animations */
+
+/* QuickActionsFAB Animations - Moved from styled-jsx */
 @keyframes fadeInUp {
   from {
     opacity: 0;

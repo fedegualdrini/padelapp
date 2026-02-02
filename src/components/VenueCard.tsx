@@ -24,95 +24,82 @@ const indoorOutdoorLabels: Record<string, string> = {
 
 export function VenueCard({ venue, groupSlug }: VenueCardProps) {
   const { venue: v, analytics, last_played_at, matches_played } = venue;
-  
+
   const avgRating = analytics.avg_overall_rating;
   const hasRatings = analytics.total_ratings > 0;
 
   return (
     <Link
       href={`/g/${groupSlug}/venues/${v.slug}`}
-      className="block bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow overflow-hidden"
+      className="block overflow-hidden rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur transition hover:-translate-y-0.5"
       data-testid="venue-card"
     >
       <div className="p-5">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 mb-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100 truncate">
-              {v.name}
-            </h3>
-            <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-sm mt-1">
-              <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+        <div className="mb-3 flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate font-display text-lg text-[var(--ink)]">{v.name}</h3>
+            <div className="mt-1 flex items-center gap-1 text-sm text-[var(--muted)]">
+              <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="truncate">{v.address}</span>
             </div>
           </div>
-          
-          {/* Rating Badge */}
-          <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 px-2.5 py-1 rounded-lg flex-shrink-0">
-            <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-            <span className="font-semibold text-amber-700 dark:text-amber-400">
-              {hasRatings ? avgRating.toFixed(1) : "—"}
-            </span>
-            <span className="text-xs text-amber-600/70 dark:text-amber-400/70">
-              ({analytics.total_ratings})
-            </span>
+
+          <div className="flex flex-shrink-0 items-center gap-1.5 rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-2.5 py-1">
+            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+            <span className="text-sm font-semibold text-[var(--ink)]">{hasRatings ? avgRating.toFixed(1) : "—"}</span>
+            <span className="text-xs text-[var(--muted)]">({analytics.total_ratings})</span>
           </div>
         </div>
 
-        {/* Attributes */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md text-xs text-slate-600 dark:text-slate-300">
-            <Circle className="w-3 h-3" />
+        <div className="mb-4 flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-3 py-1 text-xs text-[var(--muted)]">
+            <Circle className="h-3 w-3" />
             {surfaceLabels[v.surface_type]}
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md text-xs text-slate-600 dark:text-slate-300">
-            <Sun className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-3 py-1 text-xs text-[var(--muted)]">
+            <Sun className="h-3 w-3" />
             {indoorOutdoorLabels[v.indoor_outdoor]}
           </span>
           {v.num_courts > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md text-xs text-slate-600 dark:text-slate-300">
+            <span className="inline-flex items-center rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-3 py-1 text-xs text-[var(--muted)]">
               {v.num_courts} cancha{v.num_courts > 1 ? "s" : ""}
             </span>
           )}
         </div>
 
-        {/* Amenities */}
-        <div className="flex gap-3 mb-4">
+        <div className="mb-4 flex gap-3 text-[var(--muted)]">
           {v.has_parking && (
-            <div className="text-slate-400 dark:text-slate-500" title="Estacionamiento">
-              <Car className="w-4 h-4" />
+            <div title="Estacionamiento">
+              <Car className="h-4 w-4" />
             </div>
           )}
           {v.has_showers && (
-            <div className="text-slate-400 dark:text-slate-500" title="Duchas">
-              <Droplets className="w-4 h-4" />
+            <div title="Duchas">
+              <Droplets className="h-4 w-4" />
             </div>
           )}
           {v.has_bar_restaurant && (
-            <div className="text-slate-400 dark:text-slate-500" title="Bar/Restaurant">
-              <Coffee className="w-4 h-4" />
+            <div title="Bar / Restaurante">
+              <Coffee className="h-4 w-4" />
             </div>
           )}
           {v.has_wifi && (
-            <div className="text-slate-400 dark:text-slate-500" title="WiFi">
-              <Wifi className="w-4 h-4" />
+            <div title="WiFi">
+              <Wifi className="h-4 w-4" />
             </div>
           )}
           {v.has_equipment_rental && (
-            <div className="text-slate-400 dark:text-slate-500" title="Alquiler de equipos">
-              <Package className="w-4 h-4" />
+            <div title="Alquiler de equipos">
+              <Package className="h-4 w-4" />
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-700">
-          <span>
-            {matches_played > 0 ? `${matches_played} partidos jugados` : "Sin partidos aún"}
-          </span>
+        <div className="flex items-center justify-between border-t border-[color:var(--card-border)] pt-3 text-xs text-[var(--muted)]">
+          <span>{matches_played > 0 ? `${matches_played} partidos jugados` : "Sin partidos todavía"}</span>
           {last_played_at && (
             <span>
-              Último: {new Date(last_played_at).toLocaleDateString("es-ES", {
+              Último: {new Date(last_played_at).toLocaleDateString("es-AR", {
                 month: "short",
                 day: "numeric",
               })}

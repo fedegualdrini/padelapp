@@ -118,7 +118,7 @@ export default function CalendarClient({
       {/* Header */}
       <div className="bg-[var(--card-solid)] border-b">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-[var(--ink)] mb-4">Calendario</h1>
+          <h2 className="font-display text-2xl text-[var(--ink)] mb-4">Calendario</h2>
 
           {/* Navigation */}
           <div className="flex items-center justify-between">
