@@ -259,12 +259,27 @@ export async function generateOccurrences(
   const { error } = await supabase
     .from("event_occurrences")
     .upsert(occurrences, {
-      onConflict: 'weekly_event_id,starts_at',
+      onConflict: "weekly_event_id,starts_at",
       ignoreDuplicates: true,
     });
 
   if (error) {
-    throw new Error(error.message);
+    // Common root causes:
+    // - RLS (no INSERT/UPDATE policy)
+    // - Missing table/migration
+    // - onConflict columns not backed by a UNIQUE index
+    console.error("generateOccurrences: upsert failed", {
+      weeklyEventId,
+      groupId: group.id,
+      weeksAhead,
+      occurrences: occurrences.length,
+      code: (error as unknown as { code?: string }).code,
+      message: error.message,
+      details: (error as unknown as { details?: string }).details,
+      hint: (error as unknown as { hint?: string }).hint,
+    });
+
+    throw new Error(`No se pudieron generar fechas: ${error.message}`);
   }
 
   revalidatePath(`/g/${slug}/events`);

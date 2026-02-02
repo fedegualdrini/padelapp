@@ -125,7 +125,7 @@ interface RacketsListProps {
 
 export function RacketsList({ rackets, slug, playerId }: RacketsListProps) {
   const handleRacketClick = (racketId: string) => {
-    window.location.href = `/g/${slug}/players/${playerId}/rackets/${racketId}`;
+    window.location.assign(`/g/${slug}/players/${playerId}/rackets/${racketId}`);
   };
 
   return (
