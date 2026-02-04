@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, KeyboardEvent } from "react";
-import { Plus, X, Calendar, UserPlus, Trophy } from "lucide-react";
+import { Plus, X, UserPlus, Trophy } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -74,6 +74,7 @@ export default function QuickActionsFAB({ slug }: QuickActionsFABProps) {
     }
   };
 
+  // Core-only actions. Everything else lives under Beta/Labs.
   const quickActions: QuickAction[] = [
     {
       icon: <Trophy size={18} />,
@@ -82,22 +83,10 @@ export default function QuickActionsFAB({ slug }: QuickActionsFABProps) {
       ariaLabel: "Cargar nuevo partido",
     },
     {
-      icon: <Calendar size={18} />,
-      label: "Crear evento",
-      href: `${basePath}/events?create=true`,
-      ariaLabel: "Crear nuevo evento",
-    },
-    {
       icon: <UserPlus size={18} />,
       label: "Nuevo jugador",
       href: `${basePath}/players#add-player`,
       ariaLabel: "Agregar nuevo jugador",
-    },
-    {
-      icon: <Calendar size={18} />,
-      label: "Ver calendario",
-      href: `${basePath}/calendar`,
-      ariaLabel: "Ver calendario de eventos",
     },
   ];
 

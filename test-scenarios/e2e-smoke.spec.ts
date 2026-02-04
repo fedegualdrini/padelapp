@@ -30,7 +30,8 @@ test.describe('PadelApp E2E Test Suite', () => {
       await page.screenshot({ path: 'test-results/01-home-page.png', fullPage: true });
       results.tests.push({ name: 'Home page loads', status: 'PASS', screenshot: 'test-results/01-home-page.png' });
     } catch (error) {
-      results.tests.push({ name: 'Home page loads', status: 'FAIL', error: error.message });
+      const message = error instanceof Error ? error.message : String(error);
+      results.tests.push({ name: 'Home page loads', status: 'FAIL', error: message });
       throw error;
     }
   });
@@ -72,7 +73,8 @@ test.describe('PadelApp E2E Test Suite', () => {
         notes: `Group created: ${TEST_GROUP_NAME}, slug: ${TEST_GROUP_SLUG}`
       });
     } catch (error) {
-      results.tests.push({ name: 'Create group with passphrase', status: 'FAIL', error: error.message });
+      const message = error instanceof Error ? error.message : String(error);
+      results.tests.push({ name: 'Create group with passphrase', status: 'FAIL', error: message });
       throw error;
     }
   });
@@ -117,7 +119,8 @@ test.describe('PadelApp E2E Test Suite', () => {
         notes: `Players added: ${TEST_PLAYERS.join(', ')}`
       });
     } catch (error) {
-      results.tests.push({ name: 'Add 4 players', status: 'FAIL', error: error.message });
+      const message = error instanceof Error ? error.message : String(error);
+      results.tests.push({ name: 'Add 4 players', status: 'FAIL', error: message });
       throw error;
     }
   });
@@ -170,7 +173,8 @@ test.describe('PadelApp E2E Test Suite', () => {
         notes: 'Match created with 2 teams of 2 players'
       });
     } catch (error) {
-      results.tests.push({ name: 'Load match with 4 players', status: 'FAIL', error: error.message });
+      const message = error instanceof Error ? error.message : String(error);
+      results.tests.push({ name: 'Load match with 4 players', status: 'FAIL', error: message });
       throw error;
     }
   });
