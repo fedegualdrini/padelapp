@@ -1,8 +1,61 @@
 import Link from "next/link";
 import { createGroup } from "@/app/actions";
 import { getGroups } from "@/lib/data";
+import { hasSupabaseEnv } from "@/lib/supabase/server";
+
+function SetupRequired() {
+  return (
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 pb-16 pt-10 sm:px-6">
+      <div>
+        <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">Setup</p>
+        <h1 className="font-display text-3xl text-[var(--ink)] sm:text-4xl">
+          Falta configurar Supabase
+        </h1>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Este entorno no tiene definidas las variables de entorno necesarias para conectarse.
+        </p>
+      </div>
+
+      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+        <h2 className="font-display text-xl text-[var(--ink)]">Variables requeridas</h2>
+        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-[var(--muted)]">
+          <li>
+            <span className="font-semibold text-[var(--ink)]">NEXT_PUBLIC_SUPABASE_URL</span>
+          </li>
+          <li>
+            <span className="font-semibold text-[var(--ink)]">NEXT_PUBLIC_SUPABASE_ANON_KEY</span>
+          </li>
+        </ul>
+        <p className="mt-4 text-sm text-[var(--muted)]">
+          Cuando estén en <span className="font-mono">.env.local</span>, reiniciá el dev server.
+        </p>
+      </section>
+
+      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-soft)] p-6 text-sm text-[var(--muted)] backdrop-blur">
+        <p className="font-semibold text-[var(--ink)]">Mientras tanto</p>
+        <p className="mt-1">
+          Podemos seguir normalizando UX (nav core + Beta/Labs) con mocks, o instalar Vercel CLI
+          para hacer <span className="font-mono">vercel env pull</span>.
+        </p>
+      </section>
+
+      <div className="flex flex-wrap gap-3">
+        <Link
+          href="/"
+          className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-solid)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
+        >
+          Reintentar
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 export default async function Home() {
+  if (!hasSupabaseEnv()) {
+    return <SetupRequired />;
+  }
+
   const groups = await getGroups();
 
   return (
