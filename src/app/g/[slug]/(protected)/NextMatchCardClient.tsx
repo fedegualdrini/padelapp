@@ -1,9 +1,16 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { updateAttendance, type AttendanceStatus } from "./events/actions";
+import {
+  updateAttendance,
+  type AttendanceStatus,
+  getConfirmedPlayersWithElo,
+  balanceTeams,
+  type SuggestedTeams,
+} from "./events/actions";
+import TeamSuggestionModal from "./events/TeamSuggestionModal";
 
 type WeeklyEvent = {
   id: string;
@@ -67,6 +74,9 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [modal, setModal] = useState<{ show: boolean; teams: SuggestedTeams | null }>(
+    { show: false, teams: null }
+  );
 
   const usualPlayers = useMemo(
     () => players.filter((p) => p.status === "usual"),
@@ -74,6 +84,12 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
   );
 
   const [selectedPlayer, setSelectedPlayer] = useState<string>(usualPlayers[0]?.id ?? "");
+
+  useEffect(() => {
+    if (!selectedPlayer && usualPlayers[0]?.id) {
+      setSelectedPlayer(usualPlayers[0].id);
+    }
+  }, [selectedPlayer, usualPlayers]);
 
   if (!summary) {
     return (
@@ -146,12 +162,35 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
           >
             Abrir RSVP
           </Link>
-          <Link
-            href={`/g/${slug}/matches/new`}
-            className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+          <button
+            type="button"
+            onClick={() => {
+              setError(null);
+              startTransition(async () => {
+                try {
+                  const playersWithElo = await getConfirmedPlayersWithElo(s.occurrence.id);
+                  if (playersWithElo.length !== 4) {
+                    throw new Error("Se necesitan 4 confirmados para crear equipos");
+                  }
+                  const teams = await balanceTeams(playersWithElo);
+                  setModal({ show: true, teams });
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Error creando equipos");
+                }
+              });
+            }}
+            disabled={isPending || s.confirmedCount < 4 || Boolean(s.occurrence.loaded_match_id)}
+            className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+            title={
+              s.occurrence.loaded_match_id
+                ? "Ya hay un partido creado para esta fecha"
+                : s.confirmedCount < 4
+                  ? "Confirmá 4 jugadores para crear equipos"
+                  : "Crear partido con equipos sugeridos"
+            }
           >
-            Cargar score
-          </Link>
+            Crear partido (equipos)
+          </button>
         </div>
       </div>
 
@@ -304,6 +343,27 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
       <p className="mt-4 text-xs text-[var(--muted)]">
         Tip: los extras (calendario, challenges, venues, etc.) están en Beta/Labs.
       </p>
+
+      {modal.show && modal.teams && (
+        <TeamSuggestionModal
+          occurrenceId={s.occurrence.id}
+          slug={slug}
+          initialTeams={modal.teams}
+          onClose={() => setModal({ show: false, teams: null })}
+          onError={(msg) => setError(msg)}
+          onSuccess={() => {
+            setModal({ show: false, teams: null });
+            if (slug === "demo") {
+              setError("Demo: partido creado (no se guarda en la DB)");
+              return;
+            }
+            router.refresh();
+          }}
+          // Not ideal: we don't know the current user player id here.
+          // For now, use the selected player as the creator.
+          createdBy={selectedPlayer}
+        />
+      )}
     </section>
   );
 }

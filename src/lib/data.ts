@@ -2018,11 +2018,22 @@ export async function getAttendanceForOccurrence(
         occurrence_id: "occ1",
         group_id: DEMO_GROUP.id,
         player_id: "p3",
-        status: "maybe",
+        status: "confirmed",
         source: "web",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         players: { id: "p3", name: "Santi" },
+      },
+      {
+        id: "a4",
+        occurrence_id: "occ1",
+        group_id: DEMO_GROUP.id,
+        player_id: "p4",
+        status: "confirmed",
+        source: "web",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        players: { id: "p4", name: "Lucho" },
       },
     ];
   }

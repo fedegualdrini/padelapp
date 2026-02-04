@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { getGroupBySlug, isGroupMember } from "@/lib/data";
 
 export type AttendanceStatus = 'confirmed' | 'declined' | 'maybe' | 'waitlist';
@@ -299,6 +299,10 @@ export async function createMatchFromOccurrence(
   teamBPlayerIds: string[],
   createdBy: string
 ) {
+  if (!hasSupabaseEnv() && slug === "demo") {
+    // Demo mode: pretend we created it.
+    return { matchId: "demo-match-1" };
+  }
   const group = await getGroupBySlug(slug);
   if (!group) throw new Error("Group not found");
 
@@ -420,6 +424,15 @@ export type SuggestedTeams = {
 export async function getConfirmedPlayersWithElo(
   occurrenceId: string
 ): Promise<PlayerWithElo[]> {
+  if (!hasSupabaseEnv() && occurrenceId === "occ1") {
+    return [
+      { id: "p1", name: "Fede", elo: 1095 },
+      { id: "p2", name: "Nico", elo: 1120 },
+      { id: "p3", name: "Santi", elo: 1010 },
+      { id: "p4", name: "Lucho", elo: 1040 },
+    ];
+  }
+
   const supabase = await createSupabaseServerClient();
 
   const { data: attendance, error: attendanceError } = await supabase
