@@ -302,6 +302,11 @@ export async function getMatches(
   groupId: string,
   filters?: { playerId?: string; from?: string; to?: string }
 ) {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    // Keep it simple for demo: ignore filters and reuse recent match mock.
+    return getRecentMatches(groupId, 10);
+  }
+
   const supabaseServer = await getSupabaseServerClient();
 
   // If filtering by player, resolve match IDs via match_team_players -> match_teams.
@@ -611,6 +616,16 @@ export async function getPlayerStats(
   startDate?: string,
   endDate?: string
 ) {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    return [
+      { player_id: "p1", matches_played: 12, wins: 7, losses: 5, undecided: 0, win_rate: 58.3 },
+      { player_id: "p2", matches_played: 15, wins: 9, losses: 6, undecided: 0, win_rate: 60.0 },
+      { player_id: "p3", matches_played: 10, wins: 4, losses: 6, undecided: 0, win_rate: 40.0 },
+      { player_id: "p4", matches_played: 11, wins: 5, losses: 6, undecided: 0, win_rate: 45.5 },
+      { player_id: "p5", matches_played: 3, wins: 1, losses: 2, undecided: 0, win_rate: 33.3 },
+    ];
+  }
+
   const supabaseServer = await getSupabaseServerClient();
 
   // If no date filter, use the materialized view for better performance
@@ -1075,6 +1090,62 @@ export async function getEloTimeline(
   startDate?: string,
   endDate?: string
 ) {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    const base = new Date();
+    const daysAgo = (n: number) => {
+      const d = new Date(base);
+      d.setDate(d.getDate() - n);
+      return d.toISOString().slice(0, 10);
+    };
+
+    return [
+      {
+        playerId: "p1",
+        name: "Fede",
+        status: "usual",
+        points: [
+          { date: daysAgo(28), rating: 1030 },
+          { date: daysAgo(21), rating: 1055 },
+          { date: daysAgo(14), rating: 1080 },
+          { date: daysAgo(7), rating: 1095 },
+        ],
+      },
+      {
+        playerId: "p2",
+        name: "Nico",
+        status: "usual",
+        points: [
+          { date: daysAgo(28), rating: 1045 },
+          { date: daysAgo(21), rating: 1070 },
+          { date: daysAgo(14), rating: 1100 },
+          { date: daysAgo(7), rating: 1120 },
+        ],
+      },
+      {
+        playerId: "p3",
+        name: "Santi",
+        status: "usual",
+        points: [
+          { date: daysAgo(28), rating: 1005 },
+          { date: daysAgo(21), rating: 1000 },
+          { date: daysAgo(14), rating: 1008 },
+          { date: daysAgo(7), rating: 1010 },
+        ],
+      },
+      {
+        playerId: "p4",
+        name: "Lucho",
+        status: "usual",
+        points: [
+          { date: daysAgo(28), rating: 1015 },
+          { date: daysAgo(21), rating: 1022 },
+          { date: daysAgo(14), rating: 1030 },
+          { date: daysAgo(7), rating: 1040 },
+        ],
+      },
+    ];
+  }
+
   const supabaseServer = await getSupabaseServerClient();
 
   let query = supabaseServer
@@ -1967,6 +2038,10 @@ export async function getPastOccurrences(
   groupId: string,
   limit = 10
 ): Promise<EventOccurrence[]> {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    return [];
+  }
+
   const supabaseServer = await getSupabaseServerClient();
   const now = new Date().toISOString();
 
