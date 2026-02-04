@@ -1,5 +1,19 @@
 import { cache } from "react";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
+
+const DEMO_GROUP: Group = { id: "demo-group", name: "Demo — Jueves Padel", slug: "demo" };
+const DEMO_PLAYERS: PlayerRow[] = [
+  { id: "p1", name: "Fede", status: "usual" },
+  { id: "p2", name: "Nico", status: "usual" },
+  { id: "p3", name: "Santi", status: "usual" },
+  { id: "p4", name: "Lucho", status: "usual" },
+  { id: "p5", name: "Invitado", status: "invite" },
+];
+
+function isDemoMode() {
+  // Auto-enable demo when Supabase env is missing.
+  return !hasSupabaseEnv();
+}
 
 export type Group = { id: string; name: string; slug: string };
 type PlayerRow = { id: string; name: string; status: string };
@@ -47,6 +61,10 @@ type MatchEditRow = {
 const getSupabaseServerClient = async () => createSupabaseServerClient();
 
 export async function getGroups() {
+  if (isDemoMode()) {
+    return [DEMO_GROUP];
+  }
+
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
     .from("groups")
@@ -61,6 +79,10 @@ export async function getGroups() {
 }
 
 export const getGroupBySlug = cache(async (slug: string) => {
+  if (isDemoMode() && slug === DEMO_GROUP.slug) {
+    return DEMO_GROUP;
+  }
+
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
     .from("groups")
@@ -101,6 +123,10 @@ export async function getGroupByMatchId(matchId: string) {
 }
 
 export async function isGroupMember(groupId: string) {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    return true;
+  }
+
   const supabaseServer = await getSupabaseServerClient();
 
   // Get the current user
@@ -205,6 +231,40 @@ const buildMatchView = (match: MatchRow) => {
 };
 
 export async function getRecentMatches(groupId: string, limit = 3) {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    const playedAt = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    return [
+      {
+        id: "m1",
+        playedAt: formatDate(playedAt),
+        bestOf: 3,
+        createdBy: "p1",
+        updatedBy: "p1",
+        teams: [
+          {
+            name: "Fede / Nico",
+            players: [
+              { id: "p1", name: "Fede" },
+              { id: "p2", name: "Nico" },
+            ],
+            sets: [6, 6],
+            opponentSets: [4, 3],
+          },
+          {
+            name: "Santi / Lucho",
+            players: [
+              { id: "p3", name: "Santi" },
+              { id: "p4", name: "Lucho" },
+            ],
+            sets: [4, 3],
+            opponentSets: [6, 6],
+          },
+        ],
+        winner: "Fede / Nico",
+      },
+    ].slice(0, limit);
+  }
+
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
     .from("matches")
@@ -528,6 +588,10 @@ export async function getMatchEditData(groupId: string, id: string) {
 }
 
 export const getPlayers = cache(async (groupId: string) => {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    return DEMO_PLAYERS;
+  }
+
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
     .from("players")
@@ -948,6 +1012,15 @@ export async function getInviteMostPlayed(
 }
 
 export async function getEloLeaderboard(groupId: string, limit = 8) {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    return [
+      { playerId: "p2", name: "Nico", rating: 1120 },
+      { playerId: "p1", name: "Fede", rating: 1095 },
+      { playerId: "p4", name: "Lucho", rating: 1040 },
+      { playerId: "p3", name: "Santi", rating: 1010 },
+    ].slice(0, limit);
+  }
+
   const supabaseServer = await getSupabaseServerClient();
   const [players, ratingsResult] = await Promise.all([
     getPlayers(groupId),
@@ -1806,6 +1879,25 @@ type AttendanceRecord = {
 };
 
 export async function getWeeklyEvents(groupId: string): Promise<WeeklyEvent[]> {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    return [
+      {
+        id: "we1",
+        group_id: DEMO_GROUP.id,
+        name: "Jueves 20:00",
+        weekday: 4,
+        start_time: "20:00:00",
+        capacity: 4,
+        cutoff_weekday: 2,
+        cutoff_time: "14:00:00",
+        is_active: true,
+        active_occurrence_id: "occ1",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ];
+  }
+
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
     .from("weekly_events")
@@ -1825,6 +1917,33 @@ export async function getUpcomingOccurrences(
   groupId: string,
   limit = 6
 ): Promise<EventOccurrence[]> {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    const nextThursday = (() => {
+      const d = new Date();
+      const day = d.getDay(); // 0 Sun..6 Sat
+      const target = 4; // Thu
+      const add = (target - day + 7) % 7 || 7;
+      d.setDate(d.getDate() + add);
+      d.setHours(20, 0, 0, 0);
+      return d;
+    })();
+
+    return (
+      [
+        {
+          id: "occ1",
+          weekly_event_id: "we1",
+          group_id: DEMO_GROUP.id,
+          starts_at: nextThursday.toISOString(),
+          status: "open" as const,
+          loaded_match_id: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ] satisfies EventOccurrence[]
+    ).slice(0, limit);
+  }
+
   const supabaseServer = await getSupabaseServerClient();
   const now = new Date().toISOString();
 
@@ -1870,6 +1989,44 @@ export async function getPastOccurrences(
 export async function getAttendanceForOccurrence(
   occurrenceId: string
 ): Promise<AttendanceRecord[]> {
+  if (isDemoMode() && occurrenceId === "occ1") {
+    return [
+      {
+        id: "a1",
+        occurrence_id: "occ1",
+        group_id: DEMO_GROUP.id,
+        player_id: "p1",
+        status: "confirmed",
+        source: "web",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        players: { id: "p1", name: "Fede" },
+      },
+      {
+        id: "a2",
+        occurrence_id: "occ1",
+        group_id: DEMO_GROUP.id,
+        player_id: "p2",
+        status: "confirmed",
+        source: "web",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        players: { id: "p2", name: "Nico" },
+      },
+      {
+        id: "a3",
+        occurrence_id: "occ1",
+        group_id: DEMO_GROUP.id,
+        player_id: "p3",
+        status: "maybe",
+        source: "web",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        players: { id: "p3", name: "Santi" },
+      },
+    ];
+  }
+
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
     .from("attendance")
@@ -1967,6 +2124,54 @@ export async function getAttendanceSummary(
   occurrences: EventOccurrence[],
   weeklyEvents: WeeklyEvent[]
 ): Promise<AttendanceSummary[]> {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    const weeklyEvent = weeklyEvents[0] ?? {
+      id: "we1",
+      group_id: DEMO_GROUP.id,
+      name: "Jueves 20:00",
+      weekday: 4,
+      start_time: "20:00:00",
+      capacity: 4,
+      cutoff_weekday: 2,
+      cutoff_time: "14:00:00",
+      is_active: true,
+      active_occurrence_id: "occ1",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const occ = occurrences[0] ?? {
+      id: "occ1",
+      weekly_event_id: weeklyEvent.id,
+      group_id: DEMO_GROUP.id,
+      starts_at: new Date().toISOString(),
+      status: "open" as const,
+      loaded_match_id: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const attendance = await getAttendanceForOccurrence(occ.id);
+    const confirmedCount = attendance.filter((a) => a.status === "confirmed").length;
+    const declinedCount = attendance.filter((a) => a.status === "declined").length;
+    const maybeCount = attendance.filter((a) => a.status === "maybe").length;
+    const waitlistCount = attendance.filter((a) => a.status === "waitlist").length;
+
+    return [
+      {
+        occurrence: occ,
+        weeklyEvent,
+        attendance,
+        confirmedCount,
+        declinedCount,
+        maybeCount,
+        waitlistCount,
+        isFull: confirmedCount >= weeklyEvent.capacity,
+        spotsAvailable: Math.max(0, weeklyEvent.capacity - confirmedCount),
+      },
+    ];
+  }
+
   const weeklyEventMap = new Map(weeklyEvents.map(we => [we.id, we]));
 
   const summaries = await Promise.all(

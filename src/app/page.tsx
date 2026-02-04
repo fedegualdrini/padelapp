@@ -41,6 +41,12 @@ function SetupRequired() {
 
       <div className="flex flex-wrap gap-3">
         <Link
+          href="/g/demo"
+          className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)]"
+        >
+          Entrar al demo
+        </Link>
+        <Link
           href="/"
           className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-solid)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
         >
