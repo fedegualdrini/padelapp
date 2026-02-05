@@ -198,9 +198,6 @@ export async function getMatches(
         best_of,
         created_by,
         updated_by,
-        predicted_win_prob,
-        prediction_factors,
-        prediction_correct,
         match_teams (
           team_number,
           match_team_players (
@@ -247,9 +244,6 @@ export async function getMatchById(groupId: string, id: string) {
         best_of,
         created_by,
         updated_by,
-        predicted_win_prob,
-        prediction_factors,
-        prediction_correct,
         match_teams (
           team_number,
           match_team_players (
