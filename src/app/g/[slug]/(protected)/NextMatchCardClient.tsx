@@ -11,6 +11,7 @@ import {
   type SuggestedTeams,
 } from "./events/actions";
 import TeamSuggestionModal from "./events/TeamSuggestionModal";
+import CancelOccurrenceButton from "./events/CancelOccurrenceButton";
 
 type WeeklyEvent = {
   id: string;
@@ -162,6 +163,13 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
           >
             Abrir RSVP
           </Link>
+
+          <CancelOccurrenceButton
+            slug={slug}
+            occurrenceId={s.occurrence.id}
+            disabled={Boolean(s.occurrence.loaded_match_id)}
+          />
+
           <button
             type="button"
             onClick={() => {

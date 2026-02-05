@@ -431,6 +431,7 @@ interface OccurrenceCardProps {
 }
 
 function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, onCreateMatch, isPast, slug }: OccurrenceCardProps) {
+  const isCancelled = summary.occurrence.status === 'cancelled';
   const [selectedPlayer, setSelectedPlayer] = useState<string>(players[0]?.id ?? '');
 
   const confirmedPlayers = summary.attendance.filter(a => a.status === 'confirmed');
@@ -452,15 +453,21 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
           </p>
         </div>
         <div className="text-right">
-          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-            summary.isFull
-              ? 'bg-red-100 text-red-700'
-              : summary.spotsAvailable <= 2
-              ? 'bg-yellow-100 text-yellow-700'
-              : 'bg-green-100 text-green-700'
-          }`}>
-            {summary.isFull ? 'Completo' : `${summary.spotsAvailable} lugares`}
-          </span>
+          {isCancelled ? (
+            <span className="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1 text-xs font-semibold text-yellow-900">
+              No se jugó
+            </span>
+          ) : (
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+              summary.isFull
+                ? 'bg-red-100 text-red-700'
+                : summary.spotsAvailable <= 2
+                ? 'bg-yellow-100 text-yellow-700'
+                : 'bg-green-100 text-green-700'
+            }`}>
+              {summary.isFull ? 'Completo' : `${summary.spotsAvailable} lugares`}
+            </span>
+          )}
         </div>
       </div>
 
@@ -525,7 +532,7 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
       )}
 
       {/* Action buttons */}
-      {!isPast && (
+      {!isPast && !isCancelled && (
         <div className="mt-4 border-t border-[color:var(--card-border)] pt-4">
           <div className="mb-3">
             <label className="mb-1 block text-sm text-[var(--muted)]">Jugador</label>

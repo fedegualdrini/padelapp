@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AddPlayerForm from "@/app/g/[slug]/(protected)/players/AddPlayerForm";
 import EditPlayerForm from "@/app/g/[slug]/(protected)/players/EditPlayerForm";
 import FormIndicator from '@/components/FormIndicator';
-import StreakBadge from '@/components/StreakBadge';
+import { fetchGroupStreaksAction } from '@/lib/streaks-actions';
 import PlayerDirectoryControls from '@/components/PlayerDirectoryControls';
 import PeriodSelector, { type PeriodRange } from '@/components/PeriodSelector';
 import ComparePlayersDialog from '@/components/ComparePlayersDialog';
@@ -50,11 +50,34 @@ export default function PlayerDirectory({
   period?: PeriodRange;
 }) {
   const [isCompareDialogOpen, setIsCompareDialogOpen] = useState(false);
+  const [groupStreaks, setGroupStreaks] = useState<Record<string, { currentStreak: number }> | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetchGroupStreaksAction(groupId)
+      .then((data) => {
+        if (!alive) return;
+        // Keep only what we need for the badge.
+        const minimal: Record<string, { currentStreak: number }> = {};
+        Object.entries(data ?? {}).forEach(([playerId, s]) => {
+          minimal[playerId] = { currentStreak: s.currentStreak };
+        });
+        setGroupStreaks(minimal);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setGroupStreaks({});
+      });
+    return () => {
+      alive = false;
+    };
+  }, [groupId]);
+
   const effectiveStatus: StatusFilter = ['all', 'usual', 'invite'].includes(status ?? 'all')
     ? (status ?? 'all')
     : 'all';
 
-  const statsByPlayer = new Map(stats.map((row) => [row.player_id, row] as const));
+  const statsByPlayer = useMemo(() => new Map(stats.map((row) => [row.player_id, row] as const)), [stats]);
 
   const nq = normalize(q ?? '');
 
@@ -96,7 +119,33 @@ export default function PlayerDirectory({
             groupSlug={groupSlug}
           />
           <FormIndicator groupId={groupId} playerId={player.id} />
-          <StreakBadge groupId={groupId} playerId={player.id} />
+          {(() => {
+            const currentStreak = groupStreaks?.[player.id]?.currentStreak ?? 0;
+            const minStreak = 2;
+            if (Math.abs(currentStreak) < minStreak) return null;
+            const isWinStreak = currentStreak > 0;
+            const streakCount = Math.abs(currentStreak);
+            return (
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                  isWinStreak
+                    ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                    : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                }`}
+                title={
+                  isWinStreak
+                    ? `${streakCount} victorias consecutivas`
+                    : `${streakCount} derrotas consecutivas`
+                }
+              >
+                <span>{isWinStreak ? "🔥" : "❄️"}</span>
+                <span>
+                  {streakCount}
+                  {isWinStreak ? "W" : "L"}
+                </span>
+              </span>
+            );
+          })()}
         </div>
 
         <div className="mt-1">

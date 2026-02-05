@@ -64,7 +64,40 @@ export async function updateAttendance(
   }
 
   revalidatePath(`/g/${slug}/events`);
+  revalidatePath(`/g/${slug}`);
 }
+
+export async function cancelOccurrence(slug: string, occurrenceId: string) {
+  if (!hasSupabaseEnv() && slug === "demo") {
+    return { ok: true };
+  }
+
+  const group = await getGroupBySlug(slug);
+  if (!group) throw new Error("Group not found");
+
+  const member = await isGroupMember(group.id);
+  if (!member) throw new Error("Not a group member");
+
+  const supabase = await createSupabaseServerClient();
+
+  const { error } = await supabase
+    .from("event_occurrences")
+    .update({
+      status: "cancelled",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", occurrenceId)
+    .eq("group_id", group.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath(`/g/${slug}/events`);
+  revalidatePath(`/g/${slug}`);
+  return { ok: true };
+}
+
 
 export async function createWeeklyEvent(
   slug: string,
