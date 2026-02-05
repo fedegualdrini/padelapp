@@ -2040,7 +2040,8 @@ export async function getPastOccurrences(
     .from("event_occurrences")
     .select("*")
     .eq("group_id", groupId)
-    .lt("starts_at", now)
+    // Past is either already happened OR explicitly cancelled (even if it was in the future)
+    .or(`starts_at.lt.${now},status.eq.cancelled`)
     .in("status", ['completed', 'cancelled', 'open', 'locked'])
     .order("starts_at", { ascending: false })
     .limit(limit);
