@@ -21,6 +21,16 @@ const DATABASE_URL = process.env.DATABASE_URL;
 const ALLOW_RESET = process.env.TEST_DB_ALLOW_RESET === 'true';
 
 if (!DATABASE_URL) {
+  // Local/dev environments (like CI-less smoke runs) may not have a test DB configured.
+  // In that case, skip the reset step so `npm test` can still run unit + e2e.
+  if (!process.env.CI) {
+    console.warn(
+      '\n[db-reset] DATABASE_URL not set; skipping test DB reset.\n' +
+        'Set DATABASE_URL and TEST_DB_ALLOW_RESET=true to enable this step.\n'
+    );
+    process.exit(0);
+  }
+
   die(
     'Missing DATABASE_URL. Set DATABASE_URL to your *test* Postgres/Supabase database connection string.\n' +
       'Refusing to run without it.'

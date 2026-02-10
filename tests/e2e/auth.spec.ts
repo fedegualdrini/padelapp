@@ -79,8 +79,8 @@ test.describe('Authentication & Access', () => {
     // Should redirect away from join page
     await Promise.race([
       page.waitForURL((url) => !url.pathname.includes('/join'), { timeout: 10000 }),
-      page.locator('role="status"]').waitFor({ state: 'visible', timeout: 5000 })
-        .then((el) => { throw new Error(`Join failed: ${await el.innerText()}`); })
+      page.locator('[role="status"]').waitFor({ state: 'visible', timeout: 5000 })
+        .then(async (el) => { throw new Error(`Join failed: ${(await el.innerText()).trim()}`); })
     ]);
     
     // Verify we're on the ranking page (in the group)
@@ -128,6 +128,6 @@ test.describe('Authentication & Access', () => {
     
     // Verify we're still authenticated (ranking should still be visible)
     await expect(page.locator('h2', { hasText: /Ranking/i }).first()).toBeVisible();
-    await expect(page.locator(`text=${headingText}`)).toBeVisible();
+    await expect(page.locator('h2', { hasText: headingText }).first()).toBeVisible();
   });
 });

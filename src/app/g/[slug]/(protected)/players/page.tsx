@@ -57,7 +57,9 @@ export default async function PlayersPage({ params, searchParams }: PlayersPageP
         <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
           <div className="grid gap-3">
             {players.map((p) => {
-              const s = statsByPlayer.get(p.id);
+              const s = statsByPlayer.get(p.id) as
+                | { matches_played?: number; win_rate?: number }
+                | undefined;
               return (
                 <div
                   key={p.id}

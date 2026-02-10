@@ -34,6 +34,7 @@ export default async function CalendarPage({
 
   return (
     <CalendarClient
+      key={`${year}-${month}`}
       slug={slug}
       groupId={group.id}
       calendarData={calendarData}

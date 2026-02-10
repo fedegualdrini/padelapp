@@ -31,11 +31,14 @@ test.describe('API & Data Integrity', () => {
       await page.waitForLoadState('networkidle');
       
       // If venues load, indexes are working
-      const venuesHeading = page.locator('h2:has-text("Venues"), h1:has-text("Venues")').first();
+      const venuesHeading = page.locator('h2:has-text("Canchas y clubes"), h1:has-text("Canchas y clubes")').first();
       await expect(venuesHeading).toBeVisible();
     });
 
     test('RLS policies are active', async ({ page }) => {
+      // In demo/no-env mode, all slugs map to the demo group so this check is meaningless.
+      test.skip(!process.env.NEXT_PUBLIC_SUPABASE_URL, 'demo mode (no Supabase env)');
+
       // Test RLS by trying to access data from another group
       // Navigate to unknown group ranking
       
@@ -83,6 +86,7 @@ test.describe('API & Data Integrity', () => {
   });
 
   test.describe('CRUD Operations', () => {
+    test.skip(!process.env.NEXT_PUBLIC_SUPABASE_URL, 'demo mode (no Supabase env)');
     test('create operation succeeds', async ({ page }) => {
       // Create a test match or event
       // Navigate to new match page
