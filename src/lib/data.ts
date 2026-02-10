@@ -2607,7 +2607,7 @@ export async function getCalendarData(
       id,
       starts_at,
       status,
-      weekly_events (
+      weekly_events!event_occurrences_weekly_event_id_fkey (
         name,
         capacity
       )
@@ -2623,7 +2623,6 @@ export async function getCalendarData(
     .select(`
       id,
       played_at,
-      mvp_player_id,
       match_teams (
         team_number,
         match_team_players (
@@ -2747,7 +2746,7 @@ export async function getCalendarData(
         team2: team2Players,
         score1: totalScore1 || null,
         score2: totalScore2 || null,
-        mvpPlayerId: match.mvp_player_id || null,
+        mvpPlayerId: null,
       });
     }
   }
