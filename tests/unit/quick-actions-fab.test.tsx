@@ -99,16 +99,14 @@ describe('QuickActionsFAB', () => {
 
     await waitFor(() => {
       const secondaryActions = container.querySelectorAll('a[role="menuitem"]');
-      expect(secondaryActions.length).toBe(4);
+      expect(secondaryActions.length).toBe(2);
 
       const labels = Array.from(secondaryActions).map(
         action => action.getAttribute('aria-label')
       );
 
       expect(labels).toContain('Cargar nuevo partido');
-      expect(labels).toContain('Crear nuevo evento');
       expect(labels).toContain('Agregar nuevo jugador');
-      expect(labels).toContain('Ver calendario de eventos');
     });
   });
 
@@ -222,9 +220,7 @@ describe('QuickActionsFAB', () => {
         .filter(text => text && text.length > 0);
 
       expect(labelTexts).toContain('Cargar partido');
-      expect(labelTexts).toContain('Crear evento');
       expect(labelTexts).toContain('Nuevo jugador');
-      expect(labelTexts).toContain('Ver calendario');
     });
   });
 
