@@ -2467,8 +2467,8 @@ export type CalendarMatch = {
   date: string;
   team1: string;
   team2: string;
-  score1: number | null;
-  score2: number | null;
+  /** Per-set games (same representation used in MatchCard score line). */
+  sets: { team1: number; team2: number }[];
   mvpPlayerId: string | null;
 };
 
@@ -2556,8 +2556,7 @@ export async function getCalendarData(
         date: `${year}-${monthStr}-03`,
         team1: "Fede / Nico",
         team2: "Santi / Lucho",
-        score1: null,
-        score2: null,
+        sets: [],
         mvpPlayerId: null,
       },
       {
@@ -2565,8 +2564,7 @@ export async function getCalendarData(
         date: `${year}-${monthStr}-05`,
         team1: "Fede / Nico",
         team2: "Santi / Lucho",
-        score1: null,
-        score2: null,
+        sets: [],
         mvpPlayerId: null,
       },
     ];
@@ -2723,20 +2721,19 @@ export async function getCalendarData(
         .filter(Boolean)
         .join(' / ') || 'Equipo 2';
 
-      // Calculate total scores
+      // Build per-set score line (same representation as MatchCard)
       const sets = Array.isArray(match.sets)
         ? [...match.sets].sort((a, b) => a.set_number - b.set_number)
         : [match.sets];
 
-      let totalScore1 = 0;
-      let totalScore2 = 0;
-
+      const setGames: { team1: number; team2: number }[] = [];
       for (const set of sets) {
         const scores = Array.isArray(set?.set_scores) ? set.set_scores[0] : set?.set_scores;
-        if (scores) {
-          totalScore1 += scores.team1_games || 0;
-          totalScore2 += scores.team2_games || 0;
-        }
+        if (!scores) continue;
+        setGames.push({
+          team1: scores.team1_games ?? 0,
+          team2: scores.team2_games ?? 0,
+        });
       }
 
       calendarMatches.push({
@@ -2744,8 +2741,7 @@ export async function getCalendarData(
         date: dateStr,
         team1: team1Players,
         team2: team2Players,
-        score1: totalScore1 || null,
-        score2: totalScore2 || null,
+        sets: setGames,
         mvpPlayerId: null,
       });
     }
