@@ -2641,6 +2641,24 @@ export async function getCalendarData(
     .lte('played_at', `${endDateStr}T23:59:59.999Z`)
     .order('played_at', { ascending: true });
 
+  // Diagnostics: if the calendar is empty because of an RLS/auth/query error,
+  // surface it in logs (and optionally in the UI for non-prod).
+  const calendarDiag: string[] = [];
+  if (occurrencesError) calendarDiag.push(`occurrencesError: ${occurrencesError.message}`);
+  if (matchesError) calendarDiag.push(`matchesError: ${matchesError.message}`);
+
+  if (calendarDiag.length > 0) {
+    console.error("[calendar] getCalendarData query error", {
+      groupId,
+      year,
+      month,
+      startDateStr,
+      endDateStr,
+      occurrencesError,
+      matchesError,
+    });
+  }
+
   // Get attendance counts for all events
   const eventsByOccurrence: Map<string, CalendarEvent> = new Map();
 
@@ -2771,6 +2789,23 @@ export async function getCalendarData(
         dayMatches.push(match);
       }
     });
+
+    // In non-prod, show a visible "debug event" when queries error out so we don't
+    // silently render an empty calendar.
+    if (day === 1 && calendarDiag.length > 0 && process.env.NODE_ENV !== "production") {
+      const msg = calendarDiag.join(" | ");
+      dayEvents.unshift({
+        id: `debug-calendar-${year}-${month}-errors`,
+        name: `DEBUG: calendar query error (see server logs)`,
+        date: dateStr,
+        time: "00:00",
+        status: "open",
+        attendanceCount: 0,
+        capacity: 0,
+      });
+      // Also emit a concise line in case logs are truncated.
+      console.error("[calendar] debug event injected", { groupId, year, month, msg });
+    }
 
     daysData.push({
       date: dateStr,
