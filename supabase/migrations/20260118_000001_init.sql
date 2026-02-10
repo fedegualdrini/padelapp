@@ -1,4 +1,4 @@
-﻿-- Initial schema for padel app (Supabase/PostgreSQL)
+-- Initial schema for padel app (Supabase/PostgreSQL)
 create extension if not exists "pgcrypto";
 
 -- Enums

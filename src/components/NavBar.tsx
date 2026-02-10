@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
-  { href: "", label: "Panel" },
+  { href: "", label: "Inicio" },
   { href: "/matches", label: "Partidos" },
-  { href: "/matches/new", label: "Nuevo partido" },
   { href: "/ranking", label: "Ranking" },
-  { href: "/players", label: "Jugadores" },
-  { href: "/pairs", label: "Parejas" },
+  // "Grupo" is the place to manage the roster/passphrase and day-to-day admin.
+  { href: "/players", label: "Grupo" },
+  // Everything experimental lives here.
+  { href: "/labs", label: "Beta/Labs" },
 ];
 
 type NavBarProps = {
@@ -24,11 +25,9 @@ export default function NavBar({ basePath }: NavBarProps) {
       {links.map((link) => {
         const href = `${basePath}${link.href}`;
         const matchesPath = `${basePath}/matches`;
-        const newMatchPath = `${basePath}/matches/new`;
         const isMatchesActive =
           link.href === "/matches" &&
-          (pathname === matchesPath || pathname.startsWith(`${matchesPath}/`)) &&
-          pathname !== newMatchPath;
+          (pathname === matchesPath || pathname.startsWith(`${matchesPath}/`));
         const isActive = pathname === href || isMatchesActive;
         return (
           <Link

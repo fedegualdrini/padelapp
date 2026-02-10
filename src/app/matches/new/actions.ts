@@ -3,6 +3,7 @@
 // (removed) previously used next/server.after
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { calculateMatchPrediction } from "./prediction-actions";
 
 const isValidSetScore = (team1: number, team2: number) => {
   const valid =
@@ -34,6 +35,8 @@ export async function createMatch(
   const team2Player1 = String(formData.get("team2_player1") ?? "").trim();
   const team2Player2 = String(formData.get("team2_player2") ?? "").trim();
 
+  const mvpPlayerId = String(formData.get("mvp_player_id") ?? "").trim();
+
   if (!groupId || !groupSlug || !date || !time || !createdBy) {
     return { error: "Faltan datos obligatorios del partido." };
   }
@@ -53,6 +56,10 @@ export async function createMatch(
   const uniquePlayers = new Set(players);
   if (uniquePlayers.size !== 4) {
     return { error: "Los jugadores deben ser únicos entre equipos." };
+  }
+
+  if (mvpPlayerId && !uniquePlayers.has(mvpPlayerId)) {
+    return { error: "El MVP debe ser uno de los jugadores del partido." };
   }
 
   const requiredSets = Math.floor(bestOf / 2) + 1;
@@ -114,6 +121,7 @@ export async function createMatch(
       best_of: bestOf,
       created_by: createdBy,
       updated_by: createdBy,
+      mvp_player_id: mvpPlayerId || null,
     })
     .select("id")
     .single();
@@ -197,11 +205,68 @@ export async function createMatch(
     return { error: "No se pudieron guardar los marcadores." };
   }
 
+  // Calculate and store prediction
+  try {
+    const team1Ids = [team1Player1, team1Player2];
+    const team2Ids = [team2Player1, team2Player2];
+    const prediction = await calculateMatchPrediction(groupId, team1Ids, team2Ids);
+
+    // Determine who won
+    const predictedWinner = prediction.teamAWinProb > 0.5 ? 1 : 2;
+    const actualWinner = team1Wins > team2Wins ? 1 : 2;
+    const predictionCorrect = predictedWinner === actualWinner;
+
+    // Update match with prediction data
+    const { error: predictionError } = await supabaseServer
+      .from("matches")
+      .update({
+        predicted_win_prob: prediction.teamAWinProb,
+        prediction_factors: prediction as Record<string, unknown>,
+        prediction_correct: predictionCorrect,
+      })
+      .eq("id", match.id);
+
+    if (predictionError) {
+      console.error("Failed to save prediction:", predictionError);
+    }
+  } catch (error) {
+    console.error("Failed to calculate prediction:", error);
+    // Don't fail the entire match creation if prediction fails
+  }
+
   // Keep stats views in sync for pages that read from materialized views.
   // We await here to avoid UI showing stale counts (e.g. "-1 match") right after creation.
   const { error: refreshError } = await supabaseServer.rpc("refresh_stats_views");
   if (refreshError) {
     console.error("refresh_stats_views failed", { refreshError });
+  }
+
+  // Check achievements for all players in the match
+  const playerIds = [team1Player1, team1Player2, team2Player1, team2Player2];
+  for (const playerId of playerIds) {
+    try {
+      await supabaseServer.rpc('check_achievements', {
+        p_group_id: groupId,
+        p_player_id: playerId,
+      });
+      await supabaseServer.rpc('check_special_achievements', {
+        p_group_id: groupId,
+        p_player_id: playerId,
+      });
+    } catch (error) {
+      console.error('Failed to check achievements for player:', playerId, error);
+    }
+  }
+
+  // Update weekly challenges progress
+  try {
+    await supabaseServer.rpc('update_weekly_progress', {
+      p_group_id: groupId,
+      p_match_id: match.id,
+    });
+  } catch (error) {
+    console.error('Failed to update weekly challenges progress:', error);
+    // Don't fail the match creation if weekly challenges update fails
   }
 
   redirect(`/g/${groupSlug}/matches/${match.id}`);

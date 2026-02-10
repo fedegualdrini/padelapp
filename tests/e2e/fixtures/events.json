@@ -1,0 +1,239 @@
+{
+  "description": "Test events for E2E testing. Includes match events, tournaments, and social events.",
+  "version": "1.0.0",
+  "events": [
+    {
+      "id": "event-001",
+      "title": "Torneo Semanal de Padel",
+      "description": "Torneo semanal para jugadores de nivel intermedio. Se jugarán dobles mixtos.",
+      "type": "tournament",
+      "status": "upcoming",
+      "date": "2024-02-10",
+      "time": "10:00",
+      "venue_id": "venue-001",
+      "venue_name": "Club Padel Buenos Aires",
+      "capacity": 16,
+      "organizer": "player-002",
+      "organizer_name": "María García",
+      "players": [
+        {"id": "player-002", "name": "María García", "rsvp": "yes"},
+        {"id": "player-004", "name": "Ana Rodríguez", "rsvp": "yes"},
+        {"id": "player-006", "name": "Laura Martínez", "rsvp": "yes"},
+        {"id": "player-008", "name": "Sofía González", "rsvp": "maybe"},
+        {"id": "player-001", "name": "Juan Pérez", "rsvp": "no"}
+      ],
+      "rsvp_count": {
+        "yes": 3,
+        "maybe": 1,
+        "no": 1,
+        "pending": 0
+      },
+      "created_at": "2024-01-28T14:00:00Z"
+    },
+    {
+      "id": "event-002",
+      "title": "Partido Amistoso: Juan vs María",
+      "description": "Partido de práctica amistoso entre Juan Pérez y María García.",
+      "type": "match",
+      "status": "completed",
+      "date": "2024-01-28",
+      "time": "10:00",
+      "venue_id": "venue-001",
+      "venue_name": "Club Padel Buenos Aires",
+      "capacity": 2,
+      "organizer": "player-001",
+      "organizer_name": "Juan Pérez",
+      "players": [
+        {"id": "player-001", "name": "Juan Pérez", "rsvp": "yes"},
+        {"id": "player-002", "name": "María García", "rsvp": "yes"}
+      ],
+      "rsvp_count": {
+        "yes": 2,
+        "maybe": 0,
+        "no": 0,
+        "pending": 0
+      },
+      "match_id": "match-001",
+      "created_at": "2024-01-27T16:00:00Z"
+    },
+    {
+      "id": "event-003",
+      "title": "Clase Grupal de Padel",
+      "description": "Clase de padel con entrenador profesional. Nivel intermedio. Requiere reserva previa.",
+      "type": "social",
+      "status": "upcoming",
+      "date": "2024-02-05",
+      "time": "18:00",
+      "venue_id": "venue-003",
+      "venue_name": "Estudio Padel Belgrano",
+      "capacity": 8,
+      "organizer": "player-004",
+      "organizer_name": "Ana Rodríguez",
+      "players": [
+        {"id": "player-004", "name": "Ana Rodríguez", "rsvp": "yes"},
+        {"id": "player-006", "name": "Laura Martínez", "rsvp": "yes"},
+        {"id": "player-007", "name": "Roberto Fernández", "rsvp": "maybe"}
+      ],
+      "rsvp_count": {
+        "yes": 2,
+        "maybe": 1,
+        "no": 0,
+        "pending": 0
+      },
+      "created_at": "2024-01-26T10:00:00Z"
+    },
+    {
+      "id": "event-004",
+      "title": "Torneo Femenino de Padel",
+      "description": "Torneo exclusivamente para jugadoras femeninas. Formato eliminatorio.",
+      "type": "tournament",
+      "status": "upcoming",
+      "date": "2024-02-15",
+      "time": "14:00",
+      "venue_id": "venue-002",
+      "venue_name": "Padel Center Palermo",
+      "capacity": 12,
+      "organizer": "player-004",
+      "organizer_name": "Ana Rodríguez",
+      "players": [
+        {"id": "player-004", "name": "Ana Rodríguez", "rsvp": "yes"},
+        {"id": "player-002", "name": "María García", "rsvp": "yes"},
+        {"id": "player-006", "name": "Laura Martínez", "rsvp": "yes"},
+        {"id": "player-008", "name": "Sofía González", "rsvp": "yes"}
+      ],
+      "rsvp_count": {
+        "yes": 4,
+        "maybe": 0,
+        "no": 0,
+        "pending": 0
+      },
+      "created_at": "2024-01-25T18:00:00Z"
+    },
+    {
+      "id": "event-005",
+      "title": "Partido de Práctica: Carlos vs Roberto",
+      "description": "Partido de práctica para mejorar el juego. Nivel principiante-intermedio.",
+      "type": "match",
+      "status": "completed",
+      "date": "2024-01-26",
+      "time": "16:00",
+      "venue_id": "venue-002",
+      "venue_name": "Padel Center Palermo",
+      "capacity": 2,
+      "organizer": "player-003",
+      "organizer_name": "Carlos López",
+      "players": [
+        {"id": "player-003", "name": "Carlos López", "rsvp": "yes"},
+        {"id": "player-007", "name": "Roberto Fernández", "rsvp": "yes"}
+      ],
+      "rsvp_count": {
+        "yes": 2,
+        "maybe": 0,
+        "no": 0,
+        "pending": 0
+      },
+      "match_id": "match-002",
+      "created_at": "2024-01-25T14:00:00Z"
+    },
+    {
+      "id": "event-006",
+      "title": "Evento Social: Cena Post-Partido",
+      "description": "Cena para todos los jugadores del grupo. Lugar: Restaurante La Cabrera.",
+      "type": "social",
+      "status": "upcoming",
+      "date": "2024-02-08",
+      "time": "21:00",
+      "venue": "Restaurante La Cabrera",
+      "capacity": 20,
+      "organizer": "player-002",
+      "organizer_name": "María García",
+      "players": [
+        {"id": "player-001", "name": "Juan Pérez", "rsvp": "yes"},
+        {"id": "player-002", "name": "María García", "rsvp": "yes"},
+        {"id": "player-003", "name": "Carlos López", "rsvp": "yes"},
+        {"id": "player-004", "name": "Ana Rodríguez", "rsvp": "yes"},
+        {"id": "player-006", "name": "Laura Martínez", "rsvp": "maybe"}
+      ],
+      "rsvp_count": {
+        "yes": 4,
+        "maybe": 1,
+        "no": 0,
+        "pending": 0
+      },
+      "created_at": "2024-01-24T12:00:00Z"
+    },
+    {
+      "id": "event-007",
+      "title": "Clínica de Padel Avanzado",
+      "description": "Clínica con entrenador internacional. Técnicas avanzadas y estrategia de juego.",
+      "type": "social",
+      "status": "completed",
+      "date": "2024-01-20",
+      "time": "10:00",
+      "venue_id": "venue-003",
+      "venue_name": "Estudio Padel Belgrano",
+      "capacity": 10,
+      "organizer": "player-008",
+      "organizer_name": "Sofía González",
+      "players": [
+        {"id": "player-001", "name": "Juan Pérez", "rsvp": "yes"},
+        {"id": "player-002", "name": "María García", "rsvp": "yes"},
+        {"id": "player-004", "name": "Ana Rodríguez", "rsvp": "yes"},
+        {"id": "player-008", "name": "Sofía González", "rsvp": "yes"}
+      ],
+      "rsvp_count": {
+        "yes": 4,
+        "maybe": 0,
+        "no": 0,
+        "pending": 0
+      },
+      "created_at": "2024-01-18T16:00:00Z"
+    },
+    {
+      "id": "event-008",
+      "title": "Copa Club Mensual",
+      "description": "Torneo mensual abierto a todos los miembros. Premios para los ganadores.",
+      "type": "tournament",
+      "status": "upcoming",
+      "date": "2024-02-20",
+      "time": "09:00",
+      "venue_id": "venue-001",
+      "venue_name": "Club Padel Buenos Aires",
+      "capacity": 20,
+      "organizer": "player-001",
+      "organizer_name": "Juan Pérez",
+      "players": [
+        {"id": "player-001", "name": "Juan Pérez", "rsvp": "yes"},
+        {"id": "player-002", "name": "María García", "rsvp": "yes"},
+        {"id": "player-004", "name": "Ana Rodríguez", "rsvp": "maybe"},
+        {"id": "player-007", "name": "Roberto Fernández", "rsvp": "yes"}
+      ],
+      "rsvp_count": {
+        "yes": 3,
+        "maybe": 1,
+        "no": 0,
+        "pending": 0
+      },
+      "created_at": "2024-01-22T10:00:00Z"
+    }
+  ],
+  "summary": {
+    "total_events": 8,
+    "by_type": {
+      "match": 2,
+      "tournament": 3,
+      "social": 3
+    },
+    "by_status": {
+      "upcoming": 5,
+      "completed": 2,
+      "cancelled": 0
+    },
+    "by_venue": {
+      "venue-001": 3,
+      "venue-002": 2,
+      "venue-003": 2,
+      "other": 1
+    }
+  }
+}

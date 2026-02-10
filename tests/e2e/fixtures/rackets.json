@@ -1,0 +1,162 @@
+{
+  "description": "Test rackets for E2E testing. Includes various brands, models, and specifications.",
+  "version": "1.0.0",
+  "rackets": [
+    {
+      "id": "racket-001",
+      "player_id": "player-001",
+      "brand": "Bullpadel",
+      "model": "Vertex 03",
+      "weight": 360,
+      "balance": 265,
+      "purchase_date": "2024-01-15",
+      "is_active": true,
+      "created_at": "2024-01-15T10:00:00Z",
+      "updated_at": "2024-01-15T10:00:00Z"
+    },
+    {
+      "id": "racket-002",
+      "player_id": "player-001",
+      "brand": "Adidas",
+      "model": "Adipower Multiweight",
+      "weight": 365,
+      "balance": 270,
+      "purchase_date": "2024-03-01",
+      "is_active": true,
+      "created_at": "2024-03-01T10:00:00Z",
+      "updated_at": "2024-03-01T10:00:00Z"
+    },
+    {
+      "id": "racket-003",
+      "player_id": "player-001",
+      "brand": "Nox",
+      "model": "ML10 Pro Cup",
+      "weight": 355,
+      "balance": 260,
+      "purchase_date": "2024-05-15",
+      "is_active": true,
+      "created_at": "2024-05-15T10:00:00Z",
+      "updated_at": "2024-05-15T10:00:00Z"
+    },
+    {
+      "id": "racket-004",
+      "player_id": "player-002",
+      "brand": "Siux",
+      "model": "Spyder",
+      "weight": 370,
+      "balance": 275,
+      "purchase_date": "2024-02-20",
+      "is_active": true,
+      "created_at": "2024-02-20T10:00:00Z",
+      "updated_at": "2024-02-20T10:00:00Z"
+    },
+    {
+      "id": "racket-005",
+      "player_id": "player-002",
+      "brand": "Wilson",
+      "model": "Blade V1",
+      "weight": 360,
+      "balance": 265,
+      "purchase_date": "2023-11-10",
+      "is_active": false,
+      "created_at": "2023-11-10T10:00:00Z",
+      "updated_at": "2024-01-05T10:00:00Z"
+    },
+    {
+      "id": "racket-006",
+      "player_id": "player-003",
+      "brand": "Varlion",
+      "model": "Summum Prisma",
+      "weight": 375,
+      "balance": 280,
+      "purchase_date": null,
+      "is_active": true,
+      "created_at": "2024-04-01T10:00:00Z",
+      "updated_at": "2024-04-01T10:00:00Z"
+    },
+    {
+      "id": "racket-007",
+      "player_id": "player-001",
+      "brand": "Star Vie",
+      "model": "Raptor",
+      "weight": 370,
+      "balance": 275,
+      "purchase_date": "2024-06-01",
+      "is_active": true,
+      "created_at": "2024-06-01T10:00:00Z",
+      "updated_at": "2024-06-01T10:00:00Z"
+    }
+  ],
+  "match_rackets": [
+    {
+      "id": "mr-001",
+      "match_id": "match-001",
+      "player_id": "player-001",
+      "racket_id": "racket-001",
+      "created_at": "2024-01-20T15:00:00Z"
+    },
+    {
+      "id": "mr-002",
+      "match_id": "match-001",
+      "player_id": "player-002",
+      "racket_id": "racket-004",
+      "created_at": "2024-01-20T15:00:00Z"
+    },
+    {
+      "id": "mr-003",
+      "match_id": "match-002",
+      "player_id": "player-001",
+      "racket_id": "racket-001",
+      "created_at": "2024-01-25T18:00:00Z"
+    },
+    {
+      "id": "mr-004",
+      "match_id": "match-002",
+      "player_id": "player-002",
+      "racket_id": "racket-004",
+      "created_at": "2024-01-25T18:00:00Z"
+    },
+    {
+      "id": "mr-005",
+      "match_id": "match-003",
+      "player_id": "player-001",
+      "racket_id": "racket-002",
+      "created_at": "2024-03-05T16:00:00Z"
+    },
+    {
+      "id": "mr-006",
+      "match_id": "match-004",
+      "player_id": "player-001",
+      "racket_id": "racket-003",
+      "created_at": "2024-05-20T17:00:00Z"
+    },
+    {
+      "id": "mr-007",
+      "match_id": "match-005",
+      "player_id": "player-001",
+      "racket_id": "racket-001",
+      "created_at": "2024-05-25T15:30:00Z"
+    },
+    {
+      "id": "mr-008",
+      "match_id": "match-006",
+      "player_id": "player-001",
+      "racket_id": "racket-002",
+      "created_at": "2024-06-10T14:00:00Z"
+    },
+    {
+      "id": "mr-009",
+      "match_id": "match-007",
+      "player_id": "player-001",
+      "racket_id": "racket-001",
+      "created_at": "2024-06-15T18:30:00Z"
+    },
+    {
+      "id": "mr-010",
+      "match_id": "match-008",
+      "player_id": "player-001",
+      "racket_id": "racket-007",
+      "created_at": "2024-06-20T16:00:00Z"
+    }
+  ]
+}

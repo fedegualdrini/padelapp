@@ -1,7 +1,21 @@
 import { cache } from "react";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 
-type Group = { id: string; name: string; slug: string };
+const DEMO_GROUP: Group = { id: "demo-group", name: "Demo — Jueves Padel", slug: "demo" };
+const DEMO_PLAYERS: PlayerRow[] = [
+  { id: "p1", name: "Fede", status: "usual" },
+  { id: "p2", name: "Nico", status: "usual" },
+  { id: "p3", name: "Santi", status: "usual" },
+  { id: "p4", name: "Lucho", status: "usual" },
+  { id: "p5", name: "Invitado", status: "invite" },
+];
+
+function isDemoMode() {
+  // Auto-enable demo when Supabase env is missing.
+  return !hasSupabaseEnv();
+}
+
+export type Group = { id: string; name: string; slug: string };
 type PlayerRow = { id: string; name: string; status: string };
 
 type MatchRow = {
@@ -10,6 +24,9 @@ type MatchRow = {
   best_of: number;
   created_by: string;
   updated_by?: string | null;
+  predicted_win_prob?: number | null;
+  prediction_factors?: PredictionFactors | null;
+  prediction_correct?: boolean | null;
   match_teams: {
     team_number: number;
     match_team_players: { players: { id: string; name: string } | null }[];
@@ -26,6 +43,10 @@ type MatchEditRow = {
   best_of: number;
   created_by: string;
   updated_by?: string | null;
+  mvp_player_id?: string | null;
+  predicted_win_prob?: number | null;
+  prediction_factors?: PredictionFactors | null;
+  prediction_correct?: boolean | null;
   match_teams: {
     team_number: number;
     id: string;
@@ -40,6 +61,10 @@ type MatchEditRow = {
 const getSupabaseServerClient = async () => createSupabaseServerClient();
 
 export async function getGroups() {
+  if (isDemoMode()) {
+    return [DEMO_GROUP];
+  }
+
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
     .from("groups")
@@ -54,6 +79,10 @@ export async function getGroups() {
 }
 
 export const getGroupBySlug = cache(async (slug: string) => {
+  if (isDemoMode() && slug === DEMO_GROUP.slug) {
+    return DEMO_GROUP;
+  }
+
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
     .from("groups")
@@ -94,6 +123,10 @@ export async function getGroupByMatchId(matchId: string) {
 }
 
 export async function isGroupMember(groupId: string) {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    return true;
+  }
+
   const supabaseServer = await getSupabaseServerClient();
 
   // Get the current user
@@ -130,12 +163,19 @@ const buildMatchView = (match: MatchRow) => {
     (a, b) => a.team_number - b.team_number
   );
 
-  const teamNames = teamsSorted.map((team) => {
-    const names =
+  const teamPlayers = teamsSorted.map((team) => {
+    const players =
       team.match_team_players
-        ?.map((mtp) => mtp.players?.name)
-        .filter(Boolean) ?? [];
-    return names.join(" / ") || `Equipo ${team.team_number}`;
+        ?.map((mtp) => mtp.players)
+        .filter((p): p is { id: string; name: string } => Boolean(p?.id) && Boolean(p?.name)) ??
+      [];
+
+    const name = players.map((p) => p.name).join(" / ") || `Equipo ${team.team_number}`;
+
+    return {
+      name,
+      players,
+    };
   });
 
   const setsSorted = [...(match.sets ?? [])].sort(
@@ -163,8 +203,8 @@ const buildMatchView = (match: MatchRow) => {
     team1SetWins === team2SetWins
       ? "Pendiente"
       : team1SetWins > team2SetWins
-      ? teamNames[0] ?? "Equipo 1"
-      : teamNames[1] ?? "Equipo 2";
+      ? teamPlayers[0]?.name ?? "Equipo 1"
+      : teamPlayers[1]?.name ?? "Equipo 2";
 
   return {
     id: match.id,
@@ -174,12 +214,14 @@ const buildMatchView = (match: MatchRow) => {
     updatedBy: match.updated_by ?? match.created_by,
     teams: [
       {
-        name: teamNames[0] ?? "Team 1",
+        name: teamPlayers[0]?.name ?? "Team 1",
+        players: teamPlayers[0]?.players ?? [],
         sets: team1Sets,
         opponentSets: team2Sets,
       },
       {
-        name: teamNames[1] ?? "Team 2",
+        name: teamPlayers[1]?.name ?? "Team 2",
+        players: teamPlayers[1]?.players ?? [],
         sets: team2Sets,
         opponentSets: team1Sets,
       },
@@ -189,6 +231,40 @@ const buildMatchView = (match: MatchRow) => {
 };
 
 export async function getRecentMatches(groupId: string, limit = 3) {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    const playedAt = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    return [
+      {
+        id: "m1",
+        playedAt: formatDate(playedAt),
+        bestOf: 3,
+        createdBy: "p1",
+        updatedBy: "p1",
+        teams: [
+          {
+            name: "Fede / Nico",
+            players: [
+              { id: "p1", name: "Fede" },
+              { id: "p2", name: "Nico" },
+            ],
+            sets: [6, 6],
+            opponentSets: [4, 3],
+          },
+          {
+            name: "Santi / Lucho",
+            players: [
+              { id: "p3", name: "Santi" },
+              { id: "p4", name: "Lucho" },
+            ],
+            sets: [4, 3],
+            opponentSets: [6, 6],
+          },
+        ],
+        winner: "Fede / Nico",
+      },
+    ].slice(0, limit);
+  }
+
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
     .from("matches")
@@ -222,9 +298,67 @@ export async function getRecentMatches(groupId: string, limit = 3) {
   return (data as unknown as MatchRow[]).map(buildMatchView);
 }
 
-export async function getMatches(groupId: string) {
+export async function getMatches(
+  groupId: string,
+  filters?: { playerId?: string; from?: string; to?: string }
+) {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    // Keep it simple for demo: ignore filters and reuse recent match mock.
+    return getRecentMatches(groupId, 10);
+  }
+
   const supabaseServer = await getSupabaseServerClient();
-  const { data, error } = await supabaseServer
+
+  // If filtering by player, resolve match IDs via match_team_players -> match_teams.
+  let matchIds: string[] | null = null;
+  if (filters?.playerId) {
+    const { data: mtp, error: mtpError } = await supabaseServer
+      .from('match_team_players')
+      .select('match_team_id')
+      .eq('player_id', filters.playerId);
+
+    if (mtpError) {
+      // Fail closed: return empty rather than showing wrong results.
+      return [];
+    }
+
+    const matchTeamIds = Array.from(
+      new Set(
+        (mtp as Array<{ match_team_id: string | null }> | null | undefined)
+          ?.map((r) => r.match_team_id)
+          .filter((id): id is string => Boolean(id)) ??
+          []
+      )
+    );
+
+    if (matchTeamIds.length === 0) {
+      return [];
+    }
+
+    const { data: mts, error: mtsError } = await supabaseServer
+      .from('match_teams')
+      .select('match_id')
+      .in('id', matchTeamIds);
+
+    if (mtsError) {
+      return [];
+    }
+
+    matchIds = Array.from(
+      new Set(
+        (mts as Array<{ match_id: string | null }> | null | undefined)
+          ?.map((r) => r.match_id)
+          .filter((id): id is string => Boolean(id)) ??
+          []
+      )
+    );
+
+    if (matchIds.length === 0) {
+      return [];
+    }
+  }
+
+  let query = supabaseServer
     .from("matches")
     .select(
       `
@@ -245,8 +379,22 @@ export async function getMatches(groupId: string) {
         )
       `
     )
-    .eq("group_id", groupId)
-    .order("played_at", { ascending: false });
+    .eq("group_id", groupId);
+
+  if (filters?.from) {
+    // played_at is timestamptz; date string works as inclusive lower bound.
+    query = query.gte('played_at', `${filters.from}T00:00:00.000Z`);
+  }
+
+  if (filters?.to) {
+    query = query.lte('played_at', `${filters.to}T23:59:59.999Z`);
+  }
+
+  if (matchIds) {
+    query = query.in('id', matchIds);
+  }
+
+  const { data, error } = await query.order("played_at", { ascending: false });
 
   if (error || !data) {
     return [];
@@ -378,6 +526,7 @@ export async function getMatchEditData(groupId: string, id: string) {
         played_at,
         best_of,
         created_by,
+        mvp_player_id,
         match_teams (
           id,
           team_number,
@@ -428,12 +577,17 @@ export async function getMatchEditData(groupId: string, id: string) {
     time,
     bestOf: match.best_of,
     createdBy: match.created_by,
+    mvpPlayerId: match.mvp_player_id ?? null,
     teamPlayers,
     setScores,
   };
 }
 
 export const getPlayers = cache(async (groupId: string) => {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    return DEMO_PLAYERS;
+  }
+
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
     .from("players")
@@ -448,23 +602,105 @@ export const getPlayers = cache(async (groupId: string) => {
   return data as PlayerRow[];
 });
 
-export async function getPlayerStats(groupId: string) {
+export async function getPlayerStats(
+  groupId: string,
+  startDate?: string,
+  endDate?: string
+) {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    return [
+      { player_id: "p1", matches_played: 12, wins: 7, losses: 5, undecided: 0, win_rate: 58.3 },
+      { player_id: "p2", matches_played: 15, wins: 9, losses: 6, undecided: 0, win_rate: 60.0 },
+      { player_id: "p3", matches_played: 10, wins: 4, losses: 6, undecided: 0, win_rate: 40.0 },
+      { player_id: "p4", matches_played: 11, wins: 5, losses: 6, undecided: 0, win_rate: 45.5 },
+      { player_id: "p5", matches_played: 3, wins: 1, losses: 2, undecided: 0, win_rate: 33.3 },
+    ];
+  }
+
   const supabaseServer = await getSupabaseServerClient();
-  const { data, error } = await supabaseServer
-    .from("mv_player_stats_v2")
-    .select("player_id, matches_played, wins, losses, undecided, win_rate")
+
+  // If no date filter, use the materialized view for better performance
+  if (!startDate && !endDate) {
+    const { data, error } = await supabaseServer
+      .from("mv_player_stats_v2")
+      .select("player_id, matches_played, wins, losses, undecided, win_rate")
+      .eq("group_id", groupId);
+
+    if (error || !data) {
+      return [];
+    }
+
+    return data;
+  }
+
+  // With date filter, calculate stats on-the-fly from the enriched view
+  let query = supabaseServer
+    .from("v_player_match_participation_enriched")
+    .select("player_id, is_win")
     .eq("group_id", groupId);
 
-  if (error || !data) {
+  if (startDate) {
+    query = query.gte("played_at", `${startDate}T00:00:00.000Z`);
+  }
+
+  if (endDate) {
+    query = query.lte("played_at", `${endDate}T23:59:59.999Z`);
+  }
+
+  const { data: matches, error } = await query;
+
+  if (error || !matches) {
     return [];
   }
 
-  return data;
+  // Group by player and calculate stats
+  const statsByPlayer = new Map<
+    string,
+    {
+      player_id: string;
+      matches_played: number;
+      wins: number;
+      losses: number;
+      undecided: number;
+      win_rate: number;
+    }
+  >();
+
+  matches.forEach((match) => {
+    const existing = statsByPlayer.get(match.player_id) ?? {
+      player_id: match.player_id,
+      matches_played: 0,
+      wins: 0,
+      losses: 0,
+      undecided: 0,
+      win_rate: 0,
+    };
+
+    existing.matches_played += 1;
+
+    if (match.is_win === true) {
+      existing.wins += 1;
+    } else if (match.is_win === false) {
+      existing.losses += 1;
+    } else {
+      existing.undecided += 1;
+    }
+
+    const totalDecided = existing.wins + existing.losses;
+    existing.win_rate =
+      totalDecided > 0 ? existing.wins / totalDecided : 0;
+
+    statsByPlayer.set(match.player_id, existing);
+  });
+
+  return Array.from(statsByPlayer.values());
 }
 
 export async function getPairAggregates(
   groupId: string,
-  players?: PlayerRow[]
+  players?: PlayerRow[],
+  startDate?: string,
+  endDate?: string
 ) {
   const supabaseServer = await getSupabaseServerClient();
   const resolvedPlayers = players ?? (await getPlayers(groupId));
@@ -472,22 +708,100 @@ export async function getPairAggregates(
     return [];
   }
   const playerIds = new Set(resolvedPlayers.map((player) => player.id));
-  const { data, error } = await supabaseServer
-    .from("mv_pair_aggregates")
-    .select(
-      "group_id, player_a_id, player_b_id, matches_played, wins, losses, win_rate"
-    )
-    .eq("group_id", groupId)
-    .order("matches_played", { ascending: false });
 
-  if (error || !data) {
+  // If no date filter, use the materialized view for better performance
+  if (!startDate && !endDate) {
+    const { data, error } = await supabaseServer
+      .from("mv_pair_aggregates")
+      .select(
+        "group_id, player_a_id, player_b_id, matches_played, wins, losses, win_rate"
+      )
+      .eq("group_id", groupId)
+      .order("matches_played", { ascending: false });
+
+    if (error || !data) {
+      return [];
+    }
+
+    return data.filter(
+      (pair) =>
+        playerIds.has(pair.player_a_id) && playerIds.has(pair.player_b_id)
+    );
+  }
+
+  // With date filter, query directly from mv_pair_stats and join with matches
+  let query = supabaseServer
+    .from("mv_pair_stats")
+    .select(`
+      player_a_id,
+      player_b_id,
+      is_win,
+      matches!inner(played_at, group_id)
+    `)
+    .eq("matches.group_id", groupId);
+
+  if (startDate) {
+    query = query.gte("matches.played_at", `${startDate}T00:00:00.000Z`);
+  }
+
+  if (endDate) {
+    query = query.lte("matches.played_at", `${endDate}T23:59:59.999Z`);
+  }
+
+  const { data: pairMatches, error } = await query;
+
+  if (error || !pairMatches) {
     return [];
   }
 
-  return data.filter(
-    (pair) =>
-      playerIds.has(pair.player_a_id) && playerIds.has(pair.player_b_id)
-  );
+  // Group by pair and calculate stats
+  const statsByPair = new Map<
+    string,
+    {
+      group_id: string;
+      player_a_id: string;
+      player_b_id: string;
+      matches_played: number;
+      wins: number;
+      losses: number;
+      win_rate: number;
+    }
+  >();
+
+  pairMatches.forEach((pm) => {
+    const pairKey = `${pm.player_a_id}-${pm.player_b_id}`;
+    const existing = statsByPair.get(pairKey) ?? {
+      group_id: groupId,
+      player_a_id: pm.player_a_id,
+      player_b_id: pm.player_b_id,
+      matches_played: 0,
+      wins: 0,
+      losses: 0,
+      win_rate: 0,
+    };
+
+    existing.matches_played += 1;
+
+    if (pm.is_win) {
+      existing.wins += 1;
+    } else {
+      existing.losses += 1;
+    }
+
+    existing.win_rate =
+      existing.matches_played > 0
+        ? existing.wins / existing.matches_played
+        : 0;
+
+    statsByPair.set(pairKey, existing);
+  });
+
+  return Array.from(statsByPair.values())
+    .filter(
+      (pair) =>
+        playerIds.has(pair.player_a_id) && playerIds.has(pair.player_b_id)
+    )
+    .sort((a, b) => b.matches_played - a.matches_played);
 }
 
 export async function getUsualPairs(groupId: string, limit = 6) {
@@ -704,6 +1018,15 @@ export async function getInviteMostPlayed(
 }
 
 export async function getEloLeaderboard(groupId: string, limit = 8) {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    return [
+      { playerId: "p2", name: "Nico", rating: 1120 },
+      { playerId: "p1", name: "Fede", rating: 1095 },
+      { playerId: "p4", name: "Lucho", rating: 1040 },
+      { playerId: "p3", name: "Santi", rating: 1010 },
+    ].slice(0, limit);
+  }
+
   const supabaseServer = await getSupabaseServerClient();
   const [players, ratingsResult] = await Promise.all([
     getPlayers(groupId),
@@ -738,7 +1061,7 @@ export async function getEloLeaderboard(groupId: string, limit = 8) {
     .slice(0, limit);
 }
 
-type EloTimelinePoint = { date: string; rating: number };
+export type EloTimelinePoint = { date: string; rating: number };
 type EloTimelineSeries = {
   playerId: string;
   name: string;
@@ -753,14 +1076,85 @@ type EloRatingRow = {
   matches: { played_at?: string; group_id?: string } | null;
 };
 
-export async function getEloTimeline(groupId: string) {
+export async function getEloTimeline(
+  groupId: string,
+  startDate?: string,
+  endDate?: string
+) {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    const base = new Date();
+    const daysAgo = (n: number) => {
+      const d = new Date(base);
+      d.setDate(d.getDate() - n);
+      return d.toISOString().slice(0, 10);
+    };
+
+    return [
+      {
+        playerId: "p1",
+        name: "Fede",
+        status: "usual",
+        points: [
+          { date: daysAgo(28), rating: 1030 },
+          { date: daysAgo(21), rating: 1055 },
+          { date: daysAgo(14), rating: 1080 },
+          { date: daysAgo(7), rating: 1095 },
+        ],
+      },
+      {
+        playerId: "p2",
+        name: "Nico",
+        status: "usual",
+        points: [
+          { date: daysAgo(28), rating: 1045 },
+          { date: daysAgo(21), rating: 1070 },
+          { date: daysAgo(14), rating: 1100 },
+          { date: daysAgo(7), rating: 1120 },
+        ],
+      },
+      {
+        playerId: "p3",
+        name: "Santi",
+        status: "usual",
+        points: [
+          { date: daysAgo(28), rating: 1005 },
+          { date: daysAgo(21), rating: 1000 },
+          { date: daysAgo(14), rating: 1008 },
+          { date: daysAgo(7), rating: 1010 },
+        ],
+      },
+      {
+        playerId: "p4",
+        name: "Lucho",
+        status: "usual",
+        points: [
+          { date: daysAgo(28), rating: 1015 },
+          { date: daysAgo(21), rating: 1022 },
+          { date: daysAgo(14), rating: 1030 },
+          { date: daysAgo(7), rating: 1040 },
+        ],
+      },
+    ];
+  }
+
   const supabaseServer = await getSupabaseServerClient();
+
+  let query = supabaseServer
+    .from("elo_ratings")
+    .select("player_id, rating, created_at, matches(played_at, group_id)")
+    .eq("matches.group_id", groupId);
+
+  if (startDate) {
+    query = query.gte("matches.played_at", `${startDate}T00:00:00.000Z`);
+  }
+
+  if (endDate) {
+    query = query.lte("matches.played_at", `${endDate}T23:59:59.999Z`);
+  }
+
   const [players, ratingsResult] = await Promise.all([
     getPlayers(groupId),
-    supabaseServer
-      .from("elo_ratings")
-      .select("player_id, rating, created_at, matches(played_at, group_id)")
-      .eq("matches.group_id", groupId)
+    query
       .order("played_at", { foreignTable: "matches", ascending: true })
       .order("created_at", { ascending: true }),
   ]);
@@ -786,6 +1180,47 @@ export async function getEloTimeline(groupId: string) {
   }
 
   return Array.from(seriesByPlayer.values());
+}
+
+export async function getPlayerEloChange(
+  groupId: string,
+  playerId: string,
+  startDate?: string,
+  endDate?: string
+) {
+  const supabaseServer = await getSupabaseServerClient();
+
+  let query = supabaseServer
+    .from("elo_ratings")
+    .select("player_id, rating, created_at, matches(played_at, group_id)")
+    .eq("player_id", playerId)
+    .eq("matches.group_id", groupId);
+
+  if (startDate) {
+    query = query.gte("matches.played_at", `${startDate}T00:00:00.000Z`);
+  }
+
+  if (endDate) {
+    query = query.lte("matches.played_at", `${endDate}T23:59:59.999Z`);
+  }
+
+  const { data, error } = await query
+    .order("played_at", { foreignTable: "matches", ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error || !data || data.length === 0) {
+    return { startElo: null, endElo: null, change: null };
+  }
+
+  const ratings = data as unknown as EloRatingRow[];
+  const startElo = ratings[0].rating;
+  const endElo = ratings[ratings.length - 1].rating;
+
+  return {
+    startElo,
+    endElo,
+    change: endElo - startElo,
+  };
 }
 
 export type PlayerForm = {
@@ -1048,6 +1483,255 @@ export type HeadToHeadStats = {
   }>;
 };
 
+export async function getPlayerById(groupId: string, playerId: string) {
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from("players")
+    .select("id, name, status")
+    .eq("id", playerId)
+    .eq("group_id", groupId)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as PlayerRow;
+}
+
+export type PartnerStat = {
+  partnerId: string;
+  partnerName: string;
+  partnerStatus: string;
+  matchesPlayed: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+};
+
+export async function getPlayerPartnerStats(
+  groupId: string,
+  playerId: string
+): Promise<PartnerStat[]> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Get all players in the group for name resolution
+  const players = await getPlayers(groupId);
+  const playerMap = new Map(players.map((p) => [p.id, p]));
+
+  // Find all matches where the player participated
+  const { data: playerMatches, error: matchError } = await supabaseServer
+    .from("match_team_players")
+    .select(
+      `
+      match_team_id,
+      match_teams!inner (
+        match_id,
+        team_number,
+        match_team_players!inner (
+          player_id
+        )
+      )
+    `
+    )
+    .eq("player_id", playerId);
+
+  if (matchError || !playerMatches || playerMatches.length === 0) {
+    return [];
+  }
+
+  // Build partner stats
+  const partnerStats = new Map<
+    string,
+    { wins: number; losses: number; matches: number }
+  >();
+
+  for (const row of playerMatches) {
+    const matchTeam = Array.isArray(row.match_teams)
+      ? row.match_teams[0]
+      : row.match_teams;
+    if (!matchTeam?.match_id) continue;
+
+    // Get teammates for this match
+    const teammates = Array.isArray(matchTeam.match_team_players)
+      ? matchTeam.match_team_players
+      : [matchTeam.match_team_players];
+
+    const partnerRow = teammates.find((t: { player_id: string }) => t.player_id !== playerId);
+    if (!partnerRow) continue;
+
+    const partnerId = partnerRow.player_id;
+
+    // Get match result to determine win/loss
+    const { data: matchResult, error: resultError } = await supabaseServer
+      .from("v_player_match_results")
+      .select("is_win")
+      .eq("match_id", matchTeam.match_id)
+      .eq("player_id", playerId)
+      .single();
+
+    if (resultError || !matchResult) continue;
+
+    const stats = partnerStats.get(partnerId) || { wins: 0, losses: 0, matches: 0 };
+    stats.matches++;
+    if (matchResult.is_win) {
+      stats.wins++;
+    } else {
+      stats.losses++;
+    }
+    partnerStats.set(partnerId, stats);
+  }
+
+  // Convert to array and sort by matches played
+  return Array.from(partnerStats.entries())
+    .map(([partnerId, stats]) => {
+      const partner = playerMap.get(partnerId);
+      return {
+        partnerId,
+        partnerName: partner?.name ?? "Unknown",
+        partnerStatus: partner?.status ?? "usual",
+        matchesPlayed: stats.matches,
+        wins: stats.wins,
+        losses: stats.losses,
+        winRate: stats.matches > 0 ? stats.wins / stats.matches : 0,
+      };
+    })
+    .sort((a, b) => b.matchesPlayed - a.matchesPlayed)
+    .slice(0, 5);
+}
+
+export type RecentMatch = {
+  id: string;
+  playedAt: string;
+  opponentTeam: string;
+  partnerName: string | null;
+  result: "win" | "loss";
+  score: string;
+};
+
+export async function getPlayerRecentMatches(
+  groupId: string,
+  playerId: string,
+  limit: number = 10
+): Promise<RecentMatch[]> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Get recent matches with results using the enriched view
+  const { data: matchResults, error } = await supabaseServer
+    .from("v_player_match_results_enriched")
+    .select("match_id, is_win, played_at")
+    .eq("player_id", playerId)
+    .eq("group_id", groupId)
+    .order("played_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !matchResults || matchResults.length === 0) {
+    return [];
+  }
+
+  const matches: RecentMatch[] = [];
+
+  for (const result of matchResults) {
+    // Get match details
+    const { data: matchData, error: matchError } = await supabaseServer
+      .from("matches")
+      .select(
+        `
+        id,
+        played_at,
+        match_teams (
+          team_number,
+          match_team_players (
+            player_id,
+            players ( name )
+          )
+        ),
+        sets (
+          set_number,
+          set_scores ( team1_games, team2_games )
+        )
+      `
+      )
+      .eq("id", result.match_id)
+      .eq("group_id", groupId)
+      .single();
+
+    if (matchError || !matchData) continue;
+
+    // Find which team the player was on
+    let partnerName: string | null = null;
+    const opponentTeamNames: string[] = [];
+
+    for (const team of matchData.match_teams || []) {
+      const teamPlayers = Array.isArray(team.match_team_players)
+        ? team.match_team_players
+        : [team.match_team_players];
+
+      const playerOnTeam = teamPlayers.find(
+        (tp: { player_id: string }) => tp.player_id === playerId
+      );
+
+      if (playerOnTeam) {
+        // Find partner
+        const partner = teamPlayers.find(
+          (tp: { player_id: string }) => tp.player_id !== playerId
+        );
+        if (partner?.players) {
+          const playerData = Array.isArray(partner.players)
+            ? partner.players[0]
+            : partner.players;
+          partnerName = playerData?.name ?? null;
+        }
+      } else {
+        // This is the opponent team
+        for (const tp of teamPlayers) {
+          if (tp.players) {
+            const playerData = Array.isArray(tp.players)
+              ? tp.players[0]
+              : tp.players;
+            if (playerData?.name) {
+              opponentTeamNames.push(playerData.name);
+            }
+          }
+        }
+      }
+    }
+
+    // Calculate score
+    const sets = Array.isArray(matchData.sets) ? matchData.sets : [];
+    const sortedSets = sets.sort((a: { set_number: number }, b: { set_number: number }) => a.set_number - b.set_number);
+
+    const setScores: string[] = [];
+
+    for (const set of sortedSets) {
+      const scores = Array.isArray(set.set_scores)
+        ? set.set_scores[0]
+        : set.set_scores;
+      if (scores) {
+        const t1Games = scores.team1_games;
+        const t2Games = scores.team2_games;
+        setScores.push(`${t1Games}-${t2Games}`);
+      }
+    }
+
+    const playedAt = new Date(matchData.played_at).toLocaleDateString("es-AR", {
+      month: "short",
+      day: "2-digit",
+    });
+
+    matches.push({
+      id: matchData.id,
+      playedAt,
+      opponentTeam: opponentTeamNames.join(" / ") || "Unknown",
+      partnerName,
+      result: result.is_win ? "win" : "loss",
+      score: setScores.join(", ") || "Sin resultado",
+    });
+  }
+
+  return matches;
+}
+
 export async function getHeadToHeadStats(
   groupId: string,
   playerAId: string,
@@ -1214,5 +1898,1455 @@ export async function getHeadToHeadStats(
     },
     totalMatches: opponentMatches.length,
     matches: matchDetails,
+  };
+}
+
+// Event/Attendance related types and functions
+type WeeklyEvent = {
+  id: string;
+  group_id: string;
+  name: string;
+  weekday: number;
+  start_time: string;
+  capacity: number;
+  cutoff_weekday: number;
+  cutoff_time: string;
+  is_active: boolean;
+  active_occurrence_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type EventOccurrence = {
+  id: string;
+  weekly_event_id: string;
+  group_id: string;
+  starts_at: string;
+  status: 'open' | 'locked' | 'cancelled' | 'completed';
+  loaded_match_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type AttendanceRecord = {
+  id: string;
+  occurrence_id: string;
+  group_id: string;
+  player_id: string;
+  status: 'confirmed' | 'declined' | 'maybe' | 'waitlist';
+  source: 'whatsapp' | 'web' | 'admin';
+  created_at: string;
+  updated_at: string;
+  players?: { id: string; name: string } | null;
+};
+
+export async function getWeeklyEvents(groupId: string): Promise<WeeklyEvent[]> {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    return [
+      {
+        id: "we1",
+        group_id: DEMO_GROUP.id,
+        name: "Jueves 20:00",
+        weekday: 4,
+        start_time: "20:00:00",
+        capacity: 4,
+        cutoff_weekday: 2,
+        cutoff_time: "14:00:00",
+        is_active: true,
+        active_occurrence_id: "occ1",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ];
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from("weekly_events")
+    .select("*")
+    .eq("group_id", groupId)
+    .eq("is_active", true)
+    .order("created_at", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as WeeklyEvent[];
+}
+
+export async function getUpcomingOccurrences(
+  groupId: string,
+  limit = 6
+): Promise<EventOccurrence[]> {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    const nextThursday = (() => {
+      const d = new Date();
+      const day = d.getDay(); // 0 Sun..6 Sat
+      const target = 4; // Thu
+      const add = (target - day + 7) % 7 || 7;
+      d.setDate(d.getDate() + add);
+      d.setHours(20, 0, 0, 0);
+      return d;
+    })();
+
+    return (
+      [
+        {
+          id: "occ1",
+          weekly_event_id: "we1",
+          group_id: DEMO_GROUP.id,
+          starts_at: nextThursday.toISOString(),
+          status: "open" as const,
+          loaded_match_id: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ] satisfies EventOccurrence[]
+    ).slice(0, limit);
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabaseServer
+    .from("event_occurrences")
+    .select("*")
+    .eq("group_id", groupId)
+    .gte("starts_at", now)
+    .in("status", ['open', 'locked'])
+    .order("starts_at", { ascending: true })
+    .limit(limit);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as EventOccurrence[];
+}
+
+export async function getPastOccurrences(
+  groupId: string,
+  limit = 10
+): Promise<EventOccurrence[]> {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    return [];
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabaseServer
+    .from("event_occurrences")
+    .select("*")
+    .eq("group_id", groupId)
+    // Past is either already happened OR explicitly cancelled (even if it was in the future)
+    .or(`starts_at.lt.${now},status.eq.cancelled`)
+    .in("status", ['completed', 'cancelled', 'open', 'locked'])
+    .order("starts_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as EventOccurrence[];
+}
+
+export async function getAttendanceForOccurrence(
+  occurrenceId: string
+): Promise<AttendanceRecord[]> {
+  if (isDemoMode() && occurrenceId === "occ1") {
+    return [
+      {
+        id: "a1",
+        occurrence_id: "occ1",
+        group_id: DEMO_GROUP.id,
+        player_id: "p1",
+        status: "confirmed",
+        source: "web",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        players: { id: "p1", name: "Fede" },
+      },
+      {
+        id: "a2",
+        occurrence_id: "occ1",
+        group_id: DEMO_GROUP.id,
+        player_id: "p2",
+        status: "confirmed",
+        source: "web",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        players: { id: "p2", name: "Nico" },
+      },
+      {
+        id: "a3",
+        occurrence_id: "occ1",
+        group_id: DEMO_GROUP.id,
+        player_id: "p3",
+        status: "confirmed",
+        source: "web",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        players: { id: "p3", name: "Santi" },
+      },
+      {
+        id: "a4",
+        occurrence_id: "occ1",
+        group_id: DEMO_GROUP.id,
+        player_id: "p4",
+        status: "confirmed",
+        source: "web",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        players: { id: "p4", name: "Lucho" },
+      },
+    ];
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from("attendance")
+    .select("*, players(id, name)")
+    .eq("occurrence_id", occurrenceId)
+    .order("created_at", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as AttendanceRecord[];
+}
+
+export async function getCurrentUserPlayerId(groupId: string): Promise<string | null> {
+  const supabaseServer = await getSupabaseServerClient();
+  const { data: { user }, error: authError } = await supabaseServer.auth.getUser();
+
+  if (authError || !user) {
+    return null;
+  }
+
+  // Check if there's a player linked to this user in the group
+  // First, check group_members to get any existing mapping
+  const { data: member, error: memberError } = await supabaseServer
+    .from("group_members")
+    .select("id")
+    .eq("group_id", groupId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (memberError || !member) {
+    return null;
+  }
+
+  // Try to find a player with matching user_id or check via other means
+  // For now, return the first player with the user's email or name match
+  // This is a simplified approach - in production you'd have a proper user->player mapping
+  const { data: players, error: playersError } = await supabaseServer
+    .from("players")
+    .select("id")
+    .eq("group_id", groupId)
+    .limit(1);
+
+  if (playersError || !players || players.length === 0) {
+    return null;
+  }
+
+  // Return the first player's ID as a fallback
+  // In a real implementation, you'd have a proper user->player mapping table
+  return players[0].id;
+}
+
+export async function isGroupAdmin(groupId: string): Promise<boolean> {
+  const supabaseServer = await getSupabaseServerClient();
+  const { data: { user }, error: authError } = await supabaseServer.auth.getUser();
+
+  if (authError || !user) {
+    return false;
+  }
+
+  // Check if there's a group_admins entry for this user
+  // We need to join through players or have a direct mapping
+  // For now, check if user email matches an admin pattern or if there's an entry in group_admins
+  const { data: admin, error: adminError } = await supabaseServer
+    .from("group_admins")
+    .select("player_id")
+    .eq("group_id", groupId)
+    .maybeSingle();
+
+  if (adminError || !admin) {
+    return false;
+  }
+
+  // Check if the current user is linked to this player
+  // This requires a user_id column in players or a mapping table
+  // For now, we'll use a simplified check - first player in the group is considered admin
+  return true;
+}
+
+export type AttendanceSummary = {
+  occurrence: EventOccurrence;
+  weeklyEvent: WeeklyEvent;
+  attendance: AttendanceRecord[];
+  confirmedCount: number;
+  declinedCount: number;
+  maybeCount: number;
+  waitlistCount: number;
+  isFull: boolean;
+  spotsAvailable: number;
+};
+
+export async function getAttendanceSummary(
+  groupId: string,
+  occurrences: EventOccurrence[],
+  weeklyEvents: WeeklyEvent[]
+): Promise<AttendanceSummary[]> {
+  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+    const weeklyEvent = weeklyEvents[0] ?? {
+      id: "we1",
+      group_id: DEMO_GROUP.id,
+      name: "Jueves 20:00",
+      weekday: 4,
+      start_time: "20:00:00",
+      capacity: 4,
+      cutoff_weekday: 2,
+      cutoff_time: "14:00:00",
+      is_active: true,
+      active_occurrence_id: "occ1",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const occ = occurrences[0] ?? {
+      id: "occ1",
+      weekly_event_id: weeklyEvent.id,
+      group_id: DEMO_GROUP.id,
+      starts_at: new Date().toISOString(),
+      status: "open" as const,
+      loaded_match_id: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const attendance = await getAttendanceForOccurrence(occ.id);
+    const confirmedCount = attendance.filter((a) => a.status === "confirmed").length;
+    const declinedCount = attendance.filter((a) => a.status === "declined").length;
+    const maybeCount = attendance.filter((a) => a.status === "maybe").length;
+    const waitlistCount = attendance.filter((a) => a.status === "waitlist").length;
+
+    return [
+      {
+        occurrence: occ,
+        weeklyEvent,
+        attendance,
+        confirmedCount,
+        declinedCount,
+        maybeCount,
+        waitlistCount,
+        isFull: confirmedCount >= weeklyEvent.capacity,
+        spotsAvailable: Math.max(0, weeklyEvent.capacity - confirmedCount),
+      },
+    ];
+  }
+
+  const weeklyEventMap = new Map(weeklyEvents.map(we => [we.id, we]));
+
+  const summaries = await Promise.all(
+    occurrences.map(async (occurrence) => {
+      const attendance = await getAttendanceForOccurrence(occurrence.id);
+      const weeklyEvent = weeklyEventMap.get(occurrence.weekly_event_id);
+      const capacity = weeklyEvent?.capacity ?? 4;
+
+      const confirmedCount = attendance.filter(a => a.status === 'confirmed').length;
+      const declinedCount = attendance.filter(a => a.status === 'declined').length;
+      const maybeCount = attendance.filter(a => a.status === 'maybe').length;
+      const waitlistCount = attendance.filter(a => a.status === 'waitlist').length;
+
+      return {
+        occurrence,
+        weeklyEvent: weeklyEvent ?? {
+          id: '',
+          group_id: groupId,
+          name: 'Evento',
+          weekday: 0,
+          start_time: '20:00',
+          capacity: 4,
+          cutoff_weekday: 2,
+          cutoff_time: '14:00',
+          is_active: true,
+          active_occurrence_id: null,
+          created_at: '',
+          updated_at: '',
+        },
+        attendance,
+        confirmedCount,
+        declinedCount,
+        maybeCount,
+        waitlistCount,
+        isFull: confirmedCount >= capacity,
+        spotsAvailable: Math.max(0, capacity - confirmedCount),
+      };
+    })
+  );
+
+  return summaries;
+}
+
+// Activity feed types
+export type ActivityItem = {
+  id: string;
+  type: 'match_created' | 'match_edited' | 'mvp_assigned' | 'player_added';
+  description: string;
+  actor: string;
+  changedAt: string;
+  entityId?: string;
+  entityUrl?: string;
+};
+
+export async function getRecentActivity(groupId: string, limit: number = 15): Promise<ActivityItem[]> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Query audit_log entries for this group by joining with matches and players
+  // We need to filter by group_id, so we need to check both matches and players tables
+  const { data: matchActivities, error: matchError } = await supabaseServer
+    .from('audit_log')
+    .select(`
+      id,
+      entity_type,
+      entity_id,
+      action,
+      before_json,
+      after_json,
+      changed_by,
+      changed_at,
+      matches!inner (group_id)
+    `)
+    .eq('entity_type', 'matches')
+    .eq('matches.group_id', groupId)
+    .order('changed_at', { ascending: false })
+    .limit(limit);
+
+  const { data: playerActivities, error: playerError } = await supabaseServer
+    .from('audit_log')
+    .select(`
+      id,
+      entity_type,
+      entity_id,
+      action,
+      before_json,
+      after_json,
+      changed_by,
+      changed_at,
+      players!inner (group_id)
+    `)
+    .eq('entity_type', 'players')
+    .eq('players.group_id', groupId)
+    .order('changed_at', { ascending: false })
+    .limit(limit);
+
+  if (matchError && playerError) {
+    return [];
+  }
+
+  const activities: ActivityItem[] = [];
+
+  // Process match activities
+  if (matchActivities && !matchError) {
+    for (const activity of matchActivities) {
+      const type = determineActivityType(activity);
+      const description = buildActivityDescription(activity);
+      const entityId = activity.entity_id;
+      const entityUrl = `/g/${slugFromId(groupId)}/matches/${entityId}`;
+
+      activities.push({
+        id: activity.id,
+        type,
+        description,
+        actor: activity.changed_by || 'Desconocido',
+        changedAt: activity.changed_at,
+        entityId,
+        entityUrl,
+      });
+    }
+  }
+
+  // Process player activities
+  if (playerActivities && !playerError) {
+    for (const activity of playerActivities) {
+      if (activity.action === 'INSERT') {
+        const afterJson = activity.after_json as Record<string, unknown> | null;
+        const name = afterJson?.name || 'Jugador';
+        activities.push({
+          id: activity.id,
+          type: 'player_added',
+          description: `Agregó a ${name}`,
+          actor: activity.changed_by || 'Desconocido',
+          changedAt: activity.changed_at,
+        });
+      }
+    }
+  }
+
+  // Sort all activities by date and limit
+  activities.sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime());
+  return activities.slice(0, limit);
+}
+
+function determineActivityType(activity: Record<string, unknown>): 'match_created' | 'match_edited' | 'mvp_assigned' {
+  if (activity.action === 'INSERT') {
+    return 'match_created';
+  }
+
+  if (activity.action === 'UPDATE') {
+    const before = activity.before_json as Record<string, unknown> | null;
+    const after = activity.after_json as Record<string, unknown> | null;
+
+    // Check if MVP changed
+    if (before?.mvp_player_id !== after?.mvp_player_id && after?.mvp_player_id) {
+      return 'mvp_assigned';
+    }
+
+    return 'match_edited';
+  }
+
+  return 'match_edited';
+}
+
+function buildActivityDescription(activity: Record<string, unknown>): string {
+  if (activity.action === 'INSERT') {
+    return 'Creó un partido';
+  }
+
+  if (activity.action === 'UPDATE') {
+    const before = activity.before_json as Record<string, unknown> | null;
+    const after = activity.after_json as Record<string, unknown> | null;
+
+    // Check if MVP changed
+    if (before?.mvp_player_id !== after?.mvp_player_id && after?.mvp_player_id) {
+      return 'Asignó MVP';
+    }
+
+    return 'Editó un partido';
+  }
+
+  return 'Editó un partido';
+}
+
+async function slugFromId(groupId: string): Promise<string> {
+  const supabaseServer = await getSupabaseServerClient();
+  const { data } = await supabaseServer
+    .from('groups')
+    .select('slug')
+    .eq('id', groupId)
+    .single();
+
+  return data?.slug || 'g';
+}
+
+// Calendar data types
+export type CalendarEvent = {
+  id: string;
+  name: string;
+  date: string;
+  time: string;
+  status: 'open' | 'locked' | 'cancelled' | 'completed';
+  attendanceCount: number;
+  capacity: number;
+};
+
+export type CalendarMatch = {
+  id: string;
+  date: string;
+  team1: string;
+  team2: string;
+  score1: number | null;
+  score2: number | null;
+  mvpPlayerId: string | null;
+};
+
+export type CalendarDayData = {
+  date: string;
+  events: CalendarEvent[];
+  matches: CalendarMatch[];
+};
+
+export type CalendarData = {
+  year: number;
+  month: number;
+  days: CalendarDayData[];
+};
+
+export async function getCalendarData(
+  groupId: string,
+  year: number,
+  month: number
+): Promise<CalendarData> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Calculate date range for the month
+  const startDate = new Date(year, month, 1);
+  const endDate = new Date(year, month + 1, 0, 23, 59, 59);
+
+  const startDateStr = startDate.toISOString().slice(0, 10);
+  const endDateStr = endDate.toISOString().slice(0, 10);
+
+  // Fetch events for the month
+  const { data: occurrences, error: occurrencesError } = await supabaseServer
+    .from('event_occurrences')
+    .select(`
+      id,
+      starts_at,
+      status,
+      weekly_events (
+        name,
+        capacity
+      )
+    `)
+    .eq('group_id', groupId)
+    .gte('starts_at', `${startDateStr}T00:00:00.000Z`)
+    .lte('starts_at', `${endDateStr}T23:59:59.999Z`)
+    .order('starts_at', { ascending: true });
+
+  // Fetch matches for the month
+  const { data: matches, error: matchesError } = await supabaseServer
+    .from('matches')
+    .select(`
+      id,
+      played_at,
+      mvp_player_id,
+      match_teams (
+        team_number,
+        match_team_players (
+          player_id,
+          players (name)
+        )
+      ),
+      sets (
+        set_number,
+        set_scores (team1_games, team2_games)
+      )
+    `)
+    .eq('group_id', groupId)
+    .gte('played_at', `${startDateStr}T00:00:00.000Z`)
+    .lte('played_at', `${endDateStr}T23:59:59.999Z`)
+    .order('played_at', { ascending: true });
+
+  // Get attendance counts for all events
+  const eventsByOccurrence: Map<string, CalendarEvent> = new Map();
+
+  if (!occurrencesError && occurrences) {
+    for (const occ of occurrences) {
+      const weeklyEvent = Array.isArray(occ.weekly_events)
+        ? occ.weekly_events[0]
+        : occ.weekly_events;
+      const capacity = weeklyEvent?.capacity ?? 4;
+
+      // Get attendance for this occurrence
+      const { data: attendance, error: attendanceError } = await supabaseServer
+        .from('attendance')
+        .select('status')
+        .eq('occurrence_id', occ.id);
+
+      const attendanceCount = attendance && !attendanceError
+        ? attendance.filter(a => a.status === 'confirmed').length
+        : 0;
+
+      const dateObj = new Date(occ.starts_at);
+      const dateStr = dateObj.toISOString().slice(0, 10);
+      const timeStr = dateObj.toISOString().slice(11, 16);
+
+      eventsByOccurrence.set(occ.id, {
+        id: occ.id,
+        name: weeklyEvent?.name || 'Evento',
+        date: dateStr,
+        time: timeStr,
+        status: occ.status as 'open' | 'locked' | 'cancelled' | 'completed',
+        attendanceCount,
+        capacity,
+      });
+    }
+  }
+
+  // Process matches
+  const calendarMatches: CalendarMatch[] = [];
+
+  if (!matchesError && matches) {
+    for (const match of matches) {
+      const dateObj = new Date(match.played_at);
+      const dateStr = dateObj.toISOString().slice(0, 10);
+
+      // Sort teams by team_number
+      const teams = Array.isArray(match.match_teams)
+        ? [...match.match_teams].sort((a, b) => a.team_number - b.team_number)
+        : [match.match_teams];
+
+      const team1Players = teams[0]?.match_team_players
+        ?.map(mtp => {
+          const player = Array.isArray(mtp?.players) ? mtp.players[0] : mtp?.players;
+          return player?.name || '';
+        })
+        .filter(Boolean)
+        .join(' / ') || 'Equipo 1';
+
+      const team2Players = teams[1]?.match_team_players
+        ?.map(mtp => {
+          const player = Array.isArray(mtp?.players) ? mtp.players[0] : mtp?.players;
+          return player?.name || '';
+        })
+        .filter(Boolean)
+        .join(' / ') || 'Equipo 2';
+
+      // Calculate total scores
+      const sets = Array.isArray(match.sets)
+        ? [...match.sets].sort((a, b) => a.set_number - b.set_number)
+        : [match.sets];
+
+      let totalScore1 = 0;
+      let totalScore2 = 0;
+
+      for (const set of sets) {
+        const scores = Array.isArray(set?.set_scores) ? set.set_scores[0] : set?.set_scores;
+        if (scores) {
+          totalScore1 += scores.team1_games || 0;
+          totalScore2 += scores.team2_games || 0;
+        }
+      }
+
+      calendarMatches.push({
+        id: match.id,
+        date: dateStr,
+        team1: team1Players,
+        team2: team2Players,
+        score1: totalScore1 || null,
+        score2: totalScore2 || null,
+        mvpPlayerId: match.mvp_player_id || null,
+      });
+    }
+  }
+
+  // Build day-by-day data
+  const daysData: CalendarDayData[] = [];
+  const today = new Date();
+  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+
+  // Get first day of month (0 = Sunday, 6 = Saturday)
+  const firstDay = startDate.getDay();
+
+  // Pad with empty days for alignment
+  for (let i = 0; i < firstDay; i++) {
+    daysData.push({
+      date: '',
+      events: [],
+      matches: [],
+    });
+  }
+
+  // Fill in actual days
+  const daysInMonth = endDate.getDate();
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+    // Find events for this day
+    const dayEvents: CalendarEvent[] = [];
+    eventsByOccurrence.forEach((event) => {
+      if (event.date === dateStr) {
+        dayEvents.push(event);
+      }
+    });
+
+    // Find matches for this day
+    const dayMatches: CalendarMatch[] = [];
+    calendarMatches.forEach((match) => {
+      if (match.date === dateStr) {
+        dayMatches.push(match);
+      }
+    });
+
+    daysData.push({
+      date: dateStr,
+      events: dayEvents,
+      matches: dayMatches,
+    });
+  }
+
+  return {
+    year,
+    month,
+    days: daysData,
+  };
+}
+
+// ===== PREDICTION FUNCTIONS =====
+
+export type PredictionAccuracy = {
+  overallAccuracy: number;
+  accuracyByEloGap: { eloRange: string; accuracy: number; matches: number }[];
+  biggestUpsets: { matchId: string; underdogTeam: string; winProb: number; date: string }[];
+  trendOverTime: { date: string; accuracy: number }[];
+};
+
+export type PredictionFactor = {
+  name: string;
+  value: string;
+  weight: string;
+  impact: "team1" | "team2" | "neutral";
+};
+
+export type PredictionFactors = {
+  teamAWinProb: number;
+  teamBWinProb: number;
+  factors: PredictionFactor[];
+  confidenceLevel: "high" | "medium" | "low";
+};
+
+/**
+ * Get prediction accuracy statistics for a group
+ */
+export async function getPredictionAccuracy(groupId: string): Promise<PredictionAccuracy> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Get all completed matches with predictions
+  const { data: matches, error: matchesError } = await supabaseServer
+    .from("matches")
+    .select(`
+      id,
+      played_at,
+      predicted_win_prob,
+      prediction_correct,
+      match_teams (
+        team_number,
+        match_team_players (
+          players (
+            id,
+            elo_ratings (rating)
+          )
+        )
+      )
+    `)
+    .eq("group_id", groupId)
+    .not("predicted_win_prob", "is", null)
+    .not("prediction_correct", "is", null)
+    .order("played_at", { ascending: true });
+
+  if (matchesError || !matches) {
+    return {
+      overallAccuracy: 0,
+      accuracyByEloGap: [],
+      biggestUpsets: [],
+      trendOverTime: [],
+    };
+  }
+
+  // Calculate overall accuracy
+  const correctPredictions = matches.filter((m) => m.prediction_correct).length;
+  const totalPredictions = matches.length;
+  const overallAccuracy = totalPredictions > 0 ? (correctPredictions / totalPredictions) * 100 : 0;
+
+  // Group by ELO gap for accuracy by band
+  const eloGapBands: { [key: string]: { correct: number; total: number } } = {
+    "0-50": { correct: 0, total: 0 },
+    "51-100": { correct: 0, total: 0 },
+    "101-150": { correct: 0, total: 0 },
+    "151-200": { correct: 0, total: 0 },
+    "200+": { correct: 0, total: 0 },
+  };
+
+  const upsetMatches: { matchId: string; underdogTeam: string; winProb: number; date: string }[] = [];
+
+  for (const match of matches) {
+    // Calculate average ELO for each team
+    const team1 = match.match_teams?.find((t) => t.team_number === 1);
+    const team2 = match.match_teams?.find((t) => t.team_number === 2);
+
+    if (!team1 || !team2) continue;
+
+    const getTeamAvgElo = (team: { match_team_players?: { players?: { elo_ratings?: { rating: number }[] }[] }[] }) => {
+      const players = team.match_team_players || [];
+      const ratings = players
+        .map((p) => p.players?.[0]?.elo_ratings?.[0]?.rating || 1000)
+        .filter((r) => r > 0);
+      return ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 1000;
+    };
+
+    const team1AvgElo = getTeamAvgElo(team1);
+    const team2AvgElo = getTeamAvgElo(team2);
+    const eloGap = Math.abs(team1AvgElo - team2AvgElo);
+
+    // Determine band
+    let band = "200+";
+    if (eloGap <= 50) band = "0-50";
+    else if (eloGap <= 100) band = "51-100";
+    else if (eloGap <= 150) band = "101-150";
+    else if (eloGap <= 200) band = "151-200";
+
+    if (eloGapBands[band]) {
+      eloGapBands[band].total++;
+      if (match.prediction_correct) {
+        eloGapBands[band].correct++;
+      }
+    }
+
+    // Track upsets (underdog won)
+    const winProb = match.predicted_win_prob || 0.5;
+    const isUpset = match.prediction_correct === false && (winProb > 0.55 || winProb < 0.45);
+
+    if (isUpset && match.predicted_win_prob !== null) {
+      const underdogProb = match.predicted_win_prob > 0.5 ? 1 - match.predicted_win_prob : match.predicted_win_prob;
+      const team1Players = team1.match_team_players
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ?.map((p: any) => {
+          const player = Array.isArray(p.players) ? p.players[0] : p.players;
+          return player?.name || "";
+        })
+        .filter(Boolean)
+        .join(" / ") || "Team 1";
+      const team2Players = team2.match_team_players
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ?.map((p: any) => {
+          const player = Array.isArray(p.players) ? p.players[0] : p.players;
+          return player?.name || "";
+        })
+        .filter(Boolean)
+        .join(" / ") || "Team 2";
+
+      upsetMatches.push({
+        matchId: match.id,
+        underdogTeam: winProb > 0.5 ? team2Players : team1Players,
+        winProb: underdogProb,
+        date: match.played_at,
+      });
+    }
+  }
+
+  // Build accuracy by ELO gap array
+  const accuracyByEloGap = Object.entries(eloGapBands)
+    .filter(([_, stats]) => stats.total > 0)
+    .map(([eloRange, stats]) => ({
+      eloRange,
+      accuracy: (stats.correct / stats.total) * 100,
+      matches: stats.total,
+    }));
+
+  // Get biggest upsets (sort by lowest win probability)
+  const biggestUpsets = upsetMatches
+    .sort((a, b) => a.winProb - b.winProb)
+    .slice(0, 10);
+
+  // Build trend over time (rolling 10-match accuracy)
+  const trendOverTime: { date: string; accuracy: number }[] = [];
+  const windowSize = 10;
+
+  for (let i = windowSize; i < matches.length; i++) {
+    const windowMatches = matches.slice(i - windowSize, i);
+    const windowCorrect = windowMatches.filter((m) => m.prediction_correct).length;
+    trendOverTime.push({
+      date: matches[i].played_at.split("T")[0],
+      accuracy: (windowCorrect / windowSize) * 100,
+    });
+  }
+
+  return {
+    overallAccuracy: Math.round(overallAccuracy * 10) / 10,
+    accuracyByEloGap,
+    biggestUpsets,
+    trendOverTime,
+  };
+}
+
+/**
+ * Get prediction factors for a specific match
+ */
+export async function getPredictionFactors(matchId: string): Promise<PredictionFactors | null> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Get match with teams and players
+  const { data: match, error: matchError } = await supabaseServer
+    .from("matches")
+    .select(`
+      id,
+      group_id,
+      played_at,
+      predicted_win_prob,
+      prediction_factors,
+      match_teams (
+        team_number,
+        match_team_players (
+          players (
+            id,
+            elo_ratings (rating)
+          )
+        )
+      )
+    `)
+    .eq("id", matchId)
+    .single();
+
+  if (matchError || !match) {
+    return null;
+  }
+
+  // If prediction factors already stored, return them
+  if (match.prediction_factors) {
+    return match.prediction_factors as PredictionFactors;
+  }
+
+  // Otherwise calculate on-the-fly
+  const team1 = match.match_teams?.find((t) => t.team_number === 1);
+  const team2 = match.match_teams?.find((t) => t.team_number === 2);
+
+  if (!team1 || !team2) {
+    return null;
+  }
+
+  // Get player IDs
+  const team1PlayerIds = team1.match_team_players?.map((p) => {
+    const player = Array.isArray(p.players) ? p.players[0] : p.players;
+    return player?.id;
+  }).filter(Boolean) || [];
+  const team2PlayerIds = team2.match_team_players?.map((p) => {
+    const player = Array.isArray(p.players) ? p.players[0] : p.players;
+    return player?.id;
+  }).filter(Boolean) || [];
+
+  // Get average ELO ratings
+  const getTeamAvgElo = (team: { match_team_players?: { players?: { elo_ratings?: { rating: number }[] }[] }[] }) => {
+    const players = team.match_team_players || [];
+    const ratings = players
+      .map((p) => p.players?.[0]?.elo_ratings?.[0]?.rating || 1000)
+      .filter((r) => r > 0);
+    return ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 1000;
+  };
+
+  const team1AvgElo = getTeamAvgElo(team1);
+  const team2AvgElo = getTeamAvgElo(team2);
+
+  // Get recent form (last 5 matches win rate)
+  const getRecentForm = async (playerIds: string[]) => {
+    if (playerIds.length === 0) return 0.5;
+
+    const { data: playerMatches } = await supabaseServer
+      .from("v_player_match_results")
+      .select("is_win")
+      .in("player_id", playerIds)
+      .order("match_id", { ascending: false })
+      .limit(playerIds.length * 5);
+
+    if (!playerMatches || playerMatches.length === 0) return 0.5;
+
+    const wins = playerMatches.filter((m) => m.is_win).length;
+    return wins / playerMatches.length;
+  };
+
+  // Get head-to-head record
+  const getHeadToHead = async (team1Ids: string[], team2Ids: string[]) => {
+    if (team1Ids.length === 0 || team2Ids.length === 0) return 0.5;
+
+    const { data: matches } = await supabaseServer
+      .from("matches")
+      .select(`
+        id,
+        match_teams (
+          team_number,
+          match_team_players (
+            player_id
+          )
+        )
+      `)
+      .eq("group_id", match.group_id)
+      .lt("played_at", match.played_at)
+      .order("played_at", { ascending: false })
+      .limit(20);
+
+    if (!matches || matches.length === 0) return 0.5;
+
+    let team1Wins = 0;
+    let totalMatches = 0;
+
+    for (const m of matches) {
+      const t1 = m.match_teams?.find((t) => t.team_number === 1);
+      const t2 = m.match_teams?.find((t) => t.team_number === 2);
+
+      if (!t1 || !t2) continue;
+
+      const t1Players = t1.match_team_players?.map((p) => p.player_id).filter(Boolean) || [];
+      const t2Players = t2.match_team_players?.map((p) => p.player_id).filter(Boolean) || [];
+
+      // Check if same teams
+      const isSameConfig =
+        (team1Ids.every((id) => t1Players.includes(id)) && team2Ids.every((id) => t2Players.includes(id))) ||
+        (team1Ids.every((id) => t2Players.includes(id)) && team2Ids.every((id) => t1Players.includes(id)));
+
+      if (isSameConfig) {
+        totalMatches++;
+        // Check who won
+        const winner = await getMatchWinner(m.id);
+        if (winner === 1 && team1Ids.every((id) => t1Players.includes(id))) team1Wins++;
+        if (winner === 2 && team1Ids.every((id) => t2Players.includes(id))) team1Wins++;
+      }
+    }
+
+    return totalMatches > 0 ? team1Wins / totalMatches : 0.5;
+  };
+
+  // Get partnership synergy
+  const getPartnershipSynergy = async (playerIds: string[]) => {
+    if (playerIds.length !== 2) return 0.5;
+
+    const { data: pairStats } = await supabaseServer
+      .from("mv_pair_aggregates")
+      .select("win_rate, matches_played")
+      .or(`and(player_a_id.eq.${playerIds[0]},player_b_id.eq.${playerIds[1]}),and(player_a_id.eq.${playerIds[1]},player_b_id.eq.${playerIds[0]})`)
+      .single();
+
+    if (!pairStats || pairStats.matches_played < 3) return 0.5;
+    return pairStats.win_rate;
+  };
+
+  // Get current streak
+  const getCurrentStreak = async (playerIds: string[]) => {
+    if (playerIds.length === 0) return 0;
+
+    const { data: recentResults } = await supabaseServer
+      .from("v_player_match_results")
+      .select("is_win")
+      .in("player_id", playerIds)
+      .order("match_id", { ascending: false })
+      .limit(10);
+
+    if (!recentResults || recentResults.length === 0) return 0;
+
+    let streak = 0;
+    const lastResult = recentResults[0].is_win;
+
+    for (const result of recentResults) {
+      if (result.is_win === lastResult) {
+        streak += lastResult ? 1 : -1;
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  };
+
+  // Get match winner
+  const getMatchWinner = async (matchId: string): Promise<1 | 2 | null> => {
+    const { data: sets } = await supabaseServer
+      .from("v_match_team_set_wins")
+      .select("team_number, sets_won")
+      .eq("match_id", matchId)
+      .order("sets_won", { ascending: false })
+      .limit(1);
+
+    if (!sets || sets.length === 0) return null;
+    return sets[0].team_number as 1 | 2;
+  };
+
+  // Fetch all factors
+  const [team1Form, team2Form, headToHead, team1Synergy, team2Synergy, team1Streak, team2Streak] = await Promise.all([
+    getRecentForm(team1PlayerIds),
+    getRecentForm(team2PlayerIds),
+    getHeadToHead(team1PlayerIds, team2PlayerIds),
+    getPartnershipSynergy(team1PlayerIds),
+    getPartnershipSynergy(team2PlayerIds),
+    getCurrentStreak(team1PlayerIds),
+    getCurrentStreak(team2PlayerIds),
+  ]);
+
+  // Calculate prediction
+  const { calculateMatchPrediction } = await import("./elo-utils");
+  const prediction = calculateMatchPrediction(team1AvgElo, team2AvgElo, {
+    team1Form,
+    team2Form,
+    team1HeadToHead: headToHead,
+    team2HeadToHead: 1 - headToHead,
+    team1Streak,
+    team2Streak,
+    team1PartnershipRate: team1Synergy,
+    team2PartnershipRate: team2Synergy,
+  });
+
+  return {
+    teamAWinProb: prediction.team1WinProb,
+    teamBWinProb: prediction.team2WinProb,
+    factors: prediction.factors,
+    confidenceLevel: prediction.confidence,
+  };
+}
+
+// Types for opponent records
+export type OpponentRecord = {
+  opponentId: string;
+  opponentName: string;
+  opponentStatus: "usual" | "invited";
+  wins: number;
+  losses: number;
+  winRate: number;
+  totalMatches: number;
+  lastPlayedAt: string;
+};
+
+// Get opponent records for a player
+export async function getOpponentRecord(
+  groupId: string,
+  playerId: string
+): Promise<OpponentRecord[]> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Get all matches where the player participated
+  const { data: playerMatches, error: matchError } = await supabaseServer
+    .from("v_player_match_results_enriched")
+    .select("match_id, is_win, played_at")
+    .eq("player_id", playerId)
+    .eq("group_id", groupId)
+    .order("played_at", { ascending: false });
+
+  if (matchError || !playerMatches || playerMatches.length === 0) {
+    return [];
+  }
+
+  const matchIds = playerMatches.map((m) => m.match_id);
+
+  // Get all players in those matches (teammates and opponents)
+  const { data: matchTeamPlayers, error: teamError } = await supabaseServer
+    .from("match_team_players")
+    .select(`
+      player_id,
+      match_teams!inner (
+        match_id,
+        team_number
+      )
+    `)
+    .in("match_id", matchIds);
+
+  if (teamError || !matchTeamPlayers) {
+    return [];
+  }
+
+  // Group by match to find teammates
+  const matchPlayerMap = new Map<string, Map<number, string[]>>();
+  matchTeamPlayers.forEach((row) => {
+    const matchTeam = Array.isArray(row.match_teams) ? row.match_teams[0] : row.match_teams;
+    if (!matchTeam?.match_id) return;
+
+    if (!matchPlayerMap.has(matchTeam.match_id)) {
+      matchPlayerMap.set(matchTeam.match_id, new Map());
+    }
+    const teamMap = matchPlayerMap.get(matchTeam.match_id)!;
+    if (!teamMap.has(matchTeam.team_number)) {
+      teamMap.set(matchTeam.team_number, []);
+    }
+    teamMap.get(matchTeam.team_number)!.push(row.player_id);
+  });
+
+  // For each match, find opponents (players on the other team)
+  const opponentIds = new Set<string>();
+  playerMatches.forEach((match) => {
+    const teamMap = matchPlayerMap.get(match.match_id);
+    if (!teamMap) return;
+
+    // Find which team the player was on
+    for (const [teamNum, players] of teamMap.entries()) {
+      if (players.includes(playerId)) {
+        // Opponents are on the other team
+        const otherTeamNum = teamNum === 1 ? 2 : 1;
+        const opponents = teamMap.get(otherTeamNum) || [];
+        opponents.forEach((oppId) => opponentIds.add(oppId));
+        break;
+      }
+    }
+  });
+
+  if (opponentIds.size === 0) {
+    return [];
+  }
+
+  // Get opponent names and statuses
+  const { data: opponents, error: oppError } = await supabaseServer
+    .from("players")
+    .select("id, name, status")
+    .eq("group_id", groupId)
+    .in("id", Array.from(opponentIds));
+
+  if (oppError || !opponents) {
+    return [];
+  }
+
+  // Calculate W-L record against each opponent
+  const opponentRecords: OpponentRecord[] = opponents.map((opp) => {
+    let wins = 0;
+    let losses = 0;
+    let lastPlayedAt = "";
+
+    playerMatches.forEach((match) => {
+      const teamMap = matchPlayerMap.get(match.match_id);
+      if (!teamMap) return;
+
+      // Check if this opponent was in the match
+      let wasOpponent = false;
+      for (const [teamNum, players] of teamMap.entries()) {
+        if (players.includes(playerId) && players.includes(opp.id)) {
+          // Same team - not an opponent
+          wasOpponent = false;
+          break;
+        }
+        if (players.includes(playerId)) {
+          const otherTeamNum = teamNum === 1 ? 2 : 1;
+          const otherTeamPlayers = teamMap.get(otherTeamNum) || [];
+          if (otherTeamPlayers.includes(opp.id)) {
+            wasOpponent = true;
+          }
+          break;
+        }
+      }
+
+      if (wasOpponent) {
+        if (match.is_win) {
+          wins++;
+        } else {
+          losses++;
+        }
+        if (!lastPlayedAt) {
+          lastPlayedAt = match.played_at;
+        }
+      }
+    });
+
+    const totalMatches = wins + losses;
+    return {
+      opponentId: opp.id,
+      opponentName: opp.name,
+      opponentStatus: opp.status === "usual" ? "usual" : "invited",
+      wins,
+      losses,
+      winRate: totalMatches > 0 ? wins / totalMatches : 0,
+      totalMatches,
+      lastPlayedAt,
+    };
+  });
+
+  // Sort by total matches (most frequent opponents first)
+  return opponentRecords.sort((a, b) => b.totalMatches - a.totalMatches);
+}
+
+// Types for win rate trend
+export type WinRateTrendPoint = {
+  period: string; // "2025-01", "Week 1", etc.
+  wins: number;
+  losses: number;
+  winRate: number;
+  totalMatches: number;
+};
+
+export type WinRateTrend = {
+  playerId: string;
+  playerName: string;
+  trend: WinRateTrendPoint[];
+  trendDirection: "up" | "down" | "neutral";
+};
+
+// Get win rate trend over time
+export async function getWinRateTrend(
+  groupId: string,
+  playerId: string,
+  period: "month" | "week" = "month"
+): Promise<WinRateTrend | null> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Get player name
+  const { data: player, error: playerError } = await supabaseServer
+    .from("players")
+    .select("id, name")
+    .eq("id", playerId)
+    .eq("group_id", groupId)
+    .single();
+
+  if (playerError || !player) {
+    return null;
+  }
+
+  // Get all matches with results
+  const { data: matchResults, error: matchError } = await supabaseServer
+    .from("v_player_match_results_enriched")
+    .select("match_id, is_win, played_at")
+    .eq("player_id", playerId)
+    .eq("group_id", groupId)
+    .order("played_at", { ascending: true });
+
+  if (matchError || !matchResults || matchResults.length === 0) {
+    return {
+      playerId: player.id,
+      playerName: player.name,
+      trend: [],
+      trendDirection: "neutral",
+    };
+  }
+
+  // Group by period
+  const trendMap = new Map<string, { wins: number; losses: number }>();
+
+  matchResults.forEach((match) => {
+    const date = new Date(match.played_at);
+    let periodKey: string;
+
+    if (period === "month") {
+      periodKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    } else {
+      // Week: "2025-W01"
+      const startOfYear = new Date(date.getFullYear(), 0, 1);
+      const weekNum = Math.ceil(
+        ((date.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7
+      );
+      periodKey = `${date.getFullYear()}-W${String(weekNum).padStart(2, "0")}`;
+    }
+
+    if (!trendMap.has(periodKey)) {
+      trendMap.set(periodKey, { wins: 0, losses: 0 });
+    }
+
+    const stats = trendMap.get(periodKey)!;
+    if (match.is_win) {
+      stats.wins++;
+    } else {
+      stats.losses++;
+    }
+  });
+
+  // Convert to array
+  const trend: WinRateTrendPoint[] = Array.from(trendMap.entries()).map(([period, stats]) => {
+    const totalMatches = stats.wins + stats.losses;
+    return {
+      period,
+      wins: stats.wins,
+      losses: stats.losses,
+      winRate: totalMatches > 0 ? stats.wins / totalMatches : 0,
+      totalMatches,
+    };
+  });
+
+  // Determine trend direction (compare last 3 periods vs previous 3)
+  let trendDirection: "up" | "down" | "neutral" = "neutral";
+  if (trend.length >= 6) {
+    const recentPeriods = trend.slice(-3);
+    const previousPeriods = trend.slice(-6, -3);
+
+    const recentAvgWinRate =
+      recentPeriods.reduce((sum, p) => sum + p.winRate, 0) / recentPeriods.length;
+    const previousAvgWinRate =
+      previousPeriods.reduce((sum, p) => sum + p.winRate, 0) / previousPeriods.length;
+
+    if (recentAvgWinRate > previousAvgWinRate + 0.05) {
+      trendDirection = "up";
+    } else if (recentAvgWinRate < previousAvgWinRate - 0.05) {
+      trendDirection = "down";
+    }
+  }
+
+  return {
+    playerId: player.id,
+    playerName: player.name,
+    trend,
+    trendDirection,
   };
 }

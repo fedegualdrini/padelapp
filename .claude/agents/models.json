@@ -1,0 +1,32 @@
+{
+  "providers": {
+    "zai": {
+      "baseUrl": "https://api.z.ai/api/coding/paas/v4",
+      "apiKey": "0e7effa95f664f2298665a17bf9b5ceb.iYsOEiazNfC6fuKR",
+      "auth": "api-key",
+      "api": "openai-completions",
+      "headers": {
+        "Accept-Language": "en-US,en"
+      },
+      "models": [
+        {
+          "id": "GLM-4.7",
+          "name": "z.ai GLM-4.7",
+          "api": "openai-completions",
+          "reasoning": false,
+          "input": [
+            "text"
+          ],
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "contextWindow": 200000,
+          "maxTokens": 8192
+        }
+      ]
+    }
+  }
+}

@@ -1,17 +1,37 @@
-import { getPlayerRecentForm } from "@/lib/data";
+"use client";
+
+import { useEffect, useState } from "react";
+import { fetchPlayerRecentFormAction } from "@/lib/data-actions";
+import type { PlayerForm } from "@/lib/data";
 
 type FormIndicatorProps = {
   groupId: string;
   playerId: string;
 };
 
-export default async function FormIndicator({
+export default function FormIndicator({
   groupId,
   playerId,
 }: FormIndicatorProps) {
-  const form = await getPlayerRecentForm(groupId, playerId, 5);
+  const [form, setForm] = useState<PlayerForm | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (!form) {
+  useEffect(() => {
+    async function loadForm() {
+      try {
+        const data = await fetchPlayerRecentFormAction(groupId, playerId, 5);
+        setForm(data);
+      } catch (error) {
+        console.error("Failed to load form:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadForm();
+  }, [groupId, playerId]);
+
+  if (isLoading || !form) {
     return null;
   }
 
@@ -40,7 +60,7 @@ export default async function FormIndicator({
   };
 
   const getReasonText = () => {
-    // If we don’t have enough data, still show the indicator with an explanation.
+    // If we don't have enough data, still show the indicator with an explanation.
     if (form.recentMatches < 3) {
       return `Not enough matches yet (need 3+). Last ${form.recentMatches}: ${form.wins}W-${form.losses}L.`;
     }

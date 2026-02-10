@@ -1,0 +1,219 @@
+{
+  "description": "Test players for E2E testing. Includes various ELO ratings, statuses, and match history.",
+  "version": "1.0.0",
+  "players": [
+    {
+      "id": "player-001",
+      "name": "Juan Pérez",
+      "slug": "juan-perez",
+      "status": "usual",
+      "elo": 1200,
+      "points": 450,
+      "matches_played": 15,
+      "wins": 9,
+      "losses": 6,
+      "win_rate": 0.60,
+      "streak": "W2",
+      "joined_at": "2024-01-15",
+      "bio": "Padel player since 2018"
+    },
+    {
+      "id": "player-002",
+      "name": "María García",
+      "slug": "maria-garcia",
+      "status": "usual",
+      "elo": 1350,
+      "points": 525,
+      "matches_played": 20,
+      "wins": 13,
+      "losses": 7,
+      "win_rate": 0.65,
+      "streak": "W3",
+      "joined_at": "2024-01-10",
+      "bio": "Former tennis player"
+    },
+    {
+      "id": "player-003",
+      "name": "Carlos López",
+      "slug": "carlos-lopez",
+      "status": "usual",
+      "elo": 1100,
+      "points": 380,
+      "matches_played": 12,
+      "wins": 6,
+      "losses": 6,
+      "win_rate": 0.50,
+      "streak": "L1",
+      "joined_at": "2024-02-01",
+      "bio": "Learning padel"
+    },
+    {
+      "id": "player-004",
+      "name": "Ana Rodríguez",
+      "slug": "ana-rodriguez",
+      "status": "usual",
+      "elo": 1450,
+      "points": 620,
+      "matches_played": 25,
+      "wins": 18,
+      "losses": 7,
+      "win_rate": 0.72,
+      "streak": "W1",
+      "joined_at": "2024-01-05",
+      "bio": "Regular tournament player"
+    },
+    {
+      "id": "player-005",
+      "name": "Pedro Sánchez",
+      "slug": "pedro-sanchez",
+      "status": "inactive",
+      "elo": 1050,
+      "points": 320,
+      "matches_played": 8,
+      "wins": 4,
+      "losses": 4,
+      "win_rate": 0.50,
+      "streak": "L2",
+      "joined_at": "2024-02-20",
+      "bio": "Injured - not playing currently"
+    },
+    {
+      "id": "player-006",
+      "name": "Laura Martínez",
+      "slug": "laura-martinez",
+      "status": "usual",
+      "elo": 1280,
+      "points": 495,
+      "matches_played": 18,
+      "wins": 11,
+      "losses": 7,
+      "win_rate": 0.61,
+      "streak": "W4",
+      "joined_at": "2024-01-20",
+      "bio": "Weekend player"
+    },
+    {
+      "id": "player-007",
+      "name": "Roberto Fernández",
+      "slug": "roberto-fernandez",
+      "status": "usual",
+      "elo": 1180,
+      "points": 425,
+      "matches_played": 14,
+      "wins": 8,
+      "losses": 6,
+      "win_rate": 0.57,
+      "streak": "L1",
+      "joined_at": "2024-01-25",
+      "bio": "Padel enthusiast"
+    },
+    {
+      "id": "player-008",
+      "name": "Sofía González",
+      "slug": "sofia-gonzalez",
+      "status": "usual",
+      "elo": 1400,
+      "points": 580,
+      "matches_played": 22,
+      "wins": 15,
+      "losses": 7,
+      "win_rate": 0.68,
+      "streak": "W2",
+      "joined_at": "2024-01-08",
+      "bio": "Club member since 2020"
+    }
+  ],
+  "match_history": [
+    {
+      "match_id": "match-001",
+      "date": "2024-01-28",
+      "type": "doubles",
+      "players": ["player-001", "player-002", "player-003", "player-004"],
+      "teams": [
+        {"players": ["player-001", "player-002"], "score": "6-4, 6-2", "winner": true},
+        {"players": ["player-003", "player-004"], "score": "4-6, 2-6", "winner": false}
+      ],
+      "elo_changes": {
+        "player-001": 15,
+        "player-002": 12,
+        "player-003": -15,
+        "player-004": -12
+      }
+    },
+    {
+      "match_id": "match-002",
+      "date": "2024-01-26",
+      "type": "singles",
+      "players": ["player-001", "player-003"],
+      "teams": [
+        {"players": ["player-001"], "score": "6-3, 6-1", "winner": true},
+        {"players": ["player-003"], "score": "3-6, 1-6", "winner": false}
+      ],
+      "elo_changes": {
+        "player-001": 20,
+        "player-003": -20
+      }
+    },
+    {
+      "match_id": "match-003",
+      "date": "2024-01-25",
+      "type": "doubles",
+      "players": ["player-004", "player-006", "player-007", "player-008"],
+      "teams": [
+        {"players": ["player-004", "player-006"], "score": "6-4, 4-6, 7-5", "winner": true},
+        {"players": ["player-007", "player-008"], "score": "4-6, 6-4, 5-7", "winner": false}
+      ],
+      "elo_changes": {
+        "player-004": 18,
+        "player-006": 15,
+        "player-007": -18,
+        "player-008": -15
+      }
+    },
+    {
+      "match_id": "match-004",
+      "date": "2024-01-24",
+      "type": "cancelled",
+      "players": ["player-002", "player-005", "player-001", "player-007"],
+      "teams": [
+        {"players": ["player-002", "player-005"], "score": "N/A", "winner": null},
+        {"players": ["player-001", "player-007"], "score": "N/A", "winner": null}
+      ],
+      "elo_changes": {}
+    },
+    {
+      "match_id": "match-005",
+      "date": "2024-01-22",
+      "type": "singles",
+      "players": ["player-002", "player-006"],
+      "teams": [
+        {"players": ["player-002"], "score": "6-2, 6-3", "winner": true},
+        {"players": ["player-006"], "score": "2-6, 3-6", "winner": false}
+      ],
+      "elo_changes": {
+        "player-002": 18,
+        "player-006": -18
+      }
+    }
+  ],
+  "elo_progression": [
+    {
+      "player_id": "player-001",
+      "history": [
+        {"date": "2024-01-15", "elo": 1200, "change": 0},
+        {"date": "2024-01-22", "elo": 1215, "change": 15},
+        {"date": "2024-01-24", "elo": 1220, "change": 5},
+        {"date": "2024-01-26", "elo": 1240, "change": 20},
+        {"date": "2024-01-28", "elo": 1255, "change": 15}
+      ]
+    },
+    {
+      "player_id": "player-002",
+      "history": [
+        {"date": "2024-01-10", "elo": 1350, "change": 0},
+        {"date": "2024-01-22", "elo": 1368, "change": 18},
+        {"date": "2024-01-28", "elo": 1380, "change": 12}
+      ]
+    }
+  ]
+}

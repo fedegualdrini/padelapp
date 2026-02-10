@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent, useActionState } from "react";
+import { memo, useMemo, useState, type FormEvent, useActionState } from "react";
 import { createMatch } from "@/app/matches/new/actions";
 import MatchPredictionBanner from "./MatchPredictionBanner";
 
@@ -24,7 +24,9 @@ type NewMatchFormProps = {
   groupSlug: string;
 };
 
-export default function NewMatchForm({
+// FIX: Wrap with React.memo to prevent unnecessary re-renders
+// Component has expensive calculations (playerOptions, mvpOptions)
+function NewMatchForm({
   players,
   usualPairs,
   defaultDate,
@@ -36,6 +38,7 @@ export default function NewMatchForm({
   const [team1Player2, setTeam1Player2] = useState("");
   const [team2Player1, setTeam2Player1] = useState("");
   const [team2Player2, setTeam2Player2] = useState("");
+  const [mvpPlayerId, setMvpPlayerId] = useState("");
   const [clientError, setClientError] = useState<string | null>(null);
 
   const playerOptions = useMemo(
@@ -48,13 +51,65 @@ export default function NewMatchForm({
     [players]
   );
 
+  const selectedPlayerIds = useMemo(() => {
+    const ids = [team1Player1, team1Player2, team2Player1, team2Player2].filter(
+      Boolean
+    );
+    return Array.from(new Set(ids));
+  }, [team1Player1, team1Player2, team2Player1, team2Player2]);
+
+  const mvpOptions = useMemo(() => {
+    const selected = new Set(selectedPlayerIds);
+    return players
+      .filter((p) => selected.has(p.id))
+      .map((p) => (
+        <option key={p.id} value={p.id}>
+          {p.name}
+        </option>
+      ));
+  }, [players, selectedPlayerIds]);
+
+  const ensureMvpStillValid = (next: {
+    team1Player1: string;
+    team1Player2: string;
+    team2Player1: string;
+    team2Player2: string;
+  }) => {
+    if (!mvpPlayerId) return;
+    const nextSelected = new Set(
+      [
+        next.team1Player1,
+        next.team1Player2,
+        next.team2Player1,
+        next.team2Player2,
+      ].filter(Boolean)
+    );
+    if (!nextSelected.has(mvpPlayerId)) {
+      setMvpPlayerId("");
+    }
+  };
+
+
   const handlePairClick = (pair: UsualPair) => {
     const team1HasAny = team1Player1 !== "" || team1Player2 !== "";
     if (!team1HasAny) {
+      ensureMvpStillValid({
+        team1Player1: pair.playerAId,
+        team1Player2: pair.playerBId,
+        team2Player1,
+        team2Player2,
+      });
       setTeam1Player1(pair.playerAId);
       setTeam1Player2(pair.playerBId);
       return;
     }
+
+    ensureMvpStillValid({
+      team1Player1,
+      team1Player2,
+      team2Player1: pair.playerAId,
+      team2Player2: pair.playerBId,
+    });
     setTeam2Player1(pair.playerAId);
     setTeam2Player2(pair.playerBId);
   };
@@ -209,7 +264,16 @@ export default function NewMatchForm({
               <select
                 name="team1_player1"
                 value={team1Player1}
-                onChange={(event) => setTeam1Player1(event.target.value)}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  ensureMvpStillValid({
+                    team1Player1: nextValue,
+                    team1Player2,
+                    team2Player1,
+                    team2Player2,
+                  });
+                  setTeam1Player1(nextValue);
+                }}
                 aria-label="Equipo 1 jugador 1"
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
               >
@@ -219,7 +283,16 @@ export default function NewMatchForm({
               <select
                 name="team1_player2"
                 value={team1Player2}
-                onChange={(event) => setTeam1Player2(event.target.value)}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  ensureMvpStillValid({
+                    team1Player1,
+                    team1Player2: nextValue,
+                    team2Player1,
+                    team2Player2,
+                  });
+                  setTeam1Player2(nextValue);
+                }}
                 aria-label="Equipo 1 jugador 2"
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
               >
@@ -236,7 +309,16 @@ export default function NewMatchForm({
               <select
                 name="team2_player1"
                 value={team2Player1}
-                onChange={(event) => setTeam2Player1(event.target.value)}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  ensureMvpStillValid({
+                    team1Player1,
+                    team1Player2,
+                    team2Player1: nextValue,
+                    team2Player2,
+                  });
+                  setTeam2Player1(nextValue);
+                }}
                 aria-label="Equipo 2 jugador 1"
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
               >
@@ -246,7 +328,16 @@ export default function NewMatchForm({
               <select
                 name="team2_player2"
                 value={team2Player2}
-                onChange={(event) => setTeam2Player2(event.target.value)}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  ensureMvpStillValid({
+                    team1Player1,
+                    team1Player2,
+                    team2Player1,
+                    team2Player2: nextValue,
+                  });
+                  setTeam2Player2(nextValue);
+                }}
                 aria-label="Equipo 2 jugador 2"
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
               >
@@ -255,6 +346,28 @@ export default function NewMatchForm({
               </select>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+        <h3 className="font-display text-lg text-[var(--ink)]">MVP</h3>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
+            Jugador MVP (opcional)
+            <select
+              name="mvp_player_id"
+              value={mvpPlayerId}
+              onChange={(event) => setMvpPlayerId(event.target.value)}
+              aria-label="MVP"
+              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
+            >
+              <option value="">(Sin MVP)</option>
+              {mvpOptions}
+            </select>
+          </label>
+          <p className="text-xs text-[var(--muted)] sm:self-end">
+            Se habilita cuando seleccionás jugadores y siempre se limita a esos 4.
+          </p>
         </div>
       </section>
 
@@ -330,3 +443,6 @@ export default function NewMatchForm({
     </form>
   );
 }
+
+// Export memoized version to prevent re-renders when parent changes but props don't
+export default memo(NewMatchForm);

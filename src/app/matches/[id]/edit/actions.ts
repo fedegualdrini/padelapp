@@ -21,6 +21,7 @@ export async function updateMatch(formData: FormData) {
   const time = String(formData.get("played_time") ?? "").trim();
   const bestOf = Number(formData.get("best_of") ?? 3);
   const updatedBy = String(formData.get("updated_by") ?? "").trim();
+  const mvpPlayerIdRaw = String(formData.get("mvp_player_id") ?? "").trim();
 
   const team1Player1 = String(formData.get("team1_player1") ?? "").trim();
   const team1Player2 = String(formData.get("team1_player2") ?? "").trim();
@@ -46,6 +47,11 @@ export async function updateMatch(formData: FormData) {
   const uniquePlayers = new Set(players);
   if (uniquePlayers.size !== 4) {
     throw new Error("Los jugadores deben ser únicos entre equipos.");
+  }
+
+  const mvpPlayerId = mvpPlayerIdRaw || null;
+  if (mvpPlayerId && !uniquePlayers.has(mvpPlayerId)) {
+    throw new Error("El MVP debe ser uno de los jugadores del partido.");
   }
 
   const requiredSets = Math.floor(bestOf / 2) + 1;
@@ -106,6 +112,7 @@ export async function updateMatch(formData: FormData) {
       played_at: playedAt,
       best_of: bestOf,
       updated_by: updatedBy,
+      mvp_player_id: mvpPlayerId,
     })
     .eq("id", matchId);
 

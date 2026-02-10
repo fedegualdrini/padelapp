@@ -1,0 +1,335 @@
+{
+  "description": "Test venues for E2E testing. Includes various types, surfaces, and amenities.",
+  "version": "1.0.0",
+  "venues": [
+    {
+      "id": "venue-001",
+      "name": "Club Padel Buenos Aires",
+      "slug": "club-padel-buenos-aires",
+      "address": "Av. del Libertador 4500, Palermo, Buenos Aires",
+      "city": "Buenos Aires",
+      "country": "Argentina",
+      "type": "indoor",
+      "surface": "glass",
+      "courts": 6,
+      "amenities": [
+        "parking",
+        "lockers",
+        "showers",
+        "pro_shop",
+        "bar",
+        "restaurant",
+        "wifi",
+        "ac",
+        "lights"
+      ],
+      "contact": {
+        "phone": "+54 11 5555-0101",
+        "email": "info@clubpadelba.com",
+        "website": "https://clubpadelba.com"
+      },
+      "hours": {
+        "weekday": "07:00 - 23:00",
+        "weekend": "08:00 - 22:00"
+      },
+      "pricing": {
+        "hourly": 2500,
+        "currency": "ARS"
+      },
+      "overall_rating": 4.3,
+      "rating_count": 15,
+      "dimensions": {
+        "surface_quality": 4.5,
+        "lighting": 4.2,
+        "ventilation": 4.4,
+        "amenities": 4.0,
+        "location": 4.6,
+        "price": 4.2
+      },
+      "created_at": "2024-01-15T10:00:00Z",
+      "updated_at": "2024-01-28T14:30:00Z"
+    },
+    {
+      "id": "venue-002",
+      "name": "Padel Center Palermo",
+      "slug": "padel-center-palermo",
+      "address": "Humboldt 1234, Palermo Hollywood, Buenos Aires",
+      "city": "Buenos Aires",
+      "country": "Argentina",
+      "type": "indoor",
+      "surface": "artificial_grass",
+      "courts": 8,
+      "amenities": [
+        "parking",
+        "lockers",
+        "showers",
+        "pro_shop",
+        "wifi",
+        "ac",
+        "lights",
+        "cafe"
+      ],
+      "contact": {
+        "phone": "+54 11 5555-0202",
+        "email": "reservas@padelcenter.com.ar",
+        "website": "https://padelcenter.com.ar"
+      },
+      "hours": {
+        "weekday": "06:00 - 23:00",
+        "weekend": "07:00 - 22:00"
+      },
+      "pricing": {
+        "hourly": 2800,
+        "currency": "ARS"
+      },
+      "overall_rating": 4.5,
+      "rating_count": 22,
+      "dimensions": {
+        "surface_quality": 4.7,
+        "lighting": 4.3,
+        "ventilation": 4.5,
+        "amenities": 4.4,
+        "location": 4.8,
+        "price": 4.3
+      },
+      "created_at": "2024-01-10T14:00:00Z",
+      "updated_at": "2024-01-27T16:45:00Z"
+    },
+    {
+      "id": "venue-003",
+      "name": "Estudio Padel Belgrano",
+      "slug": "estudio-padel-belgrano",
+      "address": "Juramento 2345, Belgrano, Buenos Aires",
+      "city": "Buenos Aires",
+      "country": "Argentina",
+      "type": "outdoor",
+      "surface": "cement",
+      "courts": 4,
+      "amenities": [
+        "parking",
+        "lockers",
+        "lights"
+      ],
+      "contact": {
+        "phone": "+54 11 5555-0303",
+        "email": "info@estudiopadel.com.ar",
+        "website": "https://estudiopadel.com.ar"
+      },
+      "hours": {
+        "weekday": "08:00 - 21:00",
+        "weekend": "09:00 - 20:00"
+      },
+      "pricing": {
+        "hourly": 1800,
+        "currency": "ARS"
+      },
+      "overall_rating": 3.8,
+      "rating_count": 12,
+      "dimensions": {
+        "surface_quality": 3.5,
+        "lighting": 4.0,
+        "ventilation": 4.2,
+        "amenities": 3.2,
+        "location": 4.5,
+        "price": 4.7
+      },
+      "created_at": "2024-01-12T09:00:00Z",
+      "updated_at": "2024-01-26T11:20:00Z"
+    },
+    {
+      "id": "venue-004",
+      "name": "Pádel Norte",
+      "slug": "padel-norte",
+      "address": "Blondel 456, Saavedra, Buenos Aires",
+      "city": "Buenos Aires",
+      "country": "Argentina",
+      "type": "both",
+      "surface": "glass",
+      "courts": 10,
+      "amenities": [
+        "parking",
+        "lockers",
+        "showers",
+        "pro_shop",
+        "bar",
+        "restaurant",
+        "wifi",
+        "ac",
+        "lights",
+        "heating",
+        "tennis_court",
+        "gym",
+        "swimming_pool"
+      ],
+      "contact": {
+        "phone": "+54 11 5555-0404",
+        "email": "reservas@padelnorte.com",
+        "website": "https://padelnorte.com"
+      },
+      "hours": {
+        "weekday": "06:00 - 24:00",
+        "weekend": "07:00 - 23:00"
+      },
+      "pricing": {
+        "hourly": 3200,
+        "currency": "ARS"
+      },
+      "overall_rating": 4.7,
+      "rating_count": 35,
+      "dimensions": {
+        "surface_quality": 4.8,
+        "lighting": 4.6,
+        "ventilation": 4.5,
+        "amenities": 4.8,
+        "location": 4.2,
+        "price": 4.5
+      },
+      "created_at": "2024-01-08T12:00:00Z",
+      "updated_at": "2024-01-29T09:15:00Z"
+    },
+    {
+      "id": "venue-005",
+      "name": "Pádel Sur",
+      "slug": "padel-sur",
+      "address": "Av. Independencia 3456, Barracas, Buenos Aires",
+      "city": "Buenos Aires",
+      "country": "Argentina",
+      "type": "outdoor",
+      "surface": "artificial_grass",
+      "courts": 6,
+      "amenities": [
+        "parking",
+        "lockers",
+        "lights",
+        "bar"
+      ],
+      "contact": {
+        "phone": "+54 11 5555-0505",
+        "email": "info@padelsur.com.ar",
+        "website": "https://padelsur.com.ar"
+      },
+      "hours": {
+        "weekday": "07:00 - 22:00",
+        "weekend": "08:00 - 21:00"
+      },
+      "pricing": {
+        "hourly": 2000,
+        "currency": "ARS"
+      },
+      "overall_rating": 4.0,
+      "rating_count": 18,
+      "dimensions": {
+        "surface_quality": 4.2,
+        "lighting": 4.0,
+        "ventilation": 4.5,
+        "amenities": 3.8,
+        "location": 4.3,
+        "price": 4.1
+      },
+      "created_at": "2024-01-14T15:00:00Z",
+      "updated_at": "2024-01-25T17:30:00Z"
+    }
+  ],
+  "ratings": [
+    {
+      "id": "rating-001",
+      "venue_id": "venue-001",
+      "player_id": "player-001",
+      "player_name": "Juan Pérez",
+      "overall_rating": 4,
+      "dimensions": {
+        "surface_quality": 4,
+        "lighting": 3,
+        "ventilation": 4,
+        "amenities": 5,
+        "location": 5,
+        "price": 3
+      },
+      "review": "Excelente club, buena iluminación. La comida del restaurante es muy buena.",
+      "created_at": "2024-01-28T12:00:00Z"
+    },
+    {
+      "id": "rating-002",
+      "venue_id": "venue-001",
+      "player_id": "player-002",
+      "player_name": "María García",
+      "overall_rating": 5,
+      "dimensions": {
+        "surface_quality": 5,
+        "lighting": 4,
+        "ventilation": 5,
+        "amenities": 4,
+        "location": 5,
+        "price": 4
+      },
+      "review": "El mejor club de padel de Palermo. Superficies impecables y muy bien atendido.",
+      "created_at": "2024-01-26T14:30:00Z"
+    },
+    {
+      "id": "rating-003",
+      "venue_id": "venue-002",
+      "player_id": "player-003",
+      "player_name": "Carlos López",
+      "overall_rating": 4,
+      "dimensions": {
+        "surface_quality": 5,
+        "lighting": 4,
+        "ventilation": 5,
+        "amenities": 3,
+        "location": 5,
+        "price": 3
+      },
+      "review": "Buenas canchas de pasto sintético. El café está muy bien.",
+      "created_at": "2024-01-25T10:15:00Z"
+    },
+    {
+      "id": "rating-004",
+      "venue_id": "venue-003",
+      "player_id": "player-004",
+      "player_name": "Ana Rodríguez",
+      "overall_rating": 3,
+      "dimensions": {
+        "surface_quality": 3,
+        "lighting": 4,
+        "ventilation": 5,
+        "amenities": 2,
+        "location": 5,
+        "price": 5
+      },
+      "review": "Canchas de cemento, no tienen mucho. Pero el precio es muy bueno y están bien ubicadas.",
+      "created_at": "2024-01-24T16:45:00Z"
+    },
+    {
+      "id": "rating-005",
+      "venue_id": "venue-004",
+      "player_id": "player-005",
+      "player_name": "Pedro Sánchez",
+      "overall_rating": 5,
+      "dimensions": {
+        "surface_quality": 5,
+        "lighting": 5,
+        "ventilation": 5,
+        "amenities": 5,
+        "location": 4,
+        "price": 4
+      },
+      "review": "Increíble! Tienen de todo: pileta, gimnasio, canchas de tenés. El mejor complejo deportivo.",
+      "created_at": "2024-01-22T11:00:00Z"
+    }
+  ],
+  "summary": {
+    "total_venues": 5,
+    "by_type": {
+      "indoor": 2,
+      "outdoor": 2,
+      "both": 1
+    },
+    "by_surface": {
+      "glass": 2,
+      "artificial_grass": 2,
+      "cement": 1
+    },
+    "total_ratings": 5,
+    "average_rating": 4.2
+  }
+}
