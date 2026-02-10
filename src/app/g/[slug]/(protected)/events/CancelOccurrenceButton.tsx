@@ -37,7 +37,7 @@ export default function CancelOccurrenceButton({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur">
             <h3 className="font-display text-xl text-[var(--ink)]">
-              ¿Marcar como "No se jugó"?
+              ¿Marcar como &quot;No se jugó&quot;?
             </h3>
             <p className="mt-2 text-sm text-[var(--muted)]">
               Esto va a cancelar la fecha actual y quedará en historial.

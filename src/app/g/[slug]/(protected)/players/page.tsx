@@ -42,7 +42,7 @@ export default async function PlayersPage({ params, searchParams }: PlayersPageP
 
   // Demo mode: avoid client-side Supabase usage in PlayerDirectory.
   if (!hasSupabaseEnv() && slug === "demo") {
-    const statsByPlayer = new Map(stats.map((s: any) => [s.player_id, s]));
+    const statsByPlayer = new Map(stats.map((s) => [s.player_id, s]));
 
     return (
       <div className="flex flex-col gap-6">

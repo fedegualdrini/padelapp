@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { test, expect, chromium } from '@playwright/test';
 import { randomUUID } from 'crypto';
 import * as fs from 'fs';
