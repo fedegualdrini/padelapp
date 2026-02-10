@@ -277,7 +277,7 @@ export default function CalendarClient({
                         }`}
                       >
                         <div className={`w-1.5 h-1.5 rounded-full ${
-                          match.score1 !== null && match.score2 !== null
+                          match.sets.length > 0
                             ? "bg-[var(--accent)]"
                             : "bg-[var(--muted)]"
                         }`} />
@@ -388,8 +388,10 @@ export default function CalendarClient({
                             <div className="flex items-center justify-between text-sm">
                               <span className="font-medium">{match.team1}</span>
                               <span className="text-[var(--muted)]">
-                                {match.score1 !== null && match.score2 !== null
-                                  ? `${match.score1} - ${match.score2}`
+                                {match.sets.length > 0
+                                  ? match.sets
+                                      .map((s) => `${s.team1}-${s.team2}`)
+                                      .join(", ")
                                   : "Pendiente"}
                               </span>
                               <span className="font-medium">{match.team2}</span>

@@ -24,7 +24,7 @@ export async function joinGroup(
       return { error: "Clave incorrecta. Por favor, intentá de nuevo." };
     }
 
-    redirect(`/g/${slug}/ranking`);
+    redirect(`/g/${slug}`);
   }
 
   const supabaseServer = await createSupabaseServerClient();
@@ -70,5 +70,5 @@ export async function joinGroup(
     return { error: "No se pudo ingresar al grupo. Verificá la clave e intentá nuevamente." };
   }
 
-  redirect(`/g/${slug}/ranking`);
+  redirect(`/g/${slug}`);
 }

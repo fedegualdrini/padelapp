@@ -2467,8 +2467,8 @@ export type CalendarMatch = {
   date: string;
   team1: string;
   team2: string;
-  score1: number | null;
-  score2: number | null;
+  /** Per-set games (same representation used in MatchCard score line). */
+  sets: { team1: number; team2: number }[];
   mvpPlayerId: string | null;
 };
 
@@ -2556,8 +2556,7 @@ export async function getCalendarData(
         date: `${year}-${monthStr}-03`,
         team1: "Fede / Nico",
         team2: "Santi / Lucho",
-        score1: null,
-        score2: null,
+        sets: [],
         mvpPlayerId: null,
       },
       {
@@ -2565,8 +2564,7 @@ export async function getCalendarData(
         date: `${year}-${monthStr}-05`,
         team1: "Fede / Nico",
         team2: "Santi / Lucho",
-        score1: null,
-        score2: null,
+        sets: [],
         mvpPlayerId: null,
       },
     ];
@@ -2607,7 +2605,7 @@ export async function getCalendarData(
       id,
       starts_at,
       status,
-      weekly_events (
+      weekly_events!event_occurrences_weekly_event_id_fkey (
         name,
         capacity
       )
@@ -2623,7 +2621,6 @@ export async function getCalendarData(
     .select(`
       id,
       played_at,
-      mvp_player_id,
       match_teams (
         team_number,
         match_team_players (
@@ -2640,6 +2637,24 @@ export async function getCalendarData(
     .gte('played_at', `${startDateStr}T00:00:00.000Z`)
     .lte('played_at', `${endDateStr}T23:59:59.999Z`)
     .order('played_at', { ascending: true });
+
+  // Diagnostics: if the calendar is empty because of an RLS/auth/query error,
+  // surface it in logs (and optionally in the UI for non-prod).
+  const calendarDiag: string[] = [];
+  if (occurrencesError) calendarDiag.push(`occurrencesError: ${occurrencesError.message}`);
+  if (matchesError) calendarDiag.push(`matchesError: ${matchesError.message}`);
+
+  if (calendarDiag.length > 0) {
+    console.error("[calendar] getCalendarData query error", {
+      groupId,
+      year,
+      month,
+      startDateStr,
+      endDateStr,
+      occurrencesError,
+      matchesError,
+    });
+  }
 
   // Get attendance counts for all events
   const eventsByOccurrence: Map<string, CalendarEvent> = new Map();
@@ -2706,20 +2721,19 @@ export async function getCalendarData(
         .filter(Boolean)
         .join(' / ') || 'Equipo 2';
 
-      // Calculate total scores
+      // Build per-set score line (same representation as MatchCard)
       const sets = Array.isArray(match.sets)
         ? [...match.sets].sort((a, b) => a.set_number - b.set_number)
         : [match.sets];
 
-      let totalScore1 = 0;
-      let totalScore2 = 0;
-
+      const setGames: { team1: number; team2: number }[] = [];
       for (const set of sets) {
         const scores = Array.isArray(set?.set_scores) ? set.set_scores[0] : set?.set_scores;
-        if (scores) {
-          totalScore1 += scores.team1_games || 0;
-          totalScore2 += scores.team2_games || 0;
-        }
+        if (!scores) continue;
+        setGames.push({
+          team1: scores.team1_games ?? 0,
+          team2: scores.team2_games ?? 0,
+        });
       }
 
       calendarMatches.push({
@@ -2727,9 +2741,8 @@ export async function getCalendarData(
         date: dateStr,
         team1: team1Players,
         team2: team2Players,
-        score1: totalScore1 || null,
-        score2: totalScore2 || null,
-        mvpPlayerId: match.mvp_player_id || null,
+        sets: setGames,
+        mvpPlayerId: null,
       });
     }
   }
@@ -2771,6 +2784,23 @@ export async function getCalendarData(
         dayMatches.push(match);
       }
     });
+
+    // In non-prod, show a visible "debug event" when queries error out so we don't
+    // silently render an empty calendar.
+    if (day === 1 && calendarDiag.length > 0 && process.env.NODE_ENV !== "production") {
+      const msg = calendarDiag.join(" | ");
+      dayEvents.unshift({
+        id: `debug-calendar-${year}-${month}-errors`,
+        name: `DEBUG: calendar query error (see server logs)`,
+        date: dateStr,
+        time: "00:00",
+        status: "open",
+        attendanceCount: 0,
+        capacity: 0,
+      });
+      // Also emit a concise line in case logs are truncated.
+      console.error("[calendar] debug event injected", { groupId, year, month, msg });
+    }
 
     daysData.push({
       date: dateStr,
