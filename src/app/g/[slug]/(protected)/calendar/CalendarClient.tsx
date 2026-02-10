@@ -64,24 +64,25 @@ export default function CalendarClient({
     router.push(url.pathname + url.search);
   };
 
+  // Treat YYYY-MM-DD as a *calendar date* (not a timestamp).
+  // Never use `new Date('YYYY-MM-DD')` here: it's parsed as UTC and then displayed
+  // in local time, which can shift the day/weekday in negative-offset timezones.
+  const todayKeyUtc = new Date().toISOString().slice(0, 10);
+
+  const parseDateKeyUtc = (dateStr: string) => {
+    const [y, m, d] = dateStr.split("-").map((v) => Number(v));
+    return new Date(Date.UTC(y, (m ?? 1) - 1, d ?? 1));
+  };
+
   const isToday = (dateStr: string) => {
     if (!dateStr) return false;
-    const today = new Date();
-    const date = new Date(dateStr);
-    return (
-      today.getFullYear() === date.getFullYear() &&
-      today.getMonth() === date.getMonth() &&
-      today.getDate() === date.getDate()
-    );
+    return dateStr === todayKeyUtc;
   };
 
   const isPastDay = (dateStr: string) => {
     if (!dateStr) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const date = new Date(dateStr);
-    date.setHours(0, 0, 0, 0);
-    return date < today;
+    // Compare as YYYY-MM-DD strings (lexicographic order matches date order).
+    return dateStr < todayKeyUtc;
   };
 
   const getFilteredEventsForDay = (dateStr: string) => {
@@ -218,7 +219,7 @@ export default function CalendarClient({
                 return <div key={`empty-${index}`} className="h-24 border-r border-b bg-[var(--bg-hover)]" />;
               }
 
-              const dayNum = new Date(dayData.date).getDate();
+              const dayNum = parseDateKeyUtc(dayData.date).getUTCDate();
               const isTodayCell = isToday(dayData.date);
               const isPast = isPastDay(dayData.date);
               const events = getFilteredEventsForDay(dayData.date);
@@ -305,10 +306,11 @@ export default function CalendarClient({
             {/* Header */}
             <div className="bg-[var(--bg-hover)] px-6 py-4 border-b border-[color:var(--card-border)] flex items-center justify-between">
               <h3 className="text-lg font-semibold text-[var(--ink)]">
-                {new Date(selectedDay).toLocaleDateString("es-AR", {
+                {parseDateKeyUtc(selectedDay).toLocaleDateString("es-AR", {
                   weekday: "long",
                   day: "numeric",
                   month: "long",
+                  timeZone: "UTC",
                 })}
               </h3>
               <button

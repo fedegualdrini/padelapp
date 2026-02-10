@@ -2496,18 +2496,18 @@ export async function getCalendarData(
     // Deterministic demo event that changes per month (used by e2e tests).
     const demoAnchorDate = `${year}-${monthStr}-02`;
 
-    const startDate = new Date(year, month, 1);
-    const endDate = new Date(year, month + 1, 0, 23, 59, 59);
+    // Work in UTC for calendar date keys (YYYY-MM-DD) so client timezone never
+    // shifts the day/weekday (e.g. America/Argentina/Buenos_Aires).
+    const startDate = new Date(Date.UTC(year, month, 1));
+    const endDate = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59));
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayKeyUtc = new Date().toISOString().slice(0, 10);
 
     const demoEvents: CalendarEvent[] = [];
 
     // Anchor event on the 2nd of the month.
     {
-      const d = new Date(`${demoAnchorDate}T20:00:00.000Z`);
-      const isPast = new Date(demoAnchorDate) < today;
+      const isPast = demoAnchorDate < todayKeyUtc;
       demoEvents.push({
         id: `demo-occ-${demoAnchorDate}`,
         name: `Evento demo ${year}-${monthStr}`,
@@ -2523,11 +2523,11 @@ export async function getCalendarData(
     {
       const d = new Date(startDate);
       // 4 = Thursday
-      while (d.getDay() !== 4) d.setDate(d.getDate() + 1);
+      while (d.getUTCDay() !== 4) d.setUTCDate(d.getUTCDate() + 1);
 
       while (d <= endDate) {
         const dateStr = d.toISOString().slice(0, 10);
-        const isPast = new Date(dateStr) < today;
+        const isPast = dateStr < todayKeyUtc;
         demoEvents.push({
           id: `demo-weekly-${dateStr}`,
           name: "Jueves Padel",
@@ -2537,7 +2537,7 @@ export async function getCalendarData(
           attendanceCount: isPast ? 4 : 1,
           capacity: 4,
         });
-        d.setDate(d.getDate() + 7);
+        d.setUTCDate(d.getUTCDate() + 7);
       }
     }
 
@@ -2550,6 +2550,16 @@ export async function getCalendarData(
     }
 
     const demoMatches: CalendarMatch[] = [
+      // Regression anchor: match on Feb 3 should render in the correct day cell.
+      {
+        id: `demo-match-${year}-${monthStr}-03`,
+        date: `${year}-${monthStr}-03`,
+        team1: "Fede / Nico",
+        team2: "Santi / Lucho",
+        score1: null,
+        score2: null,
+        mvpPlayerId: null,
+      },
       {
         id: `demo-match-${year}-${monthStr}-05`,
         date: `${year}-${monthStr}-05`,
@@ -2563,13 +2573,13 @@ export async function getCalendarData(
 
     // Build day-by-day data (same layout logic as real data).
     const daysData: CalendarDayData[] = [];
-    const firstDay = startDate.getDay();
+    const firstDay = startDate.getUTCDay();
 
     for (let i = 0; i < firstDay; i++) {
       daysData.push({ date: "", events: [], matches: [] });
     }
 
-    const daysInMonth = endDate.getDate();
+    const daysInMonth = endDate.getUTCDate();
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${year}-${monthStr}-${String(day).padStart(2, "0")}`;
       const dayEvents = demoEvents.filter((e) => e.date === dateStr);
@@ -2582,9 +2592,10 @@ export async function getCalendarData(
 
   const supabaseServer = await getSupabaseServerClient();
 
-  // Calculate date range for the month
-  const startDate = new Date(year, month, 1);
-  const endDate = new Date(year, month + 1, 0, 23, 59, 59);
+  // Calculate date range for the month.
+  // Use UTC-based dates so converting to YYYY-MM-DD doesn't drift due to host TZ.
+  const startDate = new Date(Date.UTC(year, month, 1));
+  const endDate = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59));
 
   const startDateStr = startDate.toISOString().slice(0, 10);
   const endDateStr = endDate.toISOString().slice(0, 10);
@@ -2729,7 +2740,7 @@ export async function getCalendarData(
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
   // Get first day of month (0 = Sunday, 6 = Saturday)
-  const firstDay = startDate.getDay();
+  const firstDay = startDate.getUTCDay();
 
   // Pad with empty days for alignment
   for (let i = 0; i < firstDay; i++) {
@@ -2741,7 +2752,7 @@ export async function getCalendarData(
   }
 
   // Fill in actual days
-  const daysInMonth = endDate.getDate();
+  const daysInMonth = endDate.getUTCDate();
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
