@@ -1,7 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const demoMode = !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
 export default defineConfig({
   testDir: './tests/e2e',
+  // In demo/no-env mode we only run the subset of e2e tests that are designed to work without Supabase.
+  ...(demoMode ? { testMatch: ['**/calendar.spec.ts'] } : {}),
   globalSetup: './tests/e2e/global-setup.ts',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,

@@ -308,9 +308,10 @@ export async function getMatchEloDeltas(matchId: string) {
         ? row.players[0]
         : row.players) as { name: string } | null;
       const current = ratingsByPlayer.get(row.player_id);
-      if (!player || current === undefined) {
+      if (!player || current === undefined || current === null) {
         return null;
       }
+      const currentRating = Number(current);
       const { data: prev, error: prevError } = await supabaseServer.rpc(
         "get_player_elo_before",
         {
@@ -326,8 +327,8 @@ export async function getMatchEloDeltas(matchId: string) {
         playerId: row.player_id,
         name: player.name,
         previous,
-        current,
-        delta: current - previous,
+        current: currentRating,
+        delta: currentRating - previous,
       };
     })
   );

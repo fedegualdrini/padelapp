@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CalendarDays, Trophy } from "lucide-react";
-import type { CalendarData, CalendarEvent, CalendarMatch } from "@/lib/data";
+import type { CalendarData } from "@/lib/data";
 
 type CalendarClientProps = {
   slug: string;
@@ -26,8 +27,13 @@ export default function CalendarClient({
   currentYear,
   currentMonth,
 }: CalendarClientProps) {
-  const [viewYear, setViewYear] = useState(calendarData.year);
-  const [viewMonth, setViewMonth] = useState(calendarData.month);
+  const router = useRouter();
+
+  // The calendar grid is driven by Server Component data (calendarData).
+  // Keep the header in sync with it to avoid stale UI on navigation.
+  const viewYear = calendarData.year;
+  const viewMonth = calendarData.month;
+
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [showOnlyEvents, setShowOnlyEvents] = useState(false);
   const [showOnlyMatches, setShowOnlyMatches] = useState(false);
@@ -44,24 +50,18 @@ export default function CalendarClient({
       newYear -= 1;
     }
 
-    setViewMonth(newMonth);
-    setViewYear(newYear);
-
-    // Update URL without reloading
+    // Update the URL via Next.js router so the Server Component refetches data.
     const url = new URL(window.location.href);
     url.searchParams.set("year", newYear.toString());
     url.searchParams.set("month", newMonth.toString());
-    window.history.pushState({}, "", url.toString());
+    router.push(url.pathname + url.search);
   };
 
   const jumpToToday = () => {
-    setViewYear(currentYear);
-    setViewMonth(currentMonth);
-
     const url = new URL(window.location.href);
     url.searchParams.set("year", currentYear.toString());
     url.searchParams.set("month", currentMonth.toString());
-    window.history.pushState({}, "", url.toString());
+    router.push(url.pathname + url.search);
   };
 
   const isToday = (dateStr: string) => {
@@ -228,6 +228,8 @@ export default function CalendarClient({
               return (
                 <button
                   key={dayData.date}
+                  data-testid={`calendar-day-${dayData.date}`}
+                  aria-label={`Día ${dayNum} (${dayData.date})`}
                   onClick={() => setSelectedDay(dayData.date)}
                   className={`
                     h-24 border-r border-b p-2 text-left transition-colors border-[color:var(--card-border)]
@@ -292,6 +294,7 @@ export default function CalendarClient({
       {/* Day Details Modal */}
       {selectedDay && selectedDayData && (
         <div
+          data-testid="calendar-day-modal-backdrop"
           className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedDay(null)}
         >

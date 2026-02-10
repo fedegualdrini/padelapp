@@ -24,19 +24,11 @@ export default async function ProtectedLayout({ children, params }: ProtectedLay
   const { slug } = await params;
 
   if (!hasSupabaseEnv()) {
-    // Demo group: allow navigation + pages with mocked data.
-    if (slug === "demo") {
-      return (
-        <AppShell groupName="Demo — Jueves Padel" slug={slug} showNavigation={true}>
-          {children}
-        </AppShell>
-      );
-    }
-
-    // Non-demo: Render a shell without navigation (since group data isn't available) and avoid crashing.
+    // Demo mode: when Supabase env is missing, allow navigation for any slug and rely on mocked data.
+    // This keeps e2e + local/dev usage working without external dependencies.
     return (
-      <AppShell groupName="Padel Tracker" slug={slug} showNavigation={false}>
-        <SetupRequiredProtected />
+      <AppShell groupName="Demo — Jueves Padel" slug={slug} showNavigation={true}>
+        {children}
       </AppShell>
     );
   }

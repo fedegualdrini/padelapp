@@ -79,8 +79,14 @@ export async function getGroups() {
 }
 
 export const getGroupBySlug = cache(async (slug: string) => {
-  if (isDemoMode() && slug === DEMO_GROUP.slug) {
+  if (slug === DEMO_GROUP.slug) {
     return DEMO_GROUP;
+  }
+
+  // When Supabase env is missing, run the app in demo mode for any slug.
+  // Keep the requested slug so route links remain consistent.
+  if (isDemoMode()) {
+    return { ...DEMO_GROUP, slug };
   }
 
   const supabaseServer = await getSupabaseServerClient();
@@ -123,7 +129,7 @@ export async function getGroupByMatchId(matchId: string) {
 }
 
 export async function isGroupMember(groupId: string) {
-  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+  if (groupId === DEMO_GROUP.id) {
     return true;
   }
 
@@ -231,7 +237,7 @@ const buildMatchView = (match: MatchRow) => {
 };
 
 export async function getRecentMatches(groupId: string, limit = 3) {
-  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+  if (groupId === DEMO_GROUP.id) {
     const playedAt = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     return [
       {
@@ -302,7 +308,7 @@ export async function getMatches(
   groupId: string,
   filters?: { playerId?: string; from?: string; to?: string }
 ) {
-  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+  if (groupId === DEMO_GROUP.id) {
     // Keep it simple for demo: ignore filters and reuse recent match mock.
     return getRecentMatches(groupId, 10);
   }
@@ -483,9 +489,10 @@ export async function getMatchEloDeltas(matchId: string) {
         ? row.players[0]
         : row.players) as { name: string } | null;
       const current = ratingsByPlayer.get(row.player_id);
-      if (!player || current === undefined) {
+      if (!player || current === undefined || current === null) {
         return null;
       }
+      const currentRating = Number(current);
       const { data: prev, error: prevError } = await supabaseServer.rpc(
         "get_player_elo_before",
         {
@@ -501,8 +508,8 @@ export async function getMatchEloDeltas(matchId: string) {
         playerId: row.player_id,
         name: player.name,
         previous,
-        current,
-        delta: current - previous,
+        current: currentRating,
+        delta: currentRating - previous,
       };
     })
   );
@@ -584,7 +591,7 @@ export async function getMatchEditData(groupId: string, id: string) {
 }
 
 export const getPlayers = cache(async (groupId: string) => {
-  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+  if (groupId === DEMO_GROUP.id) {
     return DEMO_PLAYERS;
   }
 
@@ -607,7 +614,7 @@ export async function getPlayerStats(
   startDate?: string,
   endDate?: string
 ) {
-  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+  if (groupId === DEMO_GROUP.id) {
     return [
       { player_id: "p1", matches_played: 12, wins: 7, losses: 5, undecided: 0, win_rate: 58.3 },
       { player_id: "p2", matches_played: 15, wins: 9, losses: 6, undecided: 0, win_rate: 60.0 },
@@ -1018,7 +1025,7 @@ export async function getInviteMostPlayed(
 }
 
 export async function getEloLeaderboard(groupId: string, limit = 8) {
-  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+  if (groupId === DEMO_GROUP.id) {
     return [
       { playerId: "p2", name: "Nico", rating: 1120 },
       { playerId: "p1", name: "Fede", rating: 1095 },
@@ -1081,7 +1088,7 @@ export async function getEloTimeline(
   startDate?: string,
   endDate?: string
 ) {
-  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+  if (groupId === DEMO_GROUP.id) {
     const base = new Date();
     const daysAgo = (n: number) => {
       const d = new Date(base);
@@ -1403,8 +1410,8 @@ export async function predictMatchOutcome(
   });
 
   // Get player names
-  const playerNamesById = new Map(
-    playersResult.data.map((p) => [p.id, p.name])
+  const playerNamesById = new Map<string, string>(
+    playersResult.data.map((p) => [String(p.id), String(p.name)])
   );
 
   // Calculate team averages (default to 1000 if no ELO history)
@@ -1941,7 +1948,7 @@ type AttendanceRecord = {
 };
 
 export async function getWeeklyEvents(groupId: string): Promise<WeeklyEvent[]> {
-  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+  if (groupId === DEMO_GROUP.id) {
     return [
       {
         id: "we1",
@@ -1979,7 +1986,7 @@ export async function getUpcomingOccurrences(
   groupId: string,
   limit = 6
 ): Promise<EventOccurrence[]> {
-  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+  if (groupId === DEMO_GROUP.id) {
     const nextThursday = (() => {
       const d = new Date();
       const day = d.getDay(); // 0 Sun..6 Sat
@@ -2029,7 +2036,7 @@ export async function getPastOccurrences(
   groupId: string,
   limit = 10
 ): Promise<EventOccurrence[]> {
-  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+  if (groupId === DEMO_GROUP.id) {
     return [];
   }
 
@@ -2202,7 +2209,7 @@ export async function getAttendanceSummary(
   occurrences: EventOccurrence[],
   weeklyEvents: WeeklyEvent[]
 ): Promise<AttendanceSummary[]> {
-  if (isDemoMode() && groupId === DEMO_GROUP.id) {
+  if (groupId === DEMO_GROUP.id) {
     const weeklyEvent = weeklyEvents[0] ?? {
       id: "we1",
       group_id: DEMO_GROUP.id,
@@ -2482,6 +2489,97 @@ export async function getCalendarData(
   year: number,
   month: number
 ): Promise<CalendarData> {
+  if (groupId === DEMO_GROUP.id) {
+    // Demo calendar data should work even without Supabase env.
+    const monthStr = String(month + 1).padStart(2, "0");
+
+    // Deterministic demo event that changes per month (used by e2e tests).
+    const demoAnchorDate = `${year}-${monthStr}-02`;
+
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0, 23, 59, 59);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const demoEvents: CalendarEvent[] = [];
+
+    // Anchor event on the 2nd of the month.
+    {
+      const d = new Date(`${demoAnchorDate}T20:00:00.000Z`);
+      const isPast = new Date(demoAnchorDate) < today;
+      demoEvents.push({
+        id: `demo-occ-${demoAnchorDate}`,
+        name: `Evento demo ${year}-${monthStr}`,
+        date: demoAnchorDate,
+        time: "20:00",
+        status: isPast ? "completed" : "open",
+        attendanceCount: 2,
+        capacity: 4,
+      });
+    }
+
+    // Add weekly Thursday events so each month has multiple occurrences.
+    {
+      const d = new Date(startDate);
+      // 4 = Thursday
+      while (d.getDay() !== 4) d.setDate(d.getDate() + 1);
+
+      while (d <= endDate) {
+        const dateStr = d.toISOString().slice(0, 10);
+        const isPast = new Date(dateStr) < today;
+        demoEvents.push({
+          id: `demo-weekly-${dateStr}`,
+          name: "Jueves Padel",
+          date: dateStr,
+          time: "20:00",
+          status: isPast ? "completed" : "open",
+          attendanceCount: isPast ? 4 : 1,
+          capacity: 4,
+        });
+        d.setDate(d.getDate() + 7);
+      }
+    }
+
+    // Add one cancelled occurrence (still visible).
+    if (demoEvents.length > 0) {
+      const toCancel = demoEvents.find((e) => e.id.startsWith("demo-weekly-"));
+      if (toCancel) {
+        toCancel.status = "cancelled";
+      }
+    }
+
+    const demoMatches: CalendarMatch[] = [
+      {
+        id: `demo-match-${year}-${monthStr}-05`,
+        date: `${year}-${monthStr}-05`,
+        team1: "Fede / Nico",
+        team2: "Santi / Lucho",
+        score1: null,
+        score2: null,
+        mvpPlayerId: null,
+      },
+    ];
+
+    // Build day-by-day data (same layout logic as real data).
+    const daysData: CalendarDayData[] = [];
+    const firstDay = startDate.getDay();
+
+    for (let i = 0; i < firstDay; i++) {
+      daysData.push({ date: "", events: [], matches: [] });
+    }
+
+    const daysInMonth = endDate.getDate();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${monthStr}-${String(day).padStart(2, "0")}`;
+      const dayEvents = demoEvents.filter((e) => e.date === dateStr);
+      const dayMatches = demoMatches.filter((m) => m.date === dateStr);
+      daysData.push({ date: dateStr, events: dayEvents, matches: dayMatches });
+    }
+
+    return { year, month, days: daysData };
+  }
+
   const supabaseServer = await getSupabaseServerClient();
 
   // Calculate date range for the month

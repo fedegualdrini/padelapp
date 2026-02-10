@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 
 type JoinGroupState = {
   error?: string;
@@ -11,9 +11,23 @@ export async function joinGroup(
   prevState: JoinGroupState | null,
   formData: FormData
 ): Promise<JoinGroupState> {
-  const supabaseServer = await createSupabaseServerClient();
   const slug = String(formData.get("group_slug") ?? "").trim();
   const passphrase = String(formData.get("group_passphrase") ?? "").trim();
+
+  // Demo mode: mimic the join flow without Supabase.
+  if (!hasSupabaseEnv()) {
+    if (!slug || !passphrase) {
+      return { error: "La clave del grupo es obligatoria." };
+    }
+
+    if (passphrase !== "padel") {
+      return { error: "Clave incorrecta. Por favor, intentá de nuevo." };
+    }
+
+    redirect(`/g/${slug}/ranking`);
+  }
+
+  const supabaseServer = await createSupabaseServerClient();
 
   if (!slug || !passphrase) {
     return { error: "La clave del grupo es obligatoria." };
@@ -56,5 +70,5 @@ export async function joinGroup(
     return { error: "No se pudo ingresar al grupo. Verificá la clave e intentá nuevamente." };
   }
 
-  redirect(`/g/${slug}`);
+  redirect(`/g/${slug}/ranking`);
 }
