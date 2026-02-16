@@ -541,7 +541,7 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
               onChange={(e) => setSelectedPlayer(e.target.value)}
               className="w-full rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
             >
-              {players.filter(p => p.status === 'usual').map(player => (
+              {players.filter(p => p.status === 'usual' || p.status === 'invite').map(player => (
                 <option key={player.id} value={player.id}>{player.name}</option>
               ))}
             </select>
