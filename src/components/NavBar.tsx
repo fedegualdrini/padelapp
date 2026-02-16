@@ -9,6 +9,11 @@ const links = [
   { href: "/ranking", label: "Ranking" },
   // "Grupo" is the place to manage the roster/passphrase and day-to-day admin.
   { href: "/players", label: "Grupo" },
+  // Moved from Labs to main nav for better discoverability (retention analysis)
+  { href: "/achievements", label: "Logros" },
+  { href: "/challenges", label: "Desafíos" },
+  { href: "/calendar", label: "Calendario" },
+  { href: "/pairs", label: "Parejas" },
   // Everything experimental lives here.
   { href: "/labs", label: "Beta/Labs" },
 ];
