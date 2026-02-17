@@ -225,7 +225,7 @@ export default function EventsClient({
 
       {/* Error message */}
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-xl border border-[color:var(--status-error-border)] bg-[color:var(--status-error-bg)] p-4 text-sm text-[color:var(--status-error-text)]">
           {error}
         </div>
       )}
