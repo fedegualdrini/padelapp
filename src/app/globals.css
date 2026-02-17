@@ -15,6 +15,43 @@
   --card-border-strong: rgba(255, 255, 255, 0.7);
   --input-bg: rgba(255, 255, 255, 0.9);
 
+  /* Status colors */
+  --status-success-bg: #dcfce7;
+  --status-success-text: #166534;
+  --status-success-text-muted: #15803d;
+  --status-success-text-light: #22c55e;
+  --status-success-strong: #16a34a;
+  --status-success-strong-text: #ffffff;
+
+  --status-warning-bg: #fef9c3;
+  --status-warning-text: #854d0e;
+  --status-warning-text-muted: #a16207;
+  --status-warning-text-light: #eab308;
+  --status-warning-strong: #eab308;
+  --status-warning-strong-text: #ffffff;
+
+  --status-error-bg: #fee2e2;
+  --status-error-text: #991b1b;
+  --status-error-text-muted: #b91c1c;
+  --status-error-text-light: #ef4444;
+  --status-error-strong: #dc2626;
+  --status-error-strong-text: #ffffff;
+
+  --status-neutral-bg: #f9fafb;
+  --status-neutral-text: #374151;
+  --status-neutral-text-muted: #6b7280;
+  --status-neutral-strong-bg: #e5e7eb;
+  --status-neutral-strong-text: #ffffff;
+
+  --status-info-bg: #dbeafe;
+  --status-info-text: #1e40af;
+  --status-info-text-muted: #2563eb;
+  --status-info-text-light: #3b82f6;
+  --status-info-strong: #2563eb;
+  --status-info-strong-text: #ffffff;
+
+  --bg-hover: rgba(0, 0, 0, 0.04);
+
   /* TradingView Chart Theme - Light */
   --chart-bg: #ffffff;
   --chart-grid: #e0e3eb;
@@ -47,6 +84,43 @@
   --card-border: rgba(148, 163, 184, 0.24);
   --card-border-strong: rgba(148, 163, 184, 0.35);
   --input-bg: rgba(15, 23, 42, 0.95);
+
+  /* Status colors */
+  --status-success-bg: #14532d;
+  --status-success-text: #86efac;
+  --status-success-text-muted: #4ade80;
+  --status-success-text-light: #22c55e;
+  --status-success-strong: #16a34a;
+  --status-success-strong-text: #ffffff;
+
+  --status-warning-bg: #713f12;
+  --status-warning-text: #fde047;
+  --status-warning-text-muted: #facc15;
+  --status-warning-text-light: #eab308;
+  --status-warning-strong: #ca8a04;
+  --status-warning-strong-text: #ffffff;
+
+  --status-error-bg: #7f1d1d;
+  --status-error-text: #fca5a5;
+  --status-error-text-muted: #f87171;
+  --status-error-text-light: #ef4444;
+  --status-error-strong: #dc2626;
+  --status-error-strong-text: #ffffff;
+
+  --status-neutral-bg: #1f2937;
+  --status-neutral-text: #e5e7eb;
+  --status-neutral-text-muted: #9ca3af;
+  --status-neutral-strong-bg: #374151;
+  --status-neutral-strong-text: #ffffff;
+
+  --status-info-bg: #1e3a8a;
+  --status-info-text: #93c5fd;
+  --status-info-text-muted: #60a5fa;
+  --status-info-text-light: #3b82f6;
+  --status-info-strong: #2563eb;
+  --status-info-strong-text: #ffffff;
+
+  --bg-hover: rgba(255, 255, 255, 0.08);
 
   /* TradingView Chart Theme - Dark */
   --chart-bg: #1e222d;
