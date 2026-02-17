@@ -52,9 +52,8 @@ export default defineConfig({
       name: 'Mobile Safari',
       use: {
         ...devices['iPhone 12'],
-        launchOptions: {
-          args: ['--disable-dev-shm-usage', '--no-sandbox'],
-        },
+        // Webkit doesn't support Chrome-specific flags like --disable-dev-shm-usage
+        // Don't add launchOptions for Mobile Safari
       },
     },
   ],
