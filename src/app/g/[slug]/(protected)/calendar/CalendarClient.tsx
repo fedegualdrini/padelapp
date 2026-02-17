@@ -261,7 +261,7 @@ export default function CalendarClient({
                         <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full shrink-0 ${
                           event.status === "completed" || event.status === "cancelled"
                             ? "bg-[var(--muted)]"
-                            : "bg-green-500"
+                            : "bg-[var(--status-success-strong)]"
                         }`} />
                         <span className="truncate">{event.name}</span>
                       </div>
