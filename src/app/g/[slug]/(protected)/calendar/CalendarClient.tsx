@@ -159,11 +159,11 @@ export default function CalendarClient({
                   setShowOnlyEvents(false);
                   setShowOnlyMatches(false);
                 }}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors shrink-0 ${
-                  !showOnlyEvents && !showOnlyMatches
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors shrink-0"
+                style={{
+                  backgroundColor: !showOnlyEvents && !showOnlyMatches ? 'var(--status-info-bg)' : 'var(--status-neutral-bg)',
+                  color: !showOnlyEvents && !showOnlyMatches ? 'var(--status-info-text)' : 'var(--status-neutral-text-muted)'
+                }}
               >
                 Todo
               </button>
@@ -172,11 +172,11 @@ export default function CalendarClient({
                   setShowOnlyEvents(!showOnlyEvents);
                   setShowOnlyMatches(false);
                 }}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors shrink-0 ${
-                  showOnlyEvents
-                    ? "bg-green-100 text-green-700"
-                    : "bg-[var(--card-solid)] text-[var(--ink)] hover:bg-[var(--bg-hover)]"
-                }`}
+                className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors shrink-0"
+                style={{
+                  backgroundColor: showOnlyEvents ? 'var(--status-success-bg)' : 'var(--card-solid)',
+                  color: showOnlyEvents ? 'var(--status-success-text)' : 'var(--ink)'
+                }}
               >
                 Eventos
               </button>
@@ -185,11 +185,11 @@ export default function CalendarClient({
                   setShowOnlyEvents(false);
                   setShowOnlyMatches(!showOnlyMatches);
                 }}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors shrink-0 ${
-                  showOnlyMatches
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-[var(--card-solid)] text-[var(--ink)] hover:bg-[var(--bg-hover)]"
-                }`}
+                className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors shrink-0"
+                style={{
+                  backgroundColor: showOnlyMatches ? 'var(--status-info-bg)' : 'var(--card-solid)',
+                  color: showOnlyMatches ? 'var(--status-info-text)' : 'var(--ink)'
+                }}
               >
                 Partidos
               </button>
@@ -345,15 +345,25 @@ export default function CalendarClient({
                             <p className="text-xs sm:text-sm text-[var(--muted)]">{event.time}</p>
                           </div>
                           <span
-                            className={`px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full shrink-0 ml-2 ${
-                              event.status === "open"
-                                ? "bg-green-100 text-green-700"
-                                : event.status === "locked"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : event.status === "completed"
-                                ? "bg-gray-100 text-gray-700"
-                                : "bg-red-100 text-red-700"
-                            }`}
+                            className="px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full shrink-0 ml-2"
+                            style={{
+                              backgroundColor:
+                                event.status === "open"
+                                  ? 'var(--status-success-bg)'
+                                  : event.status === "locked"
+                                  ? 'var(--status-warning-bg)'
+                                  : event.status === "completed"
+                                  ? 'var(--status-neutral-bg)'
+                                  : 'var(--status-error-bg)',
+                              color:
+                                event.status === "open"
+                                  ? 'var(--status-success-text)'
+                                  : event.status === "locked"
+                                  ? 'var(--status-warning-text)'
+                                  : event.status === "completed"
+                                  ? 'var(--status-neutral-text)'
+                                  : 'var(--status-error-text)'
+                            }}
                           >
                             {event.status === "open"
                               ? "Abierto"

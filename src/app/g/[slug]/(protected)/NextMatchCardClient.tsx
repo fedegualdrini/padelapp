@@ -212,21 +212,21 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
         <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4">
           <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">Asistencia</p>
           <div className="mt-3 grid grid-cols-4 gap-2 text-center">
-            <div className="rounded-lg bg-green-50 p-2">
-              <p className="text-lg font-bold text-green-700">{summary.confirmedCount}</p>
-              <p className="text-xs text-green-600">Van</p>
+            <div className="rounded-lg p-2" style={{ backgroundColor: 'var(--status-success-bg)' }}>
+              <p className="text-lg font-bold" style={{ color: 'var(--status-success-text)' }}>{summary.confirmedCount}</p>
+              <p className="text-xs" style={{ color: 'var(--status-success-text-muted)' }}>Van</p>
             </div>
-            <div className="rounded-lg bg-red-50 p-2">
-              <p className="text-lg font-bold text-red-700">{summary.declinedCount}</p>
-              <p className="text-xs text-red-600">No van</p>
+            <div className="rounded-lg p-2" style={{ backgroundColor: 'var(--status-error-bg)' }}>
+              <p className="text-lg font-bold" style={{ color: 'var(--status-error-text)' }}>{summary.declinedCount}</p>
+              <p className="text-xs" style={{ color: 'var(--status-error-text-muted)' }}>No van</p>
             </div>
-            <div className="rounded-lg bg-yellow-50 p-2">
-              <p className="text-lg font-bold text-yellow-700">{summary.maybeCount}</p>
-              <p className="text-xs text-yellow-600">Tal vez</p>
+            <div className="rounded-lg p-2" style={{ backgroundColor: 'var(--status-warning-bg)' }}>
+              <p className="text-lg font-bold" style={{ color: 'var(--status-warning-text)' }}>{summary.maybeCount}</p>
+              <p className="text-xs" style={{ color: 'var(--status-warning-text-muted)' }}>Tal vez</p>
             </div>
-            <div className="rounded-lg bg-gray-50 p-2">
-              <p className="text-lg font-bold text-gray-700">{summary.waitlistCount}</p>
-              <p className="text-xs text-gray-600">Espera</p>
+            <div className="rounded-lg p-2" style={{ backgroundColor: 'var(--status-neutral-bg)' }}>
+              <p className="text-lg font-bold" style={{ color: 'var(--status-neutral-text)' }}>{summary.waitlistCount}</p>
+              <p className="text-xs" style={{ color: 'var(--status-neutral-text-muted)' }}>Espera</p>
             </div>
           </div>
 
@@ -251,11 +251,11 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
                 type="button"
                 onClick={() => setStatus("confirmed")}
                 disabled={isPending}
-                className={`rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-50 ${
-                  currentStatus === "confirmed"
-                    ? "bg-green-600 text-white"
-                    : "bg-green-100 text-green-700 hover:bg-green-200"
-                }`}
+                className="rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-50"
+                style={{
+                  backgroundColor: currentStatus === "confirmed" ? 'var(--status-success-strong)' : 'var(--status-success-bg)',
+                  color: currentStatus === "confirmed" ? 'var(--status-success-strong-text)' : 'var(--status-success-text)'
+                }}
               >
                 Voy
               </button>
@@ -263,11 +263,11 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
                 type="button"
                 onClick={() => setStatus("maybe")}
                 disabled={isPending}
-                className={`rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-50 ${
-                  currentStatus === "maybe"
-                    ? "bg-yellow-500 text-white"
-                    : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
-                }`}
+                className="rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-50"
+                style={{
+                  backgroundColor: currentStatus === "maybe" ? 'var(--status-warning-strong)' : 'var(--status-warning-bg)',
+                  color: currentStatus === "maybe" ? 'var(--status-warning-strong-text)' : 'var(--status-warning-text)'
+                }}
               >
                 Tal vez
               </button>
@@ -275,11 +275,11 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
                 type="button"
                 onClick={() => setStatus("declined")}
                 disabled={isPending}
-                className={`rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-50 ${
-                  currentStatus === "declined"
-                    ? "bg-red-600 text-white"
-                    : "bg-red-100 text-red-700 hover:bg-red-200"
-                }`}
+                className="rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-50"
+                style={{
+                  backgroundColor: currentStatus === "declined" ? 'var(--status-error-strong)' : 'var(--status-error-bg)',
+                  color: currentStatus === "declined" ? 'var(--status-error-strong-text)' : 'var(--status-error-text)'
+                }}
               >
                 No voy
               </button>
@@ -292,7 +292,7 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
 
           <div className="mt-3 flex flex-col gap-3 text-sm">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-green-600">Van</p>
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--status-success-text-muted)' }}>Van</p>
               <div className="mt-2 flex flex-wrap gap-1">
                 {confirmedPlayers.length === 0 ? (
                   <span className="text-[var(--muted)]">—</span>
@@ -300,7 +300,11 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
                   confirmedPlayers.map((a) => (
                     <span
                       key={a.id}
-                      className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800"
+                      className="rounded-full px-2 py-1 text-xs"
+                      style={{
+                        backgroundColor: 'var(--status-success-bg)',
+                        color: 'var(--status-success-text)'
+                      }}
                     >
                       {a.players?.name ?? "Jugador"}
                     </span>
@@ -310,7 +314,7 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-yellow-600">Tal vez</p>
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--status-warning-text-muted)' }}>Tal vez</p>
               <div className="mt-2 flex flex-wrap gap-1">
                 {maybePlayers.length === 0 ? (
                   <span className="text-[var(--muted)]">—</span>
@@ -318,7 +322,11 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
                   maybePlayers.map((a) => (
                     <span
                       key={a.id}
-                      className="rounded-full bg-yellow-100 px-2 py-1 text-xs text-yellow-800"
+                      className="rounded-full px-2 py-1 text-xs"
+                      style={{
+                        backgroundColor: 'var(--status-warning-bg)',
+                        color: 'var(--status-warning-text)'
+                      }}
                     >
                       {a.players?.name ?? "Jugador"}
                     </span>
@@ -328,7 +336,7 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-red-600">No van</p>
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--status-error-text-muted)' }}>No van</p>
               <div className="mt-2 flex flex-wrap gap-1">
                 {declinedPlayers.length === 0 ? (
                   <span className="text-[var(--muted)]">—</span>
@@ -336,7 +344,11 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
                   declinedPlayers.map((a) => (
                     <span
                       key={a.id}
-                      className="rounded-full bg-red-100 px-2 py-1 text-xs text-red-800"
+                      className="rounded-full px-2 py-1 text-xs"
+                      style={{
+                        backgroundColor: 'var(--status-error-bg)',
+                        color: 'var(--status-error-text)'
+                      }}
                     >
                       {a.players?.name ?? "Jugador"}
                     </span>
