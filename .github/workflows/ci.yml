@@ -21,4 +21,25 @@ jobs:
       - run: npm run typecheck --if-present
       - run: npm run test:unit --if-present
       - run: npm run build --if-present
+      - name: Start dev server for E2E tests
+        run: |
+          mkdir -p logs
+          npm run dev > logs/server.log 2>&1 &
+          echo $! > logs/server.pid
+          for i in {1..60}; do
+            if grep -q "Ready in" logs/server.log; then
+              echo "Server ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Server failed to start"
+          cat logs/server.log
+          exit 1
       - run: npm run test:e2e --if-present
+      - name: Stop dev server
+        if: always()
+        run: |
+          if [ -f logs/server.pid ]; then
+            kill $(cat logs/server.pid) || true
+          fi
