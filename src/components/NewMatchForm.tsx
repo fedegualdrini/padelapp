@@ -255,7 +255,7 @@ function NewMatchForm({
 
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
         <h3 className="font-display text-lg text-[var(--ink)]">Equipos</h3>
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
               Equipo 1
@@ -386,7 +386,7 @@ function NewMatchForm({
       />
 
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <h3 className="font-display text-lg text-[var(--ink)]">
             Marcador por set
           </h3>
@@ -394,48 +394,50 @@ function NewMatchForm({
             Cargá todos los sets jugados (máx. 5)
           </p>
         </div>
-        <div className="mt-4 grid gap-3">
+        <div className="mt-4 space-y-4">
           {[1, 2, 3, 4, 5].map((setNumber) => (
             <div
               key={setNumber}
-              className="grid grid-cols-[80px_repeat(2,1fr)] items-center gap-3"
+              className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-[80px_repeat(2,1fr)] sm:items-center sm:gap-3"
             >
-              <span className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
+              <span className="text-xs uppercase tracking-[0.2em] text-[var(--muted)] block">
                 Set {setNumber}
               </span>
-              <input
-                type="number"
-                min={0}
-                max={7}
-                placeholder="Equipo 1 (ej: 6?)"
-                name={`set${setNumber}_team1`}
-                aria-label={`Set ${setNumber} - Equipo 1`}
-                className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
-              />
-              <input
-                type="number"
-                min={0}
-                max={7}
-                placeholder="Equipo 2 (ej: 4?)"
-                name={`set${setNumber}_team2`}
-                aria-label={`Set ${setNumber} - Equipo 2`}
-                className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
-              />
+              <div className="grid grid-cols-2 gap-3 sm:contents">
+                <input
+                  type="number"
+                  min={0}
+                  max={7}
+                  placeholder="Eq 1 (ej: 6?)"
+                  name={`set${setNumber}_team1`}
+                  aria-label={`Set ${setNumber} - Equipo 1`}
+                  className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-3 text-sm"
+                />
+                <input
+                  type="number"
+                  min={0}
+                  max={7}
+                  placeholder="Eq 2 (ej: 4?)"
+                  name={`set${setNumber}_team2`}
+                  aria-label={`Set ${setNumber} - Equipo 2`}
+                  className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-3 text-sm"
+                />
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
         <button
           type="submit"
-          className="rounded-full bg-[var(--accent)] px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+          className="rounded-full bg-[var(--accent)] px-4 py-3 sm:px-6 sm:py-2 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
         >
           Guardar partido
         </button>
         <button
           type="button"
-          className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-6 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+          className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-4 py-3 sm:px-6 sm:py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
         >
           Cancelar
         </button>
