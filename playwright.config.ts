@@ -39,6 +39,24 @@ export default defineConfig({
         },
       },
     },
+    {
+      name: 'Mobile Chrome',
+      use: {
+        ...devices['Pixel 5'],
+        launchOptions: {
+          args: ['--disable-dev-shm-usage', '--no-sandbox'],
+        },
+      },
+    },
+    {
+      name: 'Mobile Safari',
+      use: {
+        ...devices['iPhone 12'],
+        launchOptions: {
+          args: ['--disable-dev-shm-usage', '--no-sandbox'],
+        },
+      },
+    },
   ],
 
   // Conditionally start dev server only in local development (not CI/Vercel)
