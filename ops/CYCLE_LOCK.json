@@ -1,0 +1,6 @@
+{
+  "status": "running",
+  "startedAt": "2026-02-17T04:00:00Z",
+  "orchestrator": "padel-orchestrator",
+  "cycleType": "work-cycle"
+}
