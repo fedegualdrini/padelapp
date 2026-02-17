@@ -122,42 +122,44 @@ export default function CalendarClient({
           <h2 className="font-display text-2xl text-[var(--ink)] mb-4">Calendario</h2>
 
           {/* Navigation */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => navigateMonth(-1)}
-                className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
-                aria-label="Mes anterior"
-              >
-                <ChevronLeft className="w-5 h-5 text-[var(--muted)]" />
-              </button>
-              <button
-                onClick={jumpToToday}
-                className="px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-lg transition-colors"
-              >
-                Hoy
-              </button>
-              <button
-                onClick={() => navigateMonth(1)}
-                className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
-                aria-label="Mes siguiente"
-              >
-                <ChevronRight className="w-5 h-5 text-[var(--muted)]" />
-              </button>
-              <h2 className="ml-4 text-xl font-semibold text-[var(--ink)]">
-                {MONTHS[viewMonth]} {viewYear}
-              </h2>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center justify-between space-x-2">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => navigateMonth(-1)}
+                  className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
+                  aria-label="Mes anterior"
+                >
+                  <ChevronLeft className="w-5 h-5 text-[var(--muted)]" />
+                </button>
+                <button
+                  onClick={jumpToToday}
+                  className="px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-lg transition-colors"
+                >
+                  Hoy
+                </button>
+                <button
+                  onClick={() => navigateMonth(1)}
+                  className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
+                  aria-label="Mes siguiente"
+                >
+                  <ChevronRight className="w-5 h-5 text-[var(--muted)]" />
+                </button>
+                <h2 className="ml-4 text-xl font-semibold text-[var(--ink)]">
+                  {MONTHS[viewMonth]} {viewYear}
+                </h2>
+              </div>
             </div>
 
             {/* Filter toggle */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-[var(--muted)]">Filtrar:</span>
+            <div className="flex items-center space-x-2 overflow-x-auto">
+              <span className="text-sm text-[var(--muted)] whitespace-nowrap">Filtrar:</span>
               <button
                 onClick={() => {
                   setShowOnlyEvents(false);
                   setShowOnlyMatches(false);
                 }}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors shrink-0 ${
                   !showOnlyEvents && !showOnlyMatches
                     ? "bg-blue-100 text-blue-700"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -170,7 +172,7 @@ export default function CalendarClient({
                   setShowOnlyEvents(!showOnlyEvents);
                   setShowOnlyMatches(false);
                 }}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors shrink-0 ${
                   showOnlyEvents
                     ? "bg-green-100 text-green-700"
                     : "bg-[var(--card-solid)] text-[var(--ink)] hover:bg-[var(--bg-hover)]"
@@ -183,7 +185,7 @@ export default function CalendarClient({
                   setShowOnlyEvents(false);
                   setShowOnlyMatches(!showOnlyMatches);
                 }}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors shrink-0 ${
                   showOnlyMatches
                     ? "bg-blue-100 text-blue-700"
                     : "bg-[var(--card-solid)] text-[var(--ink)] hover:bg-[var(--bg-hover)]"
@@ -204,7 +206,7 @@ export default function CalendarClient({
             {WEEKDAYS.map((day) => (
               <div
                 key={day}
-                className="py-3 text-center text-sm font-medium text-[var(--muted)]"
+                className="py-2 text-center text-xs sm:text-sm font-medium text-[var(--muted)]"
               >
                 {day}
               </div>
@@ -216,7 +218,7 @@ export default function CalendarClient({
             {calendarData.days.map((dayData, index) => {
               if (!dayData.date) {
                 // Empty cell for padding
-                return <div key={`empty-${index}`} className="h-24 border-r border-b bg-[var(--bg-hover)]" />;
+                return <div key={`empty-${index}`} className="h-16 sm:h-24 border-r border-b bg-[var(--bg-hover)]" />;
               }
 
               const dayNum = parseDateKeyUtc(dayData.date).getUTCDate();
@@ -233,30 +235,30 @@ export default function CalendarClient({
                   aria-label={`Día ${dayNum} (${dayData.date})`}
                   onClick={() => setSelectedDay(dayData.date)}
                   className={`
-                    h-24 border-r border-b p-2 text-left transition-colors border-[color:var(--card-border)]
-                    ${isTodayCell ? "bg-[var(--accent)]/10 ring-2 ring-inset ring-[var(--accent)]" : "hover:bg-[var(--bg-hover)]"}
+                    h-16 sm:h-24 border-r border-b p-1 sm:p-2 text-left transition-colors border-[color:var(--card-border)]
+                    ${isTodayCell ? "bg-[var(--accent)]/10 ring-1 sm:ring-2 ring-inset ring-[var(--accent)]" : "hover:bg-[var(--bg-hover)]"}
                     ${isPast ? "text-[var(--muted)]" : "text-[var(--ink)]"}
                   `}
                   disabled={!hasActivity}
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className={`text-sm font-medium ${isTodayCell ? "text-[var(--accent)]" : ""}`}>
+                  <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                    <span className={`text-xs sm:text-sm font-medium ${isTodayCell ? "text-[var(--accent)]" : ""}`}>
                       {dayNum}
                     </span>
                     {hasActivity && (
-                      <CalendarIcon className="w-3 h-3 text-[var(--muted)]" />
+                      <CalendarIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[var(--muted)]" />
                     )}
                   </div>
 
-                  <div className="space-y-1 overflow-hidden">
-                    {events.slice(0, 2).map((event) => (
+                  <div className="space-y-0.5 sm:space-y-1 overflow-hidden">
+                    {events.slice(0, 1).map((event) => (
                       <div
                         key={event.id}
-                        className={`flex items-center space-x-1 text-xs truncate ${
+                        className={`flex items-center space-x-0.5 text-[10px] sm:text-xs truncate ${
                           isPast ? "text-[var(--muted)]" : ""
                         }`}
                       >
-                        <div className={`w-1.5 h-1.5 rounded-full ${
+                        <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full shrink-0 ${
                           event.status === "completed" || event.status === "cancelled"
                             ? "bg-[var(--muted)]"
                             : "bg-green-500"
@@ -264,19 +266,19 @@ export default function CalendarClient({
                         <span className="truncate">{event.name}</span>
                       </div>
                     ))}
-                    {events.length > 2 && (
-                      <span className="text-xs text-[var(--muted)]">
-                        +{events.length - 2} más
+                    {events.length > 1 && (
+                      <span className="text-[10px] sm:text-xs text-[var(--muted)]">
+                        +{events.length - 1}
                       </span>
                     )}
-                    {matches.slice(0, 2 - events.length).map((match) => (
+                    {matches.slice(0, 1 - events.length).map((match) => (
                       <div
                         key={match.id}
-                        className={`flex items-center space-x-1 text-xs truncate ${
+                        className={`flex items-center space-x-0.5 text-[10px] sm:text-xs truncate ${
                           isPast ? "text-[var(--muted)]" : ""
                         }`}
                       >
-                        <div className={`w-1.5 h-1.5 rounded-full ${
+                        <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full shrink-0 ${
                           match.sets.length > 0
                             ? "bg-[var(--accent)]"
                             : "bg-[var(--muted)]"
@@ -296,16 +298,16 @@ export default function CalendarClient({
       {selectedDay && selectedDayData && (
         <div
           data-testid="calendar-day-modal-backdrop"
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4"
           onClick={() => setSelectedDay(null)}
         >
           <div
-            className="bg-[var(--card-solid)] rounded-xl shadow-lg max-w-md w-full max-h-[80vh] overflow-hidden"
+            className="bg-[var(--card-solid)] rounded-t-xl sm:rounded-xl shadow-lg w-full sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-[var(--bg-hover)] px-6 py-4 border-b border-[color:var(--card-border)] flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-[var(--ink)]">
+            <div className="bg-[var(--bg-hover)] px-4 sm:px-6 py-4 border-b border-[color:var(--card-border)] flex items-center justify-between shrink-0">
+              <h3 className="text-base sm:text-lg font-semibold text-[var(--ink)]">
                 {parseDateKeyUtc(selectedDay).toLocaleDateString("es-AR", {
                   weekday: "long",
                   day: "numeric",
@@ -316,33 +318,34 @@ export default function CalendarClient({
               <button
                 onClick={() => setSelectedDay(null)}
                 className="p-1 hover:bg-[var(--bg-hover)] rounded transition-colors"
+                aria-label="Cerrar"
               >
                 <ChevronRight className="w-5 h-5 text-[var(--muted)]" />
               </button>
             </div>
 
             {/* Content */}
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1">
               {/* Events */}
               {selectedDayData.events.length > 0 && (
-                <div className="mb-6">
-                  <h4 className="text-sm font-medium text-[var(--muted)] uppercase tracking-wide mb-3 flex items-center">
-                    <CalendarDays className="w-4 h-4 mr-2" />
+                <div className="mb-4 sm:mb-6">
+                  <h4 className="text-xs sm:text-sm font-medium text-[var(--muted)] uppercase tracking-wide mb-2 sm:mb-3 flex items-center">
+                    <CalendarDays className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                     Eventos
                   </h4>
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {selectedDayData.events.map((event) => (
                       <div
                         key={event.id}
-                        className="bg-[var(--bg-hover)] rounded-lg p-4"
+                        className="bg-[var(--bg-hover)] rounded-lg p-3 sm:p-4"
                       >
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h5 className="font-medium text-[var(--ink)]">{event.name}</h5>
-                            <p className="text-sm text-[var(--muted)]">{event.time}</p>
+                        <div className="flex items-start justify-between mb-1 sm:mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h5 className="font-medium text-[var(--ink)] text-sm sm:text-base truncate">{event.name}</h5>
+                            <p className="text-xs sm:text-sm text-[var(--muted)]">{event.time}</p>
                           </div>
                           <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            className={`px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full shrink-0 ml-2 ${
                               event.status === "open"
                                 ? "bg-green-100 text-green-700"
                                 : event.status === "locked"
@@ -361,7 +364,7 @@ export default function CalendarClient({
                               : "Cancelado"}
                           </span>
                         </div>
-                        <p className="text-sm text-[var(--ink)]">
+                        <p className="text-xs sm:text-sm text-[var(--ink)]">
                           {event.attendanceCount}/{event.capacity} confirmados
                         </p>
                       </div>
@@ -373,34 +376,34 @@ export default function CalendarClient({
               {/* Matches */}
               {selectedDayData.matches.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-medium text-[var(--muted)] uppercase tracking-wide mb-3 flex items-center">
-                    <Trophy className="w-4 h-4 mr-2" />
+                  <h4 className="text-xs sm:text-sm font-medium text-[var(--muted)] uppercase tracking-wide mb-2 sm:mb-3 flex items-center">
+                    <Trophy className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                     Partidos
                   </h4>
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {selectedDayData.matches.map((match) => (
                       <div
                         key={match.id}
-                        className="bg-[var(--bg-hover)] rounded-lg p-4"
+                        className="bg-[var(--bg-hover)] rounded-lg p-3 sm:p-4"
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="font-medium">{match.team1}</span>
-                              <span className="text-[var(--muted)]">
+                        <div className="flex items-center justify-between mb-1 sm:mb-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between text-xs sm:text-sm">
+                              <span className="font-medium truncate">{match.team1}</span>
+                              <span className="text-[var(--muted)] mx-2 shrink-0">
                                 {match.sets.length > 0
                                   ? match.sets
                                       .map((s) => `${s.team1}-${s.team2}`)
                                       .join(", ")
                                   : "Pendiente"}
                               </span>
-                              <span className="font-medium">{match.team2}</span>
+                              <span className="font-medium truncate">{match.team2}</span>
                             </div>
                           </div>
                         </div>
                         <Link
                           href={`/g/${slug}/matches/${match.id}`}
-                          className="text-sm text-[var(--accent)] hover:underline"
+                          className="text-xs sm:text-sm text-[var(--accent)] hover:underline block"
                         >
                           Ver detalles
                         </Link>
@@ -413,7 +416,7 @@ export default function CalendarClient({
               {/* Empty state */}
               {selectedDayData.events.length === 0 &&
                 selectedDayData.matches.length === 0 && (
-                <p className="text-center text-[var(--muted)] py-8">
+                <p className="text-center text-[var(--muted)] py-6 sm:py-8 text-sm sm:text-base">
                   No hay eventos ni partidos para este día
                 </p>
               )}

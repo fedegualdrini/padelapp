@@ -69,6 +69,16 @@ body {
   font-family: var(--font-display), "Times New Roman", serif;
 }
 
+/* Hide scrollbar utility for horizontal scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}
+
 /* QuickActionsFAB Animations - Moved from styled-jsx */
 @keyframes fadeInUp {
   from {
