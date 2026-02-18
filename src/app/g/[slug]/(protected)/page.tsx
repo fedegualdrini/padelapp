@@ -51,8 +51,32 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
           </div>
 
           {recentMatches.length === 0 ? (
-            <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 text-sm text-[var(--muted)] shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-              No hay partidos. Cargá el primero para empezar.
+            <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 sm:p-8 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+              <div className="flex flex-col items-center gap-4 sm:gap-6 text-center">
+                <div className="text-4xl sm:text-5xl">🎾</div>
+                <div className="flex flex-col gap-2">
+                  <h4 className="text-lg sm:text-xl font-semibold text-[var(--ink)]">
+                    ¡Tu grupo está listo!
+                  </h4>
+                  <p className="text-sm text-[var(--muted)]">
+                    Registra tu primer partido y empezá a medir el rendimiento de tu equipo.
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <Link
+                    href={`/g/${slug}/matches/new`}
+                    className="rounded-full bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[color:var(--accent)]/90"
+                  >
+                    Registrar primer partido
+                  </Link>
+                  <Link
+                    href={`/g/${slug}/players`}
+                    className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-6 py-2.5 text-sm font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)]/80"
+                  >
+                    Invitar amigos
+                  </Link>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col gap-4">
