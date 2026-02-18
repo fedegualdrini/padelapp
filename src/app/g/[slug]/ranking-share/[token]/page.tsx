@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import ShareShell from "@/components/ShareShell";
 import { TradingViewRankingLayout } from "@/components/TradingViewRankingLayout";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -64,18 +65,12 @@ export default async function ShareRankingPage({ params }: ShareRankingPageProps
   const timeline = Array.from(seriesByPlayer.values());
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-          Evolucion
-        </p>
-        <h2 className="font-display text-2xl text-[var(--ink)]">Ranking</h2>
-        <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
-          Seguimiento histórico de ELO por jugador.
-        </p>
-      </div>
-
+    <ShareShell
+      title="Ranking"
+      subtitle="Evolución"
+      description="Seguimiento histórico de ELO por jugador."
+    >
       <TradingViewRankingLayout data={timeline} />
-    </div>
+    </ShareShell>
   );
 }
