@@ -96,7 +96,7 @@ function PillButton({
       type="button"
       onClick={onClick}
       className={
-        "rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] " +
+        "rounded-full px-4 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] h-10 min-h-[40px] " +
         (active
           ? "bg-[var(--accent)] text-white"
           : "border border-[color:var(--card-border)] bg-[color:var(--card-glass)] text-[var(--ink)] hover:-translate-y-0.5")
@@ -176,10 +176,11 @@ export default function ChallengesDashboard({
                   const response = await fetch(`/api/groups/${group.id}/skip-week`, { method: "POST" });
                   if (response.ok) window.location.reload();
                 }}
-                className="inline-flex items-center gap-2 rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-glass)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-glass)] px-3 py-2.5 text-xs sm:text-sm font-semibold text-[var(--ink)] transition hover:-translate-y-0.5 h-10 min-h-[40px]"
               >
                 <SkipForward className="h-4 w-4" />
-                Saltar semana
+                <span className="hidden sm:inline">Saltar semana</span>
+                <span className="sm:hidden">Saltar</span>
               </button>
             )}
           </div>

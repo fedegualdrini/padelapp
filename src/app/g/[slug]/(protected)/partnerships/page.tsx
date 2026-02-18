@@ -101,17 +101,17 @@ export default function PartnershipsPage({ params }: PartnershipsPageProps) {
       </header>
 
       {/* Filtros */}
-      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-        <div className="flex flex-wrap items-end gap-4">
-          <label className="grid gap-1 text-sm font-semibold text-[var(--ink)]">
-            Mínimo de partidos
+      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 sm:p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+        <div className="flex flex-wrap items-end gap-3 sm:gap-4">
+          <label className="grid gap-1 text-sm font-semibold text-[var(--ink)] flex-1 min-w-[120px]">
+            <span className="text-xs sm:text-sm">Mínimo de partidos</span>
             <select
               value={minMatches}
               onChange={(e) => {
                 setMinMatches(parseInt(e.target.value));
                 setOffset(0);
               }}
-              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
+              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2.5 text-sm h-10 min-h-[40px]"
             >
               <option value={3}>3+</option>
               <option value={5}>5+</option>
@@ -119,15 +119,15 @@ export default function PartnershipsPage({ params }: PartnershipsPageProps) {
             </select>
           </label>
 
-          <label className="grid gap-1 text-sm font-semibold text-[var(--ink)]">
-            Ordenar por
+          <label className="grid gap-1 text-sm font-semibold text-[var(--ink)] flex-1 min-w-[140px]">
+            <span className="text-xs sm:text-sm">Ordenar por</span>
             <select
               value={sortBy}
               onChange={(e) => {
                 setSortBy(e.target.value);
                 setOffset(0);
               }}
-              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
+              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2.5 text-sm h-10 min-h-[40px]"
             >
               <option value="win_rate">% victorias</option>
               <option value="matches_played">Partidos</option>
@@ -139,15 +139,15 @@ export default function PartnershipsPage({ params }: PartnershipsPageProps) {
           <button
             type="button"
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-            className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:-translate-y-0.5"
+            className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-3 py-2.5 text-xs sm:text-sm font-semibold text-[var(--ink)] transition hover:-translate-y-0.5 h-10 min-h-[40px]"
           >
-            {sortOrder === "desc" ? "↓ Descendente" : "↑ Ascendente"}
+            {sortOrder === "desc" ? "↓ Desc" : "↑ Asc"}
           </button>
 
           <button
             type="button"
             onClick={handleResetFilters}
-            className="rounded-full bg-transparent px-3 py-2 text-sm font-semibold text-[var(--muted)] transition hover:text-[var(--ink)]"
+            className="rounded-full bg-transparent px-3 py-2.5 text-xs sm:text-sm font-semibold text-[var(--muted)] transition hover:text-[var(--ink)] h-10 min-h-[40px]"
           >
             Reiniciar
           </button>
@@ -213,27 +213,27 @@ export default function PartnershipsPage({ params }: PartnershipsPageProps) {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setOffset(Math.max(0, offset - limit))}
                 disabled={currentPage === 1}
-                className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-glass)] px-5 py-2 text-sm font-semibold text-[var(--ink)] disabled:opacity-50"
+                className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-glass)] px-4 py-2.5 text-sm font-semibold text-[var(--ink)] disabled:opacity-50 h-10 min-h-[40px]"
               >
-                Anterior
+                ← Anterior
               </button>
 
-              <span className="text-sm text-[var(--muted)]">
-                Página {currentPage} de {totalPages} · {total} parejas
+              <span className="text-xs sm:text-sm text-[var(--muted)] px-2">
+                Pág. {currentPage} de {totalPages} · {total}
               </span>
 
               <button
                 type="button"
                 onClick={() => setOffset(Math.min((totalPages - 1) * limit, offset + limit))}
                 disabled={currentPage >= totalPages}
-                className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-glass)] px-5 py-2 text-sm font-semibold text-[var(--ink)] disabled:opacity-50"
+                className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-glass)] px-4 py-2.5 text-sm font-semibold text-[var(--ink)] disabled:opacity-50 h-10 min-h-[40px]"
               >
-                Siguiente
+                Siguiente →
               </button>
             </div>
           )}
