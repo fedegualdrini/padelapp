@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import MatchCard from "@/components/MatchCard";
 import NextMatchCardClient from "./NextMatchCardClient";
+import ChallengePreviewCard from "@/components/ChallengePreviewCard";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   getAttendanceSummary,
   getEloLeaderboard,
@@ -33,6 +35,21 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
     getRecentMatches(group.id, 3),
     getEloLeaderboard(group.id),
   ]);
+
+  // Fetch challenge data for preview card
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let challengesData = null;
+  if (user) {
+    const { data } = await supabase.rpc("get_player_challenges", {
+      p_group_id: group.id,
+      p_player_id: user.id,
+    });
+    challengesData = data;
+  }
 
   const upcomingSummaries = await getAttendanceSummary(group.id, upcomingOccurrences, weeklyEvents);
   const nextSummary = upcomingSummaries[0] ?? null;
@@ -88,6 +105,10 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
         </div>
 
         <div className="flex flex-col gap-4">
+          <ChallengePreviewCard
+            basePath={`/g/${slug}`}
+            hasActiveChallenge={!!challengesData && challengesData.length > 0}
+          />
           <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
             <div className="flex items-center justify-between gap-4">
               <h3 className="font-display text-xl text-[var(--ink)]">Ranking ELO</h3>
