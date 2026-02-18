@@ -10,3 +10,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+
+/**
+ * Create a new Supabase browser client instance
+ * Useful for components that need their own client instance
+ */
+export function createSupabaseClient() {
+  return createBrowserClient(supabaseUrl, supabaseAnonKey);
+}
