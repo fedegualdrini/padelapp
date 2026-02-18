@@ -13,20 +13,22 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Unrelated project directories:
+    // Ignore other project directories in workspace:
+    "actions-runner/**",
     "cartscanner/**",
-    "investment-portfolio-tracker/**",
     "clawd-control/**",
     "file-browser-dashboard/**",
-    "padelapp/**",
+    "investment-portfolio-tracker/**",
+    "base-rebalancer/**",
     "padel-backend/**",
     "padel-frontend/**",
     "padel-growth/**",
     "padel-orchestrator/**",
     "padel-product/**",
     "padel-qa/**",
-    "actions-runner/**",
-    "base-rebalancer/**",
+    "padelapp/**",
+    // Ignore test scenarios and node_modules:
+    "test-scenarios/**",
   ]),
 ]);
 

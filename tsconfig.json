@@ -39,18 +39,20 @@
   "exclude": [
     "node_modules",
     "tests/e2e",
+    "actions-runner",
     "cartscanner",
-    "investment-portfolio-tracker",
     "clawd-control",
     "file-browser-dashboard",
-    "padelapp",
+    "investment-portfolio-tracker",
+    "base-rebalancer",
     "padel-backend",
     "padel-frontend",
     "padel-growth",
     "padel-orchestrator",
     "padel-product",
     "padel-qa",
-    "actions-runner",
-    "base-rebalancer"
+    "padelapp",
+    "skills",
+    ".clawhub"
   ]
 }
