@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
-import { X, Trophy, Flame, Award, Star } from 'lucide-react';
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { X, Trophy, Flame, Star } from 'lucide-react';
 
 export type ToastType = 'achievement' | 'challenge' | 'streak' | 'info';
 
@@ -34,6 +34,10 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
   const addToast = useCallback((toast: Omit<Toast, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newToast: Toast = { ...toast, id };
@@ -44,11 +48,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setTimeout(() => {
       removeToast(id);
     }, duration);
-  }, []);
-
-  const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+  }, [removeToast]);
 
   const showAchievement = useCallback((achievement: {
     name: string;
