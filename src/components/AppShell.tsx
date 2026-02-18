@@ -2,6 +2,7 @@ import Link from "next/link";
 import NavBar from "@/components/NavBar";
 import ThemeToggle from "@/components/ThemeToggle";
 import QuickActionsFAB from "@/components/QuickActionsFAB";
+import { ToastProvider } from "@/components/ui/toast";
 
 type AppShellProps = {
   groupName: string;
@@ -14,7 +15,8 @@ export default function AppShell({ groupName, slug, children, showNavigation = t
   const basePath = `/g/${slug}`;
 
   return (
-    <div className="relative">
+    <ToastProvider>
+      <div className="relative">
       <a
         href="#main-content"
         className="sr-only rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
@@ -70,6 +72,7 @@ export default function AppShell({ groupName, slug, children, showNavigation = t
       </main>
 
       {showNavigation && <QuickActionsFAB slug={slug} />}
-    </div>
+      </div>
+    </ToastProvider>
   );
 }
