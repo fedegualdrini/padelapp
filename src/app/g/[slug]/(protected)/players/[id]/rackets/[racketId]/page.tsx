@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getGroupBySlug } from "@/lib/data";
 import { getRacketWithStats } from "@/lib/racket-data";
 import { RacketCard } from "../RacketClientComponents";
+import { BackButton, Heading } from "@/components/ui";
 
 type RacketDetailsPageProps = {
   params: Promise<{ slug: string; id: string; racketId: string }>;
@@ -24,13 +24,8 @@ export default async function RacketDetailsPage({ params }: RacketDetailsPagePro
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
-        <Link
-          href={`/g/${slug}/players/${playerId}/rackets`}
-          className="text-sm font-medium text-[var(--accent)] hover:underline"
-        >
-          ← Volver a paletas
-        </Link>
-        <h2 className="font-display text-2xl text-[var(--ink)]">Detalle de paleta</h2>
+        <BackButton href={`/g/${slug}/players/${playerId}/rackets`} label="Volver a paletas" variant="link" />
+        <Heading level={2}>Detalle de paleta</Heading>
         <p className="text-sm text-[var(--muted)]">Información y rendimiento.</p>
       </header>
 

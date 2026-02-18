@@ -1,7 +1,7 @@
 import { getGroupBySlug, getPlayers, getHeadToHeadStats } from "@/lib/data";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import PlayerSelector from "./PlayerSelector";
+import { BackButton, Heading } from "@/components/ui";
 
 type ComparePageProps = {
   params: Promise<{ slug: string }>;
@@ -34,18 +34,14 @@ export default async function ComparePage({
         <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
           Comparación
         </p>
-        <h2 className="font-display text-2xl text-[var(--ink)]">
-          Head to Head
-        </h2>
+        <Heading level={2}>Head to Head</Heading>
         <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
           Compará el rendimiento entre dos jugadores cuando se enfrentan.
         </p>
       </div>
 
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-        <h3 className="font-display text-lg text-[var(--ink)]">
-          Seleccionar jugadores
-        </h3>
+        <Heading level={3}>Seleccionar jugadores</Heading>
         <PlayerSelector
           players={usualPlayers}
           slug={slug}
@@ -151,9 +147,7 @@ export default async function ComparePage({
 
           {/* Match History */}
           <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-            <h3 className="font-display text-lg text-[var(--ink)]">
-              Historial de enfrentamientos
-            </h3>
+            <Heading level={3}>Historial de enfrentamientos</Heading>
             <div className="mt-4 grid gap-3">
               {stats.matches.map((match) => (
                 <Link
@@ -193,12 +187,7 @@ export default async function ComparePage({
       )}
 
       <div className="text-center">
-        <Link
-          href={`/g/${slug}/players`}
-          className="text-sm text-[var(--accent)] hover:underline"
-        >
-          ← Volver a jugadores
-        </Link>
+        <BackButton href={`/g/${slug}/players`} label="Volver a jugadores" variant="link" />
       </div>
     </div>
   );

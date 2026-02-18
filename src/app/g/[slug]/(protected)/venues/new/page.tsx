@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { getGroupBySlug, isGroupMember } from "@/lib/data";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { BackButton, Heading } from "@/components/ui";
 
 function slugify(value: string) {
   return value
@@ -86,13 +86,8 @@ export default async function VenueNewPage({ params }: VenueNewPageProps) {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
-        <Link
-          href={`/g/${slug}/venues`}
-          className="text-sm font-medium text-[var(--accent)] hover:underline"
-        >
-          ← Volver a canchas
-        </Link>
-        <h2 className="font-display text-2xl text-[var(--ink)]">Agregar cancha</h2>
+        <BackButton href={`/g/${slug}/venues`} label="Volver a canchas" variant="link" />
+        <Heading level={2}>Agregar cancha</Heading>
         <p className="text-sm text-[var(--muted)]">Cargá los datos principales del lugar.</p>
       </header>
 
