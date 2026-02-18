@@ -13,6 +13,7 @@ import {
 import { getPlayerStreaks } from "@/lib/streaks";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import PlayerStatsDashboard from "@/components/PlayerStatsDashboard";
+import { BackButton, Heading } from "@/components/ui";
 
 type PlayerStatsPageProps = {
   params: Promise<{ slug: string; id: string }>;
@@ -69,7 +70,7 @@ export default async function PlayerStatsPage({ params }: PlayerStatsPageProps) 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="font-display text-2xl text-[var(--ink)]">{player.name}</h2>
+            <Heading level={2}>{player.name}</Heading>
             <span className="rounded-full bg-[color:var(--accent)] px-2 py-0.5 text-xs font-medium text-white">
               Estadísticas
             </span>
@@ -85,12 +86,7 @@ export default async function PlayerStatsPage({ params }: PlayerStatsPageProps) 
           >
             Resumen
           </Link>
-          <Link
-            href={`/g/${slug}/players`}
-            className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
-          >
-            ← Volver
-          </Link>
+          <BackButton href={`/g/${slug}/players`} label="Volver" />
         </div>
       </div>
 
