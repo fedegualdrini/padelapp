@@ -176,7 +176,7 @@ function NewMatchForm({
           {clientError ?? state?.error}
         </div>
       )}
-      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 sm:p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
         <h3 className="font-display text-lg text-[var(--ink)]">
           Info del partido
         </h3>
@@ -224,7 +224,7 @@ function NewMatchForm({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 sm:p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
         <div className="flex items-center justify-between">
           <h3 className="font-display text-lg text-[var(--ink)]">
             Parejas habituales
@@ -253,7 +253,7 @@ function NewMatchForm({
         )}
       </section>
 
-      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 sm:p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
         <h3 className="font-display text-lg text-[var(--ink)]">Equipos</h3>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4">
@@ -349,7 +349,7 @@ function NewMatchForm({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 sm:p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
         <h3 className="font-display text-lg text-[var(--ink)]">MVP</h3>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
@@ -385,7 +385,7 @@ function NewMatchForm({
         ]}
       />
 
-      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 sm:p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <h3 className="font-display text-lg text-[var(--ink)]">
             Marcador por set
@@ -398,7 +398,7 @@ function NewMatchForm({
           {[1, 2, 3, 4, 5].map((setNumber) => (
             <div
               key={setNumber}
-              className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-[80px_repeat(2,1fr)] sm:items-center sm:gap-3"
+              className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-[60px_repeat(2,1fr)] sm:items-center sm:gap-3"
             >
               <span className="text-xs uppercase tracking-[0.2em] text-[var(--muted)] block">
                 Set {setNumber}
@@ -428,16 +428,16 @@ function NewMatchForm({
         </div>
       </section>
 
-      <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+      <div className="flex flex-col sm:flex-row gap-3">
         <button
           type="submit"
-          className="rounded-full bg-[var(--accent)] px-4 py-3 sm:px-6 sm:py-2 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+          className="w-full sm:w-auto rounded-full bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
         >
           Guardar partido
         </button>
         <button
           type="button"
-          className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-4 py-3 sm:px-6 sm:py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+          className="w-full sm:w-auto rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-4 py-3 text-sm font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
         >
           Cancelar
         </button>

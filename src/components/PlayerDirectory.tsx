@@ -170,8 +170,8 @@ export default function PlayerDirectory({
   return (
     <>
       <div className="space-y-6">
-        <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-          <div className="flex items-center justify-between gap-4">
+        <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 sm:p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="font-display text-2xl text-[var(--ink)]">Jugadores</h2>
               <p className="mt-2 text-sm text-[var(--muted)]">
@@ -180,7 +180,7 @@ export default function PlayerDirectory({
             </div>
             <button
               onClick={() => setIsCompareDialogOpen(true)}
-              className="rounded-xl bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent)]/90"
+              className="w-full sm:w-auto rounded-xl bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent)]/90"
             >
               Comparar jugadores
             </button>
