@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getPeriodRange, parsePeriodFromParams } from '@/lib/period';
+import { getPeriodRange, parsePeriodFromParams, PeriodPreset } from '@/lib/period';
 
 describe('getPeriodRange', () => {
   it('returns all-time preset with no dates', () => {
@@ -93,7 +93,7 @@ describe('getPeriodRange', () => {
   });
 
   it('handles unknown presets by defaulting to all-time', () => {
-    const result = getPeriodRange('unknown' as any);
+    const result = getPeriodRange('unknown' as PeriodPreset);
     expect(result.preset).toBe('all-time');
   });
 
@@ -263,7 +263,7 @@ describe('Period Range Validation', () => {
     const allowedPresets = ['all-time', 'last-7-days', 'last-30-days', 'this-month', 'this-quarter', 'this-year', 'custom'];
 
     allowedPresets.forEach(preset => {
-      const result = getPeriodRange(preset as any);
+      const result = getPeriodRange(preset as PeriodPreset);
       expect(result.preset).toBe(preset);
     });
   });
@@ -272,7 +272,7 @@ describe('Period Range Validation', () => {
     const presetsWithDates = ['last-7-days', 'last-30-days', 'this-month', 'this-quarter', 'this-year'];
 
     presetsWithDates.forEach(preset => {
-      const result = getPeriodRange(preset as any);
+      const result = getPeriodRange(preset as PeriodPreset);
       expect(result.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(result.endDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
@@ -282,7 +282,7 @@ describe('Period Range Validation', () => {
     const presetsWithoutDates = ['all-time', 'custom'];
 
     presetsWithoutDates.forEach(preset => {
-      const result = getPeriodRange(preset as any);
+      const result = getPeriodRange(preset as PeriodPreset);
       expect(result.startDate).toBeUndefined();
       expect(result.endDate).toBeUndefined();
     });
