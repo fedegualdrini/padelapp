@@ -25,7 +25,7 @@ export default function Heading({
     4: "text-base",
   };
 
-  const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+  const Tag = `h${level}` as React.ElementType;
 
   return (
     <Tag

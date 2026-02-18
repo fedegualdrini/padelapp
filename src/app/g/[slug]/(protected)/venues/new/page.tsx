@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import Link from "next/link";
 
 import { getGroupBySlug, isGroupMember } from "@/lib/data";
 import { createSupabaseServerClient } from "@/lib/supabase/server";

@@ -1,5 +1,6 @@
 import { getGroupBySlug, getPlayers, getHeadToHeadStats } from "@/lib/data";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import PlayerSelector from "./PlayerSelector";
 import { BackButton, Heading } from "@/components/ui";
 
