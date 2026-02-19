@@ -73,11 +73,11 @@ type EventsClientProps = {
 
 const WEEKDAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-const STATUS_LABELS: Record<AttendanceStatus, { label: string; color: string }> = {
-  confirmed: { label: 'Confirmado', color: 'text-green-600 bg-green-100' },
-  declined: { label: 'No va', color: 'text-red-600 bg-red-100' },
-  maybe: { label: 'Tal vez', color: 'text-yellow-600 bg-yellow-100' },
-  waitlist: { label: 'Lista de espera', color: 'text-gray-600 bg-gray-100' },
+const STATUS_LABELS: Record<AttendanceStatus, { label: string; bgColor: string; textColor: string }> = {
+  confirmed: { label: 'Confirmado', bgColor: 'var(--status-success-bg)', textColor: 'var(--status-success-text-muted)' },
+  declined: { label: 'No va', bgColor: 'var(--status-error-bg)', textColor: 'var(--status-error-text-muted)' },
+  maybe: { label: 'Tal vez', bgColor: 'var(--status-warning-bg)', textColor: 'var(--status-warning-text-muted)' },
+  waitlist: { label: 'Lista de espera', bgColor: 'var(--status-neutral-bg)', textColor: 'var(--status-neutral-text-muted)' },
 };
 
 function formatDate(dateStr: string): string {
@@ -454,17 +454,17 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
         </div>
         <div className="text-right">
           {isCancelled ? (
-            <span className="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1 text-xs font-semibold text-yellow-900">
+            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold" style={{
+              backgroundColor: 'var(--status-warning-bg)',
+              color: 'var(--status-warning-text)'
+            }}>
               No se jugó
             </span>
           ) : (
-            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-              summary.isFull
-                ? 'bg-red-100 text-red-700'
-                : summary.spotsAvailable <= 2
-                ? 'bg-yellow-100 text-yellow-700'
-                : 'bg-green-100 text-green-700'
-            }`}>
+            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold" style={{
+              backgroundColor: summary.isFull ? 'var(--status-error-bg)' : summary.spotsAvailable <= 2 ? 'var(--status-warning-bg)' : 'var(--status-success-bg)',
+              color: summary.isFull ? 'var(--status-error-text)' : summary.spotsAvailable <= 2 ? 'var(--status-warning-text)' : 'var(--status-success-text)'
+            }}>
               {summary.isFull ? 'Completo' : `${summary.spotsAvailable} lugares`}
             </span>
           )}
@@ -472,32 +472,35 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
       </div>
 
       {/* Stats */}
-      <div className="mb-4 grid grid-cols-4 gap-2 text-center">
-        <div className="rounded-lg bg-green-50 p-2">
-          <p className="text-lg font-bold text-green-700">{summary.confirmedCount}</p>
-          <p className="text-xs text-green-600">Van</p>
+      <div className="mb-4 grid grid-cols-4 gap-1 sm:gap-2 text-center">
+        <div className="rounded-lg p-1.5 sm:p-2" style={{ backgroundColor: 'var(--status-success-bg)' }}>
+          <p className="text-base sm:text-lg font-bold" style={{ color: 'var(--status-success-text)' }}>{summary.confirmedCount}</p>
+          <p className="text-[10px] sm:text-xs" style={{ color: 'var(--status-success-text-muted)' }}>Van</p>
         </div>
-        <div className="rounded-lg bg-red-50 p-2">
-          <p className="text-lg font-bold text-red-700">{summary.declinedCount}</p>
-          <p className="text-xs text-red-600">No van</p>
+        <div className="rounded-lg p-1.5 sm:p-2" style={{ backgroundColor: 'var(--status-error-bg)' }}>
+          <p className="text-base sm:text-lg font-bold" style={{ color: 'var(--status-error-text)' }}>{summary.declinedCount}</p>
+          <p className="text-[10px] sm:text-xs" style={{ color: 'var(--status-error-text-muted)' }}>No van</p>
         </div>
-        <div className="rounded-lg bg-yellow-50 p-2">
-          <p className="text-lg font-bold text-yellow-700">{summary.maybeCount}</p>
-          <p className="text-xs text-yellow-600">Tal vez</p>
+        <div className="rounded-lg p-1.5 sm:p-2" style={{ backgroundColor: 'var(--status-warning-bg)' }}>
+          <p className="text-base sm:text-lg font-bold" style={{ color: 'var(--status-warning-text)' }}>{summary.maybeCount}</p>
+          <p className="text-[10px] sm:text-xs" style={{ color: 'var(--status-warning-text-muted)' }}>Tal vez</p>
         </div>
-        <div className="rounded-lg bg-gray-50 p-2">
-          <p className="text-lg font-bold text-gray-700">{summary.waitlistCount}</p>
-          <p className="text-xs text-gray-600">Espera</p>
+        <div className="rounded-lg p-1.5 sm:p-2" style={{ backgroundColor: 'var(--status-neutral-bg)' }}>
+          <p className="text-base sm:text-lg font-bold" style={{ color: 'var(--status-neutral-text)' }}>{summary.waitlistCount}</p>
+          <p className="text-[10px] sm:text-xs" style={{ color: 'var(--status-neutral-text-muted)' }}>Espera</p>
         </div>
       </div>
 
       {/* Attendance lists */}
       {confirmedPlayers.length > 0 && (
         <div className="mb-3">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-green-600">Confirmados</p>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--status-success-text-muted)' }}>Confirmados</p>
           <div className="flex flex-wrap gap-1">
             {confirmedPlayers.map(a => (
-              <span key={a.id} className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">
+              <span key={a.id} className="rounded-full px-2 py-1 text-xs" style={{
+                backgroundColor: 'var(--status-success-bg)',
+                color: 'var(--status-success-text)'
+              }}>
                 {a.players?.name ?? playerMap.get(a.player_id)?.name ?? 'Desconocido'}
               </span>
             ))}
@@ -507,10 +510,13 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
 
       {maybePlayers.length > 0 && (
         <div className="mb-3">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-yellow-600">Tal vez</p>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--status-warning-text-muted)' }}>Tal vez</p>
           <div className="flex flex-wrap gap-1">
             {maybePlayers.map(a => (
-              <span key={a.id} className="rounded-full bg-yellow-100 px-2 py-1 text-xs text-yellow-800">
+              <span key={a.id} className="rounded-full px-2 py-1 text-xs" style={{
+                backgroundColor: 'var(--status-warning-bg)',
+                color: 'var(--status-warning-text)'
+              }}>
                 {a.players?.name ?? playerMap.get(a.player_id)?.name ?? 'Desconocido'}
               </span>
             ))}
@@ -520,10 +526,13 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
 
       {waitlistPlayers.length > 0 && (
         <div className="mb-3">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Lista de espera</p>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--status-neutral-text-muted)' }}>Lista de espera</p>
           <div className="flex flex-wrap gap-1">
             {waitlistPlayers.map(a => (
-              <span key={a.id} className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">
+              <span key={a.id} className="rounded-full px-2 py-1 text-xs" style={{
+                backgroundColor: 'var(--status-neutral-bg)',
+                color: 'var(--status-neutral-text)'
+              }}>
                 {a.players?.name ?? playerMap.get(a.player_id)?.name ?? 'Desconocido'}
               </span>
             ))}
@@ -541,7 +550,7 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
               onChange={(e) => setSelectedPlayer(e.target.value)}
               className="w-full rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
             >
-              {players.filter(p => p.status === 'usual').map(player => (
+              {players.filter(p => p.status === 'usual' || p.status === 'invite').map(player => (
                 <option key={player.id} value={player.id}>{player.name}</option>
               ))}
             </select>
@@ -549,7 +558,10 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
 
           {currentPlayerStatus && (
             <p className="mb-2 text-sm text-[var(--muted)]">
-              Tu estado: <span className={STATUS_LABELS[currentPlayerStatus].color + ' px-2 py-0.5 rounded-full'}>
+              Tu estado: <span className="px-2 py-0.5 rounded-full" style={{
+                backgroundColor: STATUS_LABELS[currentPlayerStatus].bgColor,
+                color: STATUS_LABELS[currentPlayerStatus].textColor
+              }}>
                 {STATUS_LABELS[currentPlayerStatus].label}
               </span>
             </p>
@@ -559,33 +571,33 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
             <button
               onClick={() => onAttendance(summary.occurrence.id, selectedPlayer, 'confirmed')}
               disabled={loading === `${summary.occurrence.id}-${selectedPlayer}`}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-                currentPlayerStatus === 'confirmed'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-green-100 text-green-700 hover:bg-green-200'
-              } disabled:opacity-50`}
+              className="rounded-lg px-3 py-2 text-sm font-medium transition disabled:opacity-50"
+              style={{
+                backgroundColor: currentPlayerStatus === 'confirmed' ? 'var(--status-success-strong)' : 'var(--status-success-bg)',
+                color: currentPlayerStatus === 'confirmed' ? 'var(--status-success-strong-text)' : 'var(--status-success-text)'
+              }}
             >
               {loading === `${summary.occurrence.id}-${selectedPlayer}` ? '...' : 'Voy'}
             </button>
             <button
               onClick={() => onAttendance(summary.occurrence.id, selectedPlayer, 'maybe')}
               disabled={loading === `${summary.occurrence.id}-${selectedPlayer}`}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-                currentPlayerStatus === 'maybe'
-                  ? 'bg-yellow-500 text-white'
-                  : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-              } disabled:opacity-50`}
+              className="rounded-lg px-3 py-2 text-sm font-medium transition disabled:opacity-50"
+              style={{
+                backgroundColor: currentPlayerStatus === 'maybe' ? 'var(--status-warning-strong)' : 'var(--status-warning-bg)',
+                color: currentPlayerStatus === 'maybe' ? 'var(--status-warning-strong-text)' : 'var(--status-warning-text)'
+              }}
             >
               Tal vez
             </button>
             <button
               onClick={() => onAttendance(summary.occurrence.id, selectedPlayer, 'declined')}
               disabled={loading === `${summary.occurrence.id}-${selectedPlayer}`}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-                currentPlayerStatus === 'declined'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-red-100 text-red-700 hover:bg-red-200'
-              } disabled:opacity-50`}
+              className="rounded-lg px-3 py-2 text-sm font-medium transition disabled:opacity-50"
+              style={{
+                backgroundColor: currentPlayerStatus === 'declined' ? 'var(--status-error-strong)' : 'var(--status-error-bg)',
+                color: currentPlayerStatus === 'declined' ? 'var(--status-error-strong-text)' : 'var(--status-error-text)'
+              }}
             >
               No voy
             </button>
