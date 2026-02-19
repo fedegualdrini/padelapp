@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const links = [
   { href: "", label: "Inicio" },
   { href: "/matches", label: "Partidos" },
+  { href: "/venues", label: "Canchas" },
   { href: "/ranking", label: "Ranking" },
   // "Grupo" is the place to manage the roster/passphrase and day-to-day admin.
   { href: "/players", label: "Grupo" },
