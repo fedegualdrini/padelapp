@@ -9,6 +9,7 @@ const links = [
   { href: "/ranking", label: "Ranking" },
   // "Grupo" is the place to manage the roster/passphrase and day-to-day admin.
   { href: "/players", label: "Grupo" },
+  { href: "/venues", label: "Canchas" },
   // Moved from Labs to main nav for better discoverability (retention analysis)
   { href: "/achievements", label: "Logros" },
   { href: "/challenges", label: "Desafíos" },
@@ -30,10 +31,14 @@ export default function NavBar({ basePath }: NavBarProps) {
       {links.map((link) => {
         const href = `${basePath}${link.href}`;
         const matchesPath = `${basePath}/matches`;
+        const venuesPath = `${basePath}/venues`;
         const isMatchesActive =
           link.href === "/matches" &&
           (pathname === matchesPath || pathname.startsWith(`${matchesPath}/`));
-        const isActive = pathname === href || isMatchesActive;
+        const isVenuesActive =
+          link.href === "/venues" &&
+          (pathname === venuesPath || pathname.startsWith(`${venuesPath}/`));
+        const isActive = pathname === href || isMatchesActive || isVenuesActive;
         return (
           <Link
             key={href}
