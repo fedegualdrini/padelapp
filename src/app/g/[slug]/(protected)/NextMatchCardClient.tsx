@@ -94,7 +94,7 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
 
   if (!summary) {
     return (
-      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 shadow-[var(--shadow-card)] backdrop-blur">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
@@ -107,7 +107,7 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
           </div>
           <Link
             href={`/g/${slug}/events?create=true`}
-            className="rounded-full bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+            className="rounded-full bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
           >
             Ir a agenda
           </Link>
@@ -141,7 +141,7 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
   }
 
   return (
-    <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+    <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 shadow-[var(--shadow-card)] backdrop-blur">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">Próximo partido</p>
@@ -188,7 +188,7 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
               });
             }}
             disabled={isPending || s.confirmedCount < 4 || Boolean(s.occurrence.loaded_match_id)}
-            className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+            className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
             title={
               s.occurrence.loaded_match_id
                 ? "Ya hay un partido creado para esta fecha"
