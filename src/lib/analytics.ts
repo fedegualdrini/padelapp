@@ -4,10 +4,13 @@
  * For now, it just logs to console for development purposes
  */
 
+type GtagEventParams = Record<string, unknown>;
+type GtagCommand = 'event' | 'config' | 'js' | 'set' | 'consent';
+
 declare global {
   interface Window {
-    gtag?: (...args: any[]) => void;
-    dataLayer?: any[];
+    gtag?: (command: GtagCommand, target: string | Date, params?: GtagEventParams) => void;
+    dataLayer?: unknown[];
   }
 }
 
@@ -53,8 +56,8 @@ export function initAnalytics(measurementId?: string) {
 
     // Configure gtag
     window.dataLayer = window.dataLayer || [];
-    window.gtag = function (...args: any[]) {
-      window.dataLayer?.push(args);
+    window.gtag = function (command: GtagCommand, target: string | Date, params?: GtagEventParams) {
+      window.dataLayer?.push([command, target, params]);
     };
     window.gtag("js", new Date());
     window.gtag("config", measurementId);

@@ -12,6 +12,24 @@ type ShareMatchPageProps = {
   params: Promise<{ slug: string; token: string }>;
 };
 
+interface MatchData {
+  match_id: string;
+  played_at: string;
+  best_of: number;
+  team1_name: string;
+  team2_name: string;
+  team1_score: number;
+  team2_score: number;
+  team1_sets: Array<{ games: number; opponent: number }>;
+  team2_sets: Array<{ games: number; opponent: number }>;
+  elo_deltas?: Array<{
+    name: string;
+    previous: number;
+    current: number;
+    delta: number;
+  }>;
+}
+
 export async function generateMetadata({ params }: ShareMatchPageProps) {
   const { slug, token } = await params;
   const supabase = await createSupabaseServerClient();
@@ -28,7 +46,7 @@ export async function generateMetadata({ params }: ShareMatchPageProps) {
     };
   }
 
-  const match = matchData[0] as any;
+  const match = matchData[0] as MatchData;
 
   return {
     title: `${match.team1_name} vs ${match.team2_name} | Resultado del Partido`,
@@ -68,7 +86,7 @@ export default async function ShareMatchPage({ params }: ShareMatchPageProps) {
     notFound();
   }
 
-  const match = matchData[0] as any;
+  const match = matchData[0] as MatchData;
 
   // Determine the winning team
   const winner = match.team1_score > match.team2_score ? match.team1_name :
@@ -146,7 +164,7 @@ export default async function ShareMatchPage({ params }: ShareMatchPageProps) {
                 {match.team1_name}
               </p>
               <div className="flex flex-wrap gap-2">
-                {team1Sets.map((set: any, index: number) => (
+                {team1Sets.map((set, index: number) => (
                   <span
                     key={`t1-set-${index}`}
                     className={`rounded-full px-3 py-1 text-sm font-medium ${
@@ -167,7 +185,7 @@ export default async function ShareMatchPage({ params }: ShareMatchPageProps) {
                 {match.team2_name}
               </p>
               <div className="flex flex-wrap gap-2">
-                {team2Sets.map((set: any, index: number) => (
+                {team2Sets.map((set, index: number) => (
                   <span
                     key={`t2-set-${index}`}
                     className={`rounded-full px-3 py-1 text-sm font-medium ${
@@ -192,7 +210,7 @@ export default async function ShareMatchPage({ params }: ShareMatchPageProps) {
               Variación de ELO
             </h3>
             <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
-              {eloDeltas.map((player: any, index: number) => (
+              {eloDeltas.map((player, index: number) => (
                 <div
                   key={`elo-${index}`}
                   className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4"

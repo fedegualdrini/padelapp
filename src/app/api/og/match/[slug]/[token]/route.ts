@@ -3,6 +3,22 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const runtime = "edge";
 
+interface MatchData {
+  match_id: string;
+  played_at: string;
+  best_of: number;
+  team1_name: string;
+  team2_name: string;
+  team1_score: number;
+  team2_score: number;
+  team1_sets: number[];
+  team2_sets: number[];
+  elo_deltas?: Array<{
+    name: string;
+    delta: number;
+  }>;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string; token: string }> }
@@ -37,7 +53,7 @@ export async function GET(
     );
   }
 
-  const match = matchData[0] as any;
+  const match = matchData[0] as MatchData;
 
   return new ImageResponse(
     (
@@ -148,7 +164,7 @@ export async function GET(
                 justifyContent: "center",
               }}
             >
-              {match.elo_deltas.map((player: any, index: number) => (
+              {match.elo_deltas.map((player, index: number) => (
                 <div
                   key={index}
                   style={{
