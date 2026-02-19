@@ -99,7 +99,7 @@ export async function copyInviteLinkAction(
   token: string
 ): Promise<{ success: boolean; error: string | null }> {
   try {
-    // Generate invite URL
+    // Generate the invite URL
     const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')}/invite/${token}`;
 
     // This will be handled on the client side with navigator.clipboard
