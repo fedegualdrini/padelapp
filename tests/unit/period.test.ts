@@ -70,7 +70,7 @@ describe('Period Utilities', () => {
     });
 
     it('returns all-time for invalid preset', () => {
-      const result = getPeriodRange('invalid' as any);
+      const result = getPeriodRange('invalid' as PeriodPreset);
       expect(result).toEqual({
         preset: 'all-time',
       });

@@ -99,7 +99,7 @@ describe('General Utilities', () => {
     });
 
     it('returns "Never" for undefined input', () => {
-      expect(formatDate(undefined as any)).toBe('Never');
+      expect(formatDate(undefined as unknown as null)).toBe('Never');
     });
 
     it('handles different months correctly', () => {
