@@ -178,6 +178,52 @@ export async function getOrCreateRankingShareToken(groupId: string): Promise<str
   return newToken;
 }
 
+/**
+ * Get or generate a match share token for a match
+ * If the match doesn't have a token, generate one
+ */
+export async function getOrCreateMatchShareToken(matchId: string): Promise<string | null> {
+  if (isDemoMode()) {
+    return "demo-match-token";
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+
+  // First, try to get existing token
+  const { data: match, error: matchError } = await supabaseServer
+    .from("matches")
+    .select("share_token")
+    .eq("id", matchId)
+    .single();
+
+  if (matchError || !match) {
+    return null;
+  }
+
+  // If token exists, return it
+  if (match.share_token) {
+    return match.share_token;
+  }
+
+  // Generate a new token
+  const newToken = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+
+  // Update the match with the new token
+  const { error: updateError } = await supabaseServer
+    .from("matches")
+    .update({ share_token: newToken })
+    .eq("id", matchId);
+
+  if (updateError) {
+    console.error("Failed to create match share token:", updateError);
+    return null;
+  }
+
+  return newToken;
+}
+
 export async function isGroupMember(groupId: string) {
   if (groupId === DEMO_GROUP.id) {
     return true;
