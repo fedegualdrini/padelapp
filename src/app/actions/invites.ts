@@ -54,7 +54,7 @@ export async function validateAndUseInviteAction(
     revalidatePath("/", "layout");
     revalidatePath("/g/[slug]", "page");
 
-    return { success: true, groupId: result.groupId, error: null };
+    return { success: true, groupId: result.groupId!, error: null };
   } catch (error) {
     console.error("Error in validateAndUseInviteAction:", error);
     return {
@@ -99,8 +99,8 @@ export async function copyInviteLinkAction(
   token: string
 ): Promise<{ success: boolean; error: string | null }> {
   try {
-    // Generate the invite URL
-    const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/invite/${token}`;
+    // Generate invite URL
+    const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')}/invite/${token}`;
 
     // This will be handled on the client side with navigator.clipboard
     return { success: true, error: null };

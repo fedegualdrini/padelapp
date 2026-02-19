@@ -99,6 +99,7 @@ describe('General Utilities', () => {
     });
 
     it('returns "Never" for undefined input', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(formatDate(undefined as any)).toBe('Never');
     });
 
