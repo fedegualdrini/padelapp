@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getPeriodRange, parsePeriodFromParams } from '@/lib/period';
+import { getPeriodRange, parsePeriodFromParams, type PeriodPreset } from '@/lib/period';
 
 describe('Period Utilities', () => {
   describe('getPeriodRange', () => {
@@ -70,7 +70,7 @@ describe('Period Utilities', () => {
     });
 
     it('returns all-time for invalid preset', () => {
-      const result = getPeriodRange('invalid' as any);
+      const result = getPeriodRange('invalid' as PeriodPreset);
       expect(result).toEqual({
         preset: 'all-time',
       });
