@@ -13,16 +13,6 @@ const betaLinks: Array<{ href: string; title: string; desc: string }> = [
     desc: "Gestioná la asistencia y la generación de fechas del evento semanal.",
   },
   {
-    href: "/calendar",
-    title: "Calendario",
-    desc: "Vista calendario de eventos y ocurrencias.",
-  },
-  {
-    href: "/pairs",
-    title: "Parejas",
-    desc: "Historial y estadísticas por pareja.",
-  },
-  {
     href: "/partnerships",
     title: "Synergy / Partnerships",
     desc: "Analytics avanzados de química de parejas (beta).",
@@ -35,12 +25,12 @@ const betaLinks: Array<{ href: string; title: string; desc: string }> = [
   {
     href: "/achievements",
     title: "Logros",
-    desc: "Badges y achievements (beta).",
+    desc: "Badges y achievements (ahora en navegación principal).",
   },
   {
     href: "/challenges",
     title: "Desafíos",
-    desc: "Retos semanales y streak rewards (beta).",
+    desc: "Retos semanales y streak rewards (ahora en navegación principal).",
   },
 ];
 
@@ -60,8 +50,7 @@ export default async function LabsPage({ params }: LabsPageProps) {
         <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">Opcional</p>
         <h2 className="font-display text-2xl text-[var(--ink)]">Beta / Labs</h2>
         <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
-          Estas secciones están en evolución. La experiencia principal del grupo vive en Inicio →
-          asistencia → equipos → score → ranking.
+          Estas secciones están en evolución. Logros y Desafíos ahora están en la navegación principal. La experiencia principal del grupo vive en Inicio → asistencia → equipos → score → ranking.
         </p>
       </div>
 
