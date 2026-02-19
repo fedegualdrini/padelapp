@@ -207,6 +207,270 @@ export async function isGroupMember(groupId: string) {
   return true;
 }
 
+// Group invite types
+export type GroupInvite = {
+  id: string;
+  groupId: string;
+  token: string;
+  createdAt: string;
+  expiresAt: string | null;
+  maxUses: number | null;
+  useCount: number;
+  createdBy: string | null;
+  usedBy: string | null;
+  usedAt: string | null;
+};
+
+export type InviteDetails = {
+  groupId: string;
+  groupName: string;
+  groupSlug: string;
+  token: string;
+  createdAt: string;
+  expiresAt: string | null;
+  maxUses: number | null;
+  useCount: number;
+  isValid: boolean;
+  message: string;
+};
+
+export type InviteValidationResult = {
+  groupId: string;
+  success: boolean;
+  message: string;
+};
+
+/**
+ * Create a group invite link
+ */
+export async function createGroupInvite(
+  groupId: string,
+  expiresInDays: number | null = null,
+  maxUses: number | null = null
+): Promise<{ invite: GroupInvite | null; error: string | null }> {
+  if (groupId === DEMO_GROUP.id) {
+    return {
+      invite: {
+        id: "demo-invite",
+        groupId: DEMO_GROUP.id,
+        token: "demo-token-123456",
+        createdAt: new Date().toISOString(),
+        expiresAt: null,
+        maxUses: null,
+        useCount: 0,
+        createdBy: "demo-user",
+        usedBy: null,
+        usedAt: null,
+      },
+      error: null,
+    };
+  }
+
+  if (isDemoMode()) {
+    return {
+      invite: null,
+      error: "Demo mode does not support invites",
+    };
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+
+  const { data, error } = await supabaseServer.rpc("create_group_invite", {
+    p_group_id: groupId,
+    p_expires_in_days: expiresInDays,
+    p_max_uses: maxUses,
+  });
+
+  if (error) {
+    console.error("Error creating group invite:", error);
+    return { invite: null, error: error.message };
+  }
+
+  // The RPC returns a table with id, token, expires_at
+  if (data && Array.isArray(data) && data[0]) {
+    return {
+      invite: {
+        id: data[0].id,
+        groupId,
+        token: data[0].token,
+        createdAt: new Date().toISOString(),
+        expiresAt: data[0].expires_at,
+        maxUses,
+        useCount: 0,
+        createdBy: null, // Will be set by the function
+        usedBy: null,
+        usedAt: null,
+      },
+      error: null,
+    };
+  }
+
+  return { invite: null, error: "Failed to create invite" };
+}
+
+/**
+ * Validate and use a group invite
+ */
+export async function validateAndUseInvite(
+  token: string
+): Promise<InviteValidationResult> {
+  if (token === "demo-token-123456") {
+    return {
+      groupId: "demo-group",
+      success: true,
+      message: "Successfully joined group",
+    };
+  }
+
+  if (isDemoMode()) {
+    return {
+      groupId: "",
+      success: false,
+      message: "Demo mode does not support invites",
+    };
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+
+  const { data, error } = await supabaseServer.rpc("validate_and_use_invite", {
+    p_token: token,
+  });
+
+  if (error) {
+    console.error("Error validating invite:", error);
+    return {
+      groupId: "",
+      success: false,
+      message: error.message,
+    };
+  }
+
+  // The RPC returns a table with group_id, success, message
+  if (data && Array.isArray(data) && data[0]) {
+    return {
+      groupId: data[0].group_id,
+      success: data[0].success,
+      message: data[0].message,
+    };
+  }
+
+  return {
+    groupId: "",
+    success: false,
+    message: "Failed to validate invite",
+  };
+}
+
+/**
+ * Get invite details (can be called anonymously)
+ */
+export async function getInviteDetails(token: string): Promise<InviteDetails | null> {
+  if (token === "demo-token-123456") {
+    return {
+      groupId: "demo-group",
+      groupName: "Demo — Jueves Padel",
+      groupSlug: "demo",
+      token,
+      createdAt: new Date().toISOString(),
+      expiresAt: null,
+      maxUses: null,
+      useCount: 0,
+      isValid: true,
+      message: "Invite is valid",
+    };
+  }
+
+  if (isDemoMode()) {
+    return null;
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+
+  const { data, error } = await supabaseServer.rpc("get_invite_details", {
+    p_token: token,
+  });
+
+  if (error) {
+    console.error("Error getting invite details:", error);
+    return null;
+  }
+
+  // The RPC returns a table with invite details
+  if (data && Array.isArray(data) && data[0]) {
+    const result = data[0];
+    return {
+      groupId: result.group_id,
+      groupName: result.group_name,
+      groupSlug: result.group_slug,
+      token: result.token,
+      createdAt: result.created_at,
+      expiresAt: result.expires_at,
+      maxUses: result.max_uses,
+      useCount: result.use_count,
+      isValid: result.is_valid,
+      message: result.message,
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Get all invites for a group
+ */
+export async function getGroupInvites(groupId: string): Promise<GroupInvite[]> {
+  if (groupId === DEMO_GROUP.id) {
+    return [
+      {
+        id: "demo-invite",
+        groupId: DEMO_GROUP.id,
+        token: "demo-token-123456",
+        createdAt: new Date().toISOString(),
+        expiresAt: null,
+        maxUses: null,
+        useCount: 0,
+        createdBy: "demo-user",
+        usedBy: null,
+        usedAt: null,
+      },
+    ];
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+
+  const { data, error } = await supabaseServer
+    .from("group_invites")
+    .select("*")
+    .eq("group_id", groupId)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as GroupInvite[];
+}
+
+/**
+ * Delete a group invite
+ */
+export async function deleteGroupInvite(
+  inviteId: string
+): Promise<{ success: boolean; error: string | null }> {
+  const supabaseServer = await getSupabaseServerClient();
+
+  const { error } = await supabaseServer
+    .from("group_invites")
+    .delete()
+    .eq("id", inviteId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, error: null };
+}
+
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat("es-AR", {
     month: "short",
