@@ -48,14 +48,15 @@ export default defineConfig({
         },
       },
     },
-    {
-      name: 'Mobile Safari',
-      use: {
-        ...devices['iPhone 12'],
-        // Webkit doesn't support Chrome-specific flags like --disable-dev-shm-usage
-        // Don't add launchOptions for Mobile Safari
-      },
-    },
+    // Mobile Safari temporarily disabled due to disk space constraints preventing webkit installation
+    // {
+    //   name: 'Mobile Safari',
+    //   use: {
+    //     ...devices['iPhone 12'],
+    //     // Webkit doesn't support Chrome-specific flags like --disable-dev-shm-usage
+    //     // Don't add launchOptions for Mobile Safari
+    //   },
+    // },
   ],
 
   // Conditionally start dev server only in local development (not CI/Vercel)
