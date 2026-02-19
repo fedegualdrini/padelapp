@@ -200,7 +200,7 @@ export default function CalendarClient({
 
       {/* Calendar Grid */}
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="bg-[var(--card-solid)] rounded-lg shadow-sm border border-[color:var(--card-border)] overflow-hidden">
+        <div className="bg-[var(--card-solid)] rounded-lg border border-[color:var(--card-border)] overflow-hidden" style={{ boxShadow: 'var(--shadow-sm)' }}>
           {/* Weekday headers */}
           <div className="grid grid-cols-7 border-b bg-[var(--bg-hover)]">
             {WEEKDAYS.map((day) => (
@@ -302,7 +302,7 @@ export default function CalendarClient({
           onClick={() => setSelectedDay(null)}
         >
           <div
-            className="bg-[var(--card-solid)] rounded-t-xl sm:rounded-xl shadow-lg w-full sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col"
+            className="bg-[var(--card-solid)] rounded-t-xl sm:rounded-xl w-full sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col" style={{ boxShadow: 'var(--shadow-lg)' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
