@@ -31,16 +31,8 @@ export default function AppShell({ groupName, slug, children, showNavigation = t
               Padel Tracker
             </h1>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-3">
             <ThemeToggle />
-            {showNavigation && (
-              <Link
-                href={`${basePath}/matches/new`}
-                className="rounded-full bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
-              >
-                Nuevo partido
-              </Link>
-            )}
           </div>
         </div>
         {showNavigation && (
