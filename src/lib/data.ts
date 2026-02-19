@@ -15,7 +15,7 @@ function isDemoMode() {
   return !hasSupabaseEnv();
 }
 
-export type Group = { id: string; name: string; slug: string };
+export type Group = { id: string; name: string; slug: string; ranking_share_token?: string | null };
 type PlayerRow = { id: string; name: string; status: string };
 
 type MatchRow = {
@@ -68,7 +68,7 @@ export async function getGroups() {
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
     .from("groups")
-    .select("id, name, slug")
+    .select("id, name, slug, ranking_share_token")
     .order("created_at", { ascending: false });
 
   if (error || !data) {
@@ -92,7 +92,7 @@ export const getGroupBySlug = cache(async (slug: string) => {
   const supabaseServer = await getSupabaseServerClient();
   const { data, error } = await supabaseServer
     .from("groups")
-    .select("id, name, slug")
+    .select("id, name, slug, ranking_share_token")
     .eq("slug", slug)
     .single();
 
@@ -117,7 +117,7 @@ export async function getGroupByMatchId(matchId: string) {
 
   const { data: group, error: groupError } = await supabaseServer
     .from("groups")
-    .select("id, name, slug")
+    .select("id, name, slug, ranking_share_token")
     .eq("id", data.group_id)
     .single();
 
@@ -126,6 +126,56 @@ export async function getGroupByMatchId(matchId: string) {
   }
 
   return group as Group;
+}
+
+/**
+ * Get or generate a ranking share token for a group
+ * If the group doesn't have a token, generate one
+ */
+export async function getOrCreateRankingShareToken(groupId: string): Promise<string | null> {
+  if (groupId === DEMO_GROUP.id) {
+    return "demo-token";
+  }
+
+  if (isDemoMode()) {
+    return "demo-token";
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+
+  // First, try to get existing token
+  const { data: group, error: groupError } = await supabaseServer
+    .from("groups")
+    .select("ranking_share_token")
+    .eq("id", groupId)
+    .single();
+
+  if (groupError || !group) {
+    return null;
+  }
+
+  // If token exists, return it
+  if (group.ranking_share_token) {
+    return group.ranking_share_token;
+  }
+
+  // Generate a new token
+  const newToken = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+
+  // Update the group with the new token
+  const { error: updateError } = await supabaseServer
+    .from("groups")
+    .update({ ranking_share_token: newToken })
+    .eq("id", groupId);
+
+  if (updateError) {
+    console.error("Failed to create ranking share token:", updateError);
+    return null;
+  }
+
+  return newToken;
 }
 
 export async function isGroupMember(groupId: string) {
