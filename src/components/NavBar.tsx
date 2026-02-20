@@ -51,7 +51,6 @@ export default function NavBar({ basePath }: NavBarProps) {
                   ? "bg-[var(--accent)] text-white shadow-[0_12px_24px_rgba(0,0,0,0.18)] rounded-full px-2 py-1 sm:px-3 sm:py-1 block"
                   : "text-[var(--ink)] hover:bg-[color:var(--card-solid)] rounded-full px-2 py-1 sm:px-3 sm:py-1 block"
               }
-              }
             >
               {link.label}
             </span>

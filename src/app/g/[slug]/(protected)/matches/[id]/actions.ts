@@ -14,7 +14,7 @@ export async function getOrCreateMatchShareToken(slug: string, matchId: string):
     return { token: null, error: "Not a group member" };
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: existing, error: fetchError } = await supabase
     .from("match_share_tokens")
     .select("token")
