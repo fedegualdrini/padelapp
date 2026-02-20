@@ -11,6 +11,7 @@ export default defineConfig({
     root: __dirname,
     include: ['src/**/*.test.{ts,tsx}', 'tests/unit/**/*.test.{ts,tsx}'],
     reporters: ['default'],
+    setupFiles: [path.resolve(__dirname, './vitest.setup.ts')],
   },
   resolve: {
     alias: {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getPeriodRange, parsePeriodFromParams } from '@/lib/period';
+import { getPeriodRange, parsePeriodFromParams, PeriodPreset } from '@/lib/period';
 
 describe('Period Utilities', () => {
   describe('getPeriodRange', () => {
