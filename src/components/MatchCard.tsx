@@ -98,23 +98,23 @@ export default function MatchCard({
       <div className="overflow-hidden rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)]">
         {/* Header row with set numbers */}
         <div className="grid border-b border-[color:var(--card-border)] bg-[var(--bg-base)]" 
-             style={{ gridTemplateColumns: `1fr repeat(${maxSets + 1}, minmax(2rem, 1fr))` }}>
+             style={{ gridTemplateColumns: `1fr repeat(${maxSets}, 2.5rem) 2.5rem` }}>
           <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
             Equipo
           </div>
           {(team1?.sets ?? []).map((_, idx) => (
-            <div key={idx} className="px-2 py-2 text-center text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            <div key={idx} className="flex items-center justify-center py-2 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
               S{idx + 1}
             </div>
           ))}
-          <div className="px-2 py-2 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)]">
+          <div className="flex items-center justify-center py-2 text-xs font-bold uppercase tracking-wider text-[var(--ink)]">
             Sets
           </div>
         </div>
 
         {/* Team 1 row */}
         <div className={`grid border-b border-[color:var(--card-border)] transition-colors ${isTeam1Winner ? 'bg-[#F2A900]/10' : ''}`}
-             style={{ gridTemplateColumns: `1fr repeat(${maxSets + 1}, minmax(2rem, 1fr))` }}>
+             style={{ gridTemplateColumns: `1fr repeat(${maxSets}, 2.5rem) 2.5rem` }}>
           <div className="flex items-center gap-2 px-3 py-2.5">
             {/* Player avatars */}
             <div className="flex -space-x-1.5">
@@ -153,20 +153,20 @@ export default function MatchCard({
             const opponentScore = team1?.opponentSets?.[idx] ?? 0;
             const wonGame = score > opponentScore;
             return (
-              <div key={idx} className={`px-2 py-2.5 text-center text-sm font-semibold tabular-nums ${wonGame ? 'text-[var(--accent)] font-bold' : 'text-[var(--muted)]'}`}>
+              <div key={idx} className={`flex items-center justify-center py-2.5 text-sm font-semibold tabular-nums ${wonGame ? 'text-[var(--accent)] font-bold' : 'text-[var(--muted)]'}`}>
                 {score}
               </div>
             );
           })}
           {/* Sets won */}
-          <div className={`px-2 py-2.5 text-center text-base font-bold tabular-nums ${isTeam1Winner ? 'text-[var(--accent)]' : 'text-[var(--ink)]'}`}>
+          <div className={`flex items-center justify-center py-2.5 text-base font-bold tabular-nums ${isTeam1Winner ? 'text-[var(--accent)]' : 'text-[var(--ink)]'}`}>
             {team1SetsWon}
           </div>
         </div>
 
         {/* Team 2 row */}
         <div className={`grid transition-colors ${isTeam2Winner ? 'bg-[#F2A900]/10' : ''}`}
-             style={{ gridTemplateColumns: `1fr repeat(${maxSets + 1}, minmax(2rem, 1fr))` }}>
+             style={{ gridTemplateColumns: `1fr repeat(${maxSets}, 2.5rem) 2.5rem` }}>
           <div className="flex items-center gap-2 px-3 py-2.5">
             {/* Player avatars */}
             <div className="flex -space-x-1.5">
@@ -205,13 +205,13 @@ export default function MatchCard({
             const opponentScore = team2?.opponentSets?.[idx] ?? 0;
             const wonGame = score > opponentScore;
             return (
-              <div key={idx} className={`px-2 py-2.5 text-center text-sm font-semibold tabular-nums ${wonGame ? 'text-[var(--accent)] font-bold' : 'text-[var(--muted)]'}`}>
+              <div key={idx} className={`flex items-center justify-center py-2.5 text-sm font-semibold tabular-nums ${wonGame ? 'text-[var(--accent)] font-bold' : 'text-[var(--muted)]'}`}>
                 {score}
               </div>
             );
           })}
           {/* Sets won */}
-          <div className={`px-2 py-2.5 text-center text-base font-bold tabular-nums ${isTeam2Winner ? 'text-[var(--accent)]' : 'text-[var(--ink)]'}`}>
+          <div className={`flex items-center justify-center py-2.5 text-base font-bold tabular-nums ${isTeam2Winner ? 'text-[var(--accent)]' : 'text-[var(--ink)]'}`}>
             {team2SetsWon}
           </div>
         </div>
