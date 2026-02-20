@@ -8,6 +8,7 @@ import { getGroupBySlug } from "@/lib/data";
 import { actionCreateRacket } from "@/lib/racket-actions";
 import { AddRacketButton, CompareRacketsButton, RacketsList } from "./RacketClientComponents";
 import type { RacketInput } from "@/lib/racket-types";
+import { BackButton, Heading } from "@/components/ui";
 
 type PlayerRacketsPageProps = {
   params: Promise<{ slug: string; id: string }>;
@@ -58,15 +59,10 @@ export default async function PlayerRacketsPage({
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link
-            href={`/g/${slug}/players/${id}`}
-            className="text-sm font-medium text-[var(--accent)] hover:underline"
-          >
-            ← Volver al perfil
-          </Link>
-          <h2 className="mt-2 font-display text-2xl text-[var(--ink)]">
+          <BackButton href={`/g/${slug}/players/${id}`} label="Volver al perfil" variant="link" />
+          <Heading level={2} className="mt-2">
             Rackets
-          </h2>
+          </Heading>
           <p className="mt-1 text-sm text-[var(--muted)]">
             Track and analyze your racket performance
           </p>
@@ -77,7 +73,7 @@ export default async function PlayerRacketsPage({
       {/* Insights */}
       {insights.length > 0 && (
         <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-          <h3 className="font-display text-lg text-[var(--ink)]">Insights</h3>
+          <Heading level={3}>Insights</Heading>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {insights.map((insight) => (
               <div

@@ -69,12 +69,12 @@ function PartnershipCard({
 
   // Format date
   const lastPlayedDate = last_played_together
-    ? new Date(last_played_together).toLocaleDateString("en-US", {
+    ? new Date(last_played_together).toLocaleDateString("es-AR", {
         month: "short",
         day: "numeric",
         year: "numeric",
       })
-    : "Unknown";
+    : "Desconocido";
 
   // Construct detail URL
   const detailUrl = `/g/${groupSlug}/partnerships/${player1_id}/${player2_id}`;
@@ -107,7 +107,7 @@ function PartnershipCard({
                 {player1_name} & {player2_name}
               </p>
               <p className="text-xs text-gray-500">
-                {matches_played} matches
+                {matches_played} partidos
               </p>
             </div>
           </div>
@@ -158,7 +158,7 @@ function PartnershipCard({
               {matchesBadge}
             </span>
             <span className="text-xs text-gray-500">
-              Last played: {lastPlayedDate}
+              Último partido: {lastPlayedDate}
             </span>
           </div>
         </div>
@@ -170,19 +170,19 @@ function PartnershipCard({
           <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {winRatePercent}%
           </p>
-          <p className="text-xs text-gray-500">Win Rate</p>
+          <p className="text-xs text-gray-500">% victorias</p>
         </div>
         <div className="text-center p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
           <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {wins}-{losses}
           </p>
-          <p className="text-xs text-gray-500">W-L</p>
+          <p className="text-xs text-gray-500">V-D</p>
         </div>
         <div className="text-center p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
           <p className={`text-2xl font-bold ${eloIndicatorText[eloIndicator]}`}>
             {eloIndicatorEmoji[eloIndicator]}
           </p>
-          <p className="text-xs text-gray-500">ELO Delta</p>
+          <p className="text-xs text-gray-500">Delta ELO</p>
         </div>
       </div>
 
@@ -191,7 +191,7 @@ function PartnershipCard({
         <div className="mt-3 pt-3 border-t border-current/20">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Synergy Score
+              Puntaje de sinergia
             </span>
             <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
               {synergyScore.toFixed(2)}
@@ -209,7 +209,7 @@ function PartnershipCard({
       {/* Action hint */}
       <div className="mt-3 text-center">
         <span className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-          Click for details →
+          Clic para ver detalles →
         </span>
       </div>
     </Link>

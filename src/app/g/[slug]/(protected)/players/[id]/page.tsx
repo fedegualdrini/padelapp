@@ -15,6 +15,7 @@ import MiniEloChart from "./MiniEloChart";
 import StreakHistoryChart from "./StreakHistoryChart";
 import AchievementsSection from "@/components/AchievementsSection";
 import PlayerPartnerships from "@/components/PlayerPartnerships";
+import { BackButton, Heading } from "@/components/ui";
 
 type PlayerProfilePageProps = {
   params: Promise<{ slug: string; id: string }>;
@@ -63,7 +64,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="font-display text-2xl text-[var(--ink)]">{player.name}</h2>
+            <Heading level={2}>{player.name}</Heading>
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                 isUsual
@@ -85,18 +86,13 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
           >
             🏓 Mis Rackets
           </Link>
-          <Link
-            href={`/g/${slug}/players`}
-            className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
-          >
-            ← Volver a jugadores
-          </Link>
+          <BackButton href={`/g/${slug}/players`} label="Volver a jugadores" />
         </div>
       </div>
 
       {/* Stats Overview */}
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-        <h3 className="font-display text-lg text-[var(--ink)]">Estadísticas</h3>
+        <Heading level={3}>Estadísticas</Heading>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4">
             <p className="text-xs uppercase tracking-wider text-[var(--muted)]">Partidos</p>
@@ -190,7 +186,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
 
       {/* Partnerships Section */}
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-        <h3 className="font-display text-lg text-[var(--ink)]">Partnerships</h3>
+        <Heading level={3}>Partnerships</Heading>
         <div className="mt-4">
           <PlayerPartnerships
             playerId={id}
@@ -203,7 +199,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
       {/* ELO Chart */}
       {playerEloData && playerEloData.points.length > 0 && (
         <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-          <h3 className="font-display text-lg text-[var(--ink)]">Evolución ELO</h3>
+          <Heading level={3}>Evolución ELO</Heading>
           <div className="mt-4">
             <MiniEloChart data={playerEloData.points} />
           </div>
@@ -213,7 +209,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
       {/* Recent Matches */}
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
         <div className="flex items-center justify-between">
-          <h3 className="font-display text-lg text-[var(--ink)]">Partidos recientes</h3>
+          <Heading level={3}>Partidos recientes</Heading>
           <Link
             href={`/g/${slug}/matches?playerId=${id}`}
             className="text-sm font-medium text-[var(--accent)] hover:underline"
@@ -263,7 +259,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
       {/* Streak History */}
       {streaks.streakHistory.length > 0 && (
         <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-          <h3 className="font-display text-lg text-[var(--ink)]">Historial de rachas</h3>
+          <Heading level={3}>Historial de rachas</Heading>
           <div className="mt-4">
             <StreakHistoryChart streakHistory={streaks.streakHistory} />
           </div>
@@ -273,7 +269,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
       {/* Partner Stats */}
       {partnerStats.length > 0 && (
         <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-          <h3 className="font-display text-lg text-[var(--ink)]">Mejores compañeros</h3>
+          <Heading level={3}>Mejores compañeros</Heading>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {partnerStats.map((partner) => (
               <div

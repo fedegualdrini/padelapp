@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGroupBySlug } from "@/lib/data";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import AchievementsLeaderboard from "@/components/AchievementsLeaderboard";
+import { BackButton, Heading } from "@/components/ui";
 
 type AchievementsPageProps = {
   params: Promise<{ slug: string }>;
@@ -104,23 +104,18 @@ export default async function AchievementsPage({ params }: AchievementsPageProps
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="font-display text-2xl text-[var(--ink)]">Logros</h2>
+          <Heading level={2}>Logros</Heading>
           <p className="mt-1 text-sm text-[var(--muted)]">
             Sistema de gamificación y badges para los jugadores
           </p>
         </div>
-        <Link
-          href={`/g/${slug}/players`}
-          className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
-        >
-          ← Volver a jugadores
-        </Link>
+        <BackButton href={`/g/${slug}/players`} label="Volver a jugadores" />
       </div>
 
       <AchievementsLeaderboard players={leaderboardData} />
 
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-        <h3 className="font-display text-lg text-[var(--ink)]">Categorías de logros</h3>
+        <Heading level={3}>Categorías de logros</Heading>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4">
             <div className="flex items-center gap-2">

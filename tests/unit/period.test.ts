@@ -70,7 +70,8 @@ describe('Period Utilities', () => {
     });
 
     it('returns all-time for invalid preset', () => {
-      const result = getPeriodRange('invalid' as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = getPeriodRange('invalid' as any); // Testing invalid preset handling
       expect(result).toEqual({
         preset: 'all-time',
       });

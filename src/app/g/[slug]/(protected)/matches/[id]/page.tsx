@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGroupBySlug, getMatchById, getMatchEloDeltas } from "@/lib/data";
+import MatchDetailActions from "@/components/MatchDetailActions";
 
 type MatchPageProps = {
   params: Promise<{ slug: string; id: string }>;
@@ -31,6 +32,11 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
     );
   }
 
+  // Calculate winner based on sets won
+  const team1SetsWon = match.teams[0].sets.reduce((count, s, idx) => count + (s > match.teams[1].sets[idx] ? 1 : 0), 0);
+  const team2SetsWon = match.teams[1].sets.reduce((count, s, idx) => count + (s > match.teams[0].sets[idx] ? 1 : 0), 0);
+  const winner = team1SetsWon > team2SetsWon ? match.teams[0].name : match.teams[1].name;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -47,12 +53,23 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
               : `Creado por ${match.createdBy}`}
           </p>
         </div>
-        <Link
-          href={`/g/${slug}/matches/${match.id}/edit`}
-          className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
-        >
-          Editar partido
-        </Link>
+        <div className="flex gap-2">
+          <MatchDetailActions
+            matchId={match.id}
+            slug={slug}
+            playedAt={match.playedAt}
+            bestOf={match.bestOf}
+            teams={match.teams}
+            eloDeltas={eloDeltas}
+            winner={winner}
+          />
+          <Link
+            href={`/g/${slug}/matches/${match.id}/edit`}
+            className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
+          >
+            Editar partido
+          </Link>
+        </div>
       </div>
 
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
