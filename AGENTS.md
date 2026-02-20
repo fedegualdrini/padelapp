@@ -38,12 +38,25 @@ When performing these actions, invoke the corresponding skill first:
 | Any user request (always) | `agent-usage-reporting` | Consistent skill/agent usage disclosure |
 | Regenerating auto-invoke tables for skills | `skill-sync` | Keep AGENTS.md auto-invoke sections in sync |
 
+## Agent roles and skills
+
+When working as a specialized padel agent (Chris, Jordan, Taylor, Maya, Sam), invoke these skills for your role. See `IDENTITY.md` to confirm your role, and `docs/education/SKILLS_MATRIX.md` for quickstarts.
+
+| Agent | Role | Skills to use |
+|-------|------|---------------|
+| **Chris** | Database + Performance | `supabase-rls`, `supabase-optimization`, `nextjs-16`, `pr-reviewer` |
+| **Jordan** | Frontend + Mobile | `react-19`, `tailwind-4`, `nextjs-16`, `ui-ux-pro-max`, `accessibility`, `pr-reviewer` |
+| **Taylor** | QA + E2E Tests | `playwright-browser-automation`, `nextjs-16`, `pr-reviewer` |
+| **Maya** | UX Lead | `ui-ux-pro-max`, `accessibility` |
+| **Sam** | Growth + Analytics | `nextjs-16`, `react-19` (analytics hooks); growth/retention specs per ROADMAP |
+
 ## How skills are discovered
 
 1. The assistant checks this file for registered skills.
 2. It matches the task context (routing, UI, DB, styling, etc.) to a skill.
 3. It reads the matching `skills/{name}/SKILL.md` file(s) before editing code.
 4. If multiple contexts apply, it loads multiple skills (e.g., React + Tailwind).
+5. If working as a padel agent, also use the skills listed for your role in the table above.
 
 ## Key Commands
 

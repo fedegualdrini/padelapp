@@ -1,40 +1,27 @@
-# TOOLS.md - Local Notes
+# TOOLS.md - Environment-specific
 
-Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
+## Skills (agents must use)
 
-## What Goes Here
+See `AGENTS.md` → **Agent roles and skills** for the full mapping. Padel agents should invoke the skills listed for their role:
 
-Things like:
+- **Chris:** `supabase-rls`, `supabase-optimization`, `nextjs-16`, `pr-reviewer`
+- **Jordan:** `react-19`, `tailwind-4`, `nextjs-16`, `ui-ux-pro-max`, `accessibility`, `pr-reviewer`
+- **Taylor:** `playwright-browser-automation`, `nextjs-16`, `pr-reviewer`
+- **Maya:** `ui-ux-pro-max`, `accessibility`
+- **Sam:** `nextjs-16`, `react-19` (plus growth/analytics specs)
 
-- Camera names and locations
-- SSH hosts and aliases
-- Preferred voices for TTS
-- Speaker/room names
-- Device nicknames
-- Anything environment-specific
+Skill paths: `skills/{name}/SKILL.md` (repo skills) or workspace `skills/` dir (OpenClaw). See `docs/education/SKILLS_MATRIX.md` for quickstarts.
 
-## Examples
+## Tools
 
-```markdown
-### Cameras
+| Tool | Use when |
+|------|----------|
+| **Trello** | Task tracking, sprint boards, moving cards. See `skills/trello/SKILL.md` if available. |
+| **Vercel Deploy** | Deployment requests. See `skills/vercel-deploy/SKILL.md` if available. |
 
-- living-room → Main area, 180° wide angle
-- front-door → Entrance, motion-triggered
+## Environment
 
-### SSH
-
-- home-server → 192.168.1.100, user: admin
-
-### TTS
-
-- Preferred voice: "Nova" (warm, slightly British)
-- Default speaker: Kitchen HomePod
-```
-
-## Why Separate?
-
-Skills are shared. Your setup is yours. Keeping them apart means you can update skills without losing your notes, and share skills without leaking your infrastructure.
-
----
-
-Add whatever helps you do your job. This is your cheat sheet.
+- **SSH hosts/aliases:** None
+- **Devices or services:** None
+- **TTS preferences:** None
+- **Other environment shortcuts:** None
