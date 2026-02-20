@@ -65,8 +65,8 @@ export default defineConfig({
     webServer: {
       command: 'npm run dev',
       url: 'http://localhost:3000',
-      // Avoid reusing a stale dev server that may have started without the right env.
-      reuseExistingServer: false,
+      // Allow reusing existing server for local testing
+      reuseExistingServer: true,
       timeout: 180000, // 3 minutes - give dev server more time to start
     },
   }),

@@ -391,7 +391,7 @@ export async function waitForAPIResponse(
   timeout: number = 30000
 ): Promise<any> {
   const responsePromise = page.waitForResponse(
-    response => response.url().match(urlPattern),
+    response => !!response.url().match(urlPattern),
     { timeout }
   );
   const response = await responsePromise;

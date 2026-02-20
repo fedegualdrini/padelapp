@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGroupBySlug, getMatchById, getMatchEloDeltas } from "@/lib/data";
-import MatchDetailActions from "@/components/MatchDetailActions";
+import { ShareMatchButton } from "./ShareMatchButton";
 
 type MatchPageProps = {
   params: Promise<{ slug: string; id: string }>;
@@ -53,16 +53,8 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
               : `Creado por ${match.createdBy}`}
           </p>
         </div>
-        <div className="flex gap-2">
-          <MatchDetailActions
-            matchId={match.id}
-            slug={slug}
-            playedAt={match.playedAt}
-            bestOf={match.bestOf}
-            teams={match.teams}
-            eloDeltas={eloDeltas}
-            winner={winner}
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <ShareMatchButton slug={slug} matchId={match.id} />
           <Link
             href={`/g/${slug}/matches/${match.id}/edit`}
             className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
