@@ -1,7 +1,7 @@
 "use server";
 
 import { getGroupBySlug, isGroupMember } from "@/lib/data";
-import { createClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function getOrCreateMatchShareToken(slug: string, matchId: string): Promise<{ token: string | null; error?: string }> {
   const group = await getGroupBySlug(slug);
@@ -14,7 +14,7 @@ export async function getOrCreateMatchShareToken(slug: string, matchId: string):
     return { token: null, error: "Not a group member" };
   }
 
-  const supabase = createClient();
+  const supabase = createSupabaseServerClient();
   const { data: existing, error: fetchError } = await supabase
     .from("match_share_tokens")
     .select("token")
