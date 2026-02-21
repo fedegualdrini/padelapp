@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { updateAttendance, createWeeklyEvent, generateOccurrences, AttendanceStatus } from "./actions";
-import { getConfirmedPlayersWithElo, balanceTeams, type PlayerWithElo, type SuggestedTeams } from "./actions";
+import { 
+  updateAttendance, 
+  createWeeklyEvent, 
+  generateOccurrences, 
+  AttendanceStatus,
+  markOccurrenceCompleted,
+  linkMatchToOccurrence,
+  getLinkableMatches
+} from "./actions";
+import { getConfirmedPlayersWithElo, balanceTeams, type SuggestedTeams } from "./actions";
 import TeamSuggestionModal from "./TeamSuggestionModal";
 
 type WeeklyEvent = {
@@ -624,6 +632,173 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
           )}
         </div>
       )}
+
+      {/* Past event actions */}
+      {isPast && !isCancelled && (
+        <div className="mt-4 border-t border-[color:var(--card-border)] pt-4">
+          {summary.occurrence.loaded_match_id ? (
+            <a
+              href={`/g/${slug}/matches/${summary.occurrence.loaded_match_id}`}
+              className="block w-full rounded-lg border border-[color:var(--status-success-border)] bg-[color:var(--status-success-bg)] px-4 py-2.5 text-center text-sm font-medium text-[var(--status-success-text)] transition hover:border-[var(--accent)]"
+            >
+              ✓ Ver partido vinculado
+            </a>
+          ) : summary.occurrence.status === 'completed' ? (
+            <div className="rounded-lg bg-[color:var(--status-success-bg)] px-4 py-2.5 text-center text-sm font-medium text-[var(--status-success-text)]">
+              ✓ Marcado como jugado
+            </div>
+          ) : (
+            <PastEventActions 
+              slug={slug} 
+              occurrenceId={summary.occurrence.id}
+            />
+          )}
+        </div>
+      )}
     </div>
+  );
+}
+
+// Component for past event actions (link match or mark completed)
+function PastEventActions({ 
+  slug, 
+  occurrenceId 
+}: { 
+  slug: string; 
+  occurrenceId: string;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkableMatches, setLinkableMatches] = useState<Array<{ id: string; team1: string; team2: string; score: string }>>([]);
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleMarkCompleted = () => {
+    startTransition(async () => {
+      try {
+        setError(null);
+        await markOccurrenceCompleted(slug, occurrenceId);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error al marcar como jugado");
+      }
+    });
+  };
+
+  const handleOpenLinkModal = async () => {
+    setError(null);
+    try {
+      const matches = await getLinkableMatches(slug, occurrenceId);
+      setLinkableMatches(matches);
+      setShowLinkModal(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al buscar partidos");
+    }
+  };
+
+  const handleLinkMatch = () => {
+    if (!selectedMatchId) return;
+    
+    startTransition(async () => {
+      try {
+        setError(null);
+        await linkMatchToOccurrence(slug, occurrenceId, selectedMatchId);
+        setShowLinkModal(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error al vincular partido");
+      }
+    });
+  };
+
+  return (
+    <>
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={handleOpenLinkModal}
+          disabled={isPending}
+          className="w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50"
+        >
+          Vincular partido
+        </button>
+        <button
+          onClick={handleMarkCompleted}
+          disabled={isPending}
+          className="w-full rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-4 py-2.5 text-sm font-medium text-[var(--ink)] transition hover:border-[var(--accent)] disabled:opacity-50"
+        >
+          Marcar como jugado
+        </button>
+      </div>
+
+      {error && (
+        <p className="mt-2 text-sm text-[var(--status-error-text)]">{error}</p>
+      )}
+
+      {/* Link match modal */}
+      {showLinkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur">
+            <h3 className="font-display text-xl text-[var(--ink)]">
+              Vincular partido
+            </h3>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              Selecciona un partido jugado ese mismo día para vincularlo al evento.
+            </p>
+
+            {linkableMatches.length === 0 ? (
+              <p className="mt-4 text-sm text-[var(--muted)]">
+                No hay partidos registrados ese día. Puedes crear uno nuevo o marcar el evento como jugado manualmente.
+              </p>
+            ) : (
+              <div className="mt-4 max-h-60 overflow-y-auto space-y-2">
+                {linkableMatches.map((match) => (
+                  <button
+                    key={match.id}
+                    onClick={() => setSelectedMatchId(match.id)}
+                    className={`w-full text-left rounded-xl border p-3 transition ${
+                      selectedMatchId === match.id 
+                        ? 'border-[var(--accent)] bg-[color:var(--status-success-bg)]' 
+                        : 'border-[color:var(--card-border)] bg-[color:var(--card-solid)]'
+                    }`}
+                  >
+                    <p className="text-sm font-medium text-[var(--ink)]">
+                      {match.team1} vs {match.team2}
+                    </p>
+                    <p className="text-xs text-[var(--muted)]">
+                      {match.score}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {error && (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowLinkModal(false)}
+                disabled={isPending}
+                className="rounded-full border border-[color:var(--card-border)] px-5 py-2 text-sm font-semibold text-[var(--ink)] disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              {linkableMatches.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleLinkMatch}
+                  disabled={isPending || !selectedMatchId}
+                  className="rounded-full bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {isPending ? "Vinculando..." : "Vincular"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
