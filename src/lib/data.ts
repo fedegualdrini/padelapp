@@ -1886,7 +1886,7 @@ export async function getPlayerPartnerStats(
   const players = await getPlayers(groupId);
   const playerMap = new Map(players.map((p) => [p.id, p]));
 
-  // Find all matches where the player participated
+  // OPTIMIZED: Single query to get all match IDs where player participated
   const { data: playerMatches, error: matchError } = await supabaseServer
     .from("match_team_players")
     .select(
@@ -1907,47 +1907,71 @@ export async function getPlayerPartnerStats(
     return [];
   }
 
-  // Build partner stats
-  const partnerStats = new Map<
-    string,
-    { wins: number; losses: number; matches: number }
-  >();
+  // Extract all match IDs
+  const matchIds = new Set<string>();
+  const matchPartnerMap = new Map<string, string[]>(); // matchId -> [partnerIds]
 
-  for (const row of playerMatches) {
+  playerMatches.forEach((row) => {
     const matchTeam = Array.isArray(row.match_teams)
       ? row.match_teams[0]
       : row.match_teams;
-    if (!matchTeam?.match_id) continue;
+    if (!matchTeam?.match_id) return;
+
+    matchIds.add(matchTeam.match_id);
 
     // Get teammates for this match
     const teammates = Array.isArray(matchTeam.match_team_players)
       ? matchTeam.match_team_players
       : [matchTeam.match_team_players];
 
-    const partnerRow = teammates.find((t: { player_id: string }) => t.player_id !== playerId);
-    if (!partnerRow) continue;
+    const partners = teammates
+      .filter((t: { player_id: string }) => t.player_id !== playerId)
+      .map((t: { player_id: string }) => t.player_id);
 
-    const partnerId = partnerRow.player_id;
-
-    // Get match result to determine win/loss
-    const { data: matchResult, error: resultError } = await supabaseServer
-      .from("v_player_match_results")
-      .select("is_win")
-      .eq("match_id", matchTeam.match_id)
-      .eq("player_id", playerId)
-      .single();
-
-    if (resultError || !matchResult) continue;
-
-    const stats = partnerStats.get(partnerId) || { wins: 0, losses: 0, matches: 0 };
-    stats.matches++;
-    if (matchResult.is_win) {
-      stats.wins++;
-    } else {
-      stats.losses++;
+    if (!matchPartnerMap.has(matchTeam.match_id)) {
+      matchPartnerMap.set(matchTeam.match_id, []);
     }
-    partnerStats.set(partnerId, stats);
+    matchPartnerMap.get(matchTeam.match_id)!.push(...partners);
+  });
+
+  // OPTIMIZED: Batch query all match results at once instead of N+1 queries
+  const { data: matchResults, error: resultsError } = await supabaseServer
+    .from("v_player_match_results")
+    .select("match_id, is_win")
+    .eq("player_id", playerId)
+    .in("match_id", Array.from(matchIds));
+
+  if (resultsError || !matchResults) {
+    return [];
   }
+
+  // Build result lookup map
+  const resultsByMatch = new Map(
+    matchResults.map((r) => [r.match_id, r.is_win])
+  );
+
+  // Build partner stats
+  const partnerStats = new Map<
+    string,
+    { wins: number; losses: number; matches: number }
+  >();
+
+  // Process all matches with partners and results
+  matchPartnerMap.forEach((partners, matchId) => {
+    const isWin = resultsByMatch.get(matchId);
+    if (isWin === undefined) return;
+
+    partners.forEach((partnerId) => {
+      const stats = partnerStats.get(partnerId) || { wins: 0, losses: 0, matches: 0 };
+      stats.matches++;
+      if (isWin) {
+        stats.wins++;
+      } else {
+        stats.losses++;
+      }
+      partnerStats.set(partnerId, stats);
+    });
+  });
 
   // Convert to array and sort by matches played
   return Array.from(partnerStats.entries())
@@ -1996,40 +2020,58 @@ export async function getPlayerRecentMatches(
     return [];
   }
 
+  // Extract match IDs
+  const matchIds = matchResults.map((r) => r.match_id);
+
+  // OPTIMIZED: Batch query all match details at once instead of N+1 queries
+  const { data: matchDetails, error: matchError } = await supabaseServer
+    .from("matches")
+    .select(
+      `
+      id,
+      played_at,
+      match_teams (
+        team_number,
+        match_team_players (
+          player_id,
+          players ( name )
+        )
+      ),
+      sets (
+        set_number,
+        set_scores ( team1_games, team2_games )
+      )
+    `
+    )
+    .eq("group_id", groupId)
+    .in("id", matchIds);
+
+  if (matchError || !matchDetails) {
+    return [];
+  }
+
+  // Build match details lookup map
+  const matchDetailsMap = new Map(
+    matchDetails.map((m) => [m.id, m])
+  );
+
+  // Build results lookup map
+  const resultsMap = new Map(
+    matchResults.map((r) => [r.match_id, r])
+  );
+
   const matches: RecentMatch[] = [];
 
-  for (const result of matchResults) {
-    // Get match details
-    const { data: matchData, error: matchError } = await supabaseServer
-      .from("matches")
-      .select(
-        `
-        id,
-        played_at,
-        match_teams (
-          team_number,
-          match_team_players (
-            player_id,
-            players ( name )
-          )
-        ),
-        sets (
-          set_number,
-          set_scores ( team1_games, team2_games )
-        )
-      `
-      )
-      .eq("id", result.match_id)
-      .eq("group_id", groupId)
-      .single();
-
-    if (matchError || !matchData) continue;
+  // Process each match
+  for (const match of matchDetails) {
+    const result = resultsMap.get(match.id) as { match_id: string; is_win: boolean; played_at: string } | undefined;
+    if (!result) continue;
 
     // Find which team the player was on
     let partnerName: string | null = null;
     const opponentTeamNames: string[] = [];
 
-    for (const team of matchData.match_teams || []) {
+    for (const team of match.match_teams || []) {
       const teamPlayers = Array.isArray(team.match_team_players)
         ? team.match_team_players
         : [team.match_team_players];
@@ -2065,7 +2107,7 @@ export async function getPlayerRecentMatches(
     }
 
     // Calculate score
-    const sets = Array.isArray(matchData.sets) ? matchData.sets : [];
+    const sets = Array.isArray(match.sets) ? match.sets : [];
     const sortedSets = sets.sort((a: { set_number: number }, b: { set_number: number }) => a.set_number - b.set_number);
 
     const setScores: string[] = [];
@@ -2081,13 +2123,13 @@ export async function getPlayerRecentMatches(
       }
     }
 
-    const playedAt = new Date(matchData.played_at).toLocaleDateString("es-AR", {
+    const playedAt = new Date(match.played_at).toLocaleDateString("es-AR", {
       month: "short",
       day: "2-digit",
     });
 
     matches.push({
-      id: matchData.id,
+      id: match.id,
       playedAt,
       opponentTeam: opponentTeamNames.join(" / ") || "Unknown",
       partnerName,
@@ -3020,21 +3062,32 @@ export async function getCalendarData(
   const eventsByOccurrence: Map<string, CalendarEvent> = new Map();
 
   if (!occurrencesError && occurrences) {
+    // OPTIMIZED: Batch query all attendance for all occurrences at once instead of N+1 queries
+    const occurrenceIds = occurrences.map((occ) => occ.id);
+    const { data: allAttendance, error: attendanceError } = await supabaseServer
+      .from('attendance')
+      .select('occurrence_id, status')
+      .in('occurrence_id', occurrenceIds);
+
+    // Build attendance count map
+    const attendanceCountByOccurrence = new Map<string, number>();
+    if (!attendanceError && allAttendance) {
+      allAttendance.forEach((att) => {
+        const current = attendanceCountByOccurrence.get(att.occurrence_id) ?? 0;
+        if (att.status === 'confirmed') {
+          attendanceCountByOccurrence.set(att.occurrence_id, current + 1);
+        }
+      });
+    }
+
+    // Process occurrences with pre-fetched attendance data
     for (const occ of occurrences) {
       const weeklyEvent = Array.isArray(occ.weekly_events)
         ? occ.weekly_events[0]
         : occ.weekly_events;
       const capacity = weeklyEvent?.capacity ?? 4;
 
-      // Get attendance for this occurrence
-      const { data: attendance, error: attendanceError } = await supabaseServer
-        .from('attendance')
-        .select('status')
-        .eq('occurrence_id', occ.id);
-
-      const attendanceCount = attendance && !attendanceError
-        ? attendance.filter(a => a.status === 'confirmed').length
-        : 0;
+      const attendanceCount = attendanceCountByOccurrence.get(occ.id) ?? 0;
 
       const dateObj = new Date(occ.starts_at);
       const dateStr = dateObj.toISOString().slice(0, 10);
@@ -3949,4 +4002,5 @@ export async function autoCloseEventsForMatch(
 
   return closedCount;
 }
+
 
