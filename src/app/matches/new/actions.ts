@@ -19,6 +19,16 @@ type CreateMatchState = {
   error?: string | null;
 };
 
+/**
+ * Build redirect URL with toast notification params
+ */
+function redirectWithToast(path: string, type: "success" | "error", message: string): string {
+  const url = new URL(path, "http://dummy.com");
+  url.searchParams.set("toast", type);
+  url.searchParams.set("message", encodeURIComponent(message));
+  return url.pathname + url.search;
+}
+
 export async function createMatch(
   _prevState: CreateMatchState,
   formData: FormData
@@ -281,5 +291,5 @@ export async function createMatch(
     // Don't fail the match creation if auto-close fails
   }
 
-  redirect(`/g/${groupSlug}/matches/${match.id}`);
+  redirect(redirectWithToast(`/g/${groupSlug}/matches/${match.id}`, "success", "Partido guardado correctamente"));
 }
