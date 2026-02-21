@@ -196,3 +196,41 @@ body {
   animation: fadeInLabel 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   animation-delay: 0.15s;
 }
+
+/* Mobile responsiveness improvements */
+@media (max-width: 640px) {
+  /* Improve touch scrolling on mobile */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* Better tap targets for mobile */
+  button, 
+  a, 
+  input, 
+  select, 
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent zoom on input focus (iOS) */
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="time"],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Ensure minimum touch target size (44x44) for accessibility */
+@media (pointer: coarse) {
+  button:not(.min-h-\\[44px\\]),
+  a:not(.min-h-\\[44px\\]),
+  [role="button"]:not(.min-h-\\[44px\\]) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

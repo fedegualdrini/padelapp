@@ -63,7 +63,7 @@ export default function MatchFiltersButton({ players }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-glass)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
+        className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-glass)] px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-[var(--ink)] min-h-[44px] flex items-center"
       >
         Filtrar{activeCount ? ` (${activeCount})` : ''}
       </button>
@@ -75,23 +75,23 @@ export default function MatchFiltersButton({ players }: Props) {
             onClick={() => setOpen(false)}
           />
 
-          <div className="relative w-full max-w-lg rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.18)] backdrop-blur">
+          <div className="relative w-full max-w-lg rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 sm:p-5 shadow-[0_18px_40px_rgba(0,0,0,0.18)] backdrop-blur max-h-[90vh] overflow-y-auto">
             <div className="mb-4">
               <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
                 Filtros
               </p>
-              <h3 className="font-display text-xl text-[var(--ink)]">
+              <h3 className="font-display text-lg sm:text-xl text-[var(--ink)]">
                 Buscar partidos
               </h3>
             </div>
 
-            <div className="grid gap-4">
-              <label className="grid gap-1 text-sm">
+            <div className="grid gap-3 sm:gap-4">
+              <label className="grid gap-1.5 text-sm">
                 <span className="text-[var(--muted)]">Jugador</span>
                 <select
                   value={playerId}
                   onChange={(e) => setPlayerId(e.target.value)}
-                  className="rounded-xl border border-[color:var(--card-border)] bg-white/70 px-3 py-2 text-[var(--ink)]"
+                  className="rounded-xl border border-[color:var(--card-border)] bg-white/70 px-3 py-2.5 sm:py-3 text-[var(--ink)] min-h-[44px]"
                 >
                   <option value="">(Cualquiera)</option>
                   {players.map((p) => (
@@ -103,23 +103,23 @@ export default function MatchFiltersButton({ players }: Props) {
               </label>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <label className="grid gap-1 text-sm">
+                <label className="grid gap-1.5 text-sm">
                   <span className="text-[var(--muted)]">Desde</span>
                   <input
                     type="date"
                     value={from}
                     onChange={(e) => setFrom(e.target.value)}
-                    className="rounded-xl border border-[color:var(--card-border)] bg-white/70 px-3 py-2 text-[var(--ink)]"
+                    className="rounded-xl border border-[color:var(--card-border)] bg-white/70 px-3 py-2.5 sm:py-3 text-[var(--ink)] min-h-[44px]"
                   />
                 </label>
 
-                <label className="grid gap-1 text-sm">
+                <label className="grid gap-1.5 text-sm">
                   <span className="text-[var(--muted)]">Hasta</span>
                   <input
                     type="date"
                     value={to}
                     onChange={(e) => setTo(e.target.value)}
-                    className="rounded-xl border border-[color:var(--card-border)] bg-white/70 px-3 py-2 text-[var(--ink)]"
+                    className="rounded-xl border border-[color:var(--card-border)] bg-white/70 px-3 py-2.5 sm:py-3 text-[var(--ink)] min-h-[44px]"
                   />
                 </label>
               </div>
@@ -129,14 +129,14 @@ export default function MatchFiltersButton({ players }: Props) {
               <button
                 type="button"
                 onClick={clear}
-                className="rounded-full border border-[color:var(--card-border)] bg-transparent px-4 py-2 text-sm font-semibold text-[var(--ink)]"
+                className="rounded-full border border-[color:var(--card-border)] bg-transparent px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-[var(--ink)] min-h-[44px]"
               >
                 Limpiar
               </button>
               <button
                 type="button"
                 onClick={apply}
-                className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white"
+                className="rounded-full bg-[var(--accent)] px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-white min-h-[44px]"
               >
                 Aplicar
               </button>
