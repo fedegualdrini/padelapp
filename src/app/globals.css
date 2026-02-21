@@ -227,9 +227,9 @@ body {
 
 /* Ensure minimum touch target size (44x44) for accessibility */
 @media (pointer: coarse) {
-  button:not(.min-h-\\[44px\\]),
-  a:not(.min-h-\\[44px\\]),
-  [role="button"]:not(.min-h-\\[44px\\]) {
+  button,
+  a,
+  [role="button"] {
     min-height: 44px;
     min-width: 44px;
   }
