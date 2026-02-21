@@ -43,35 +43,35 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
 
       <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-2xl text-[var(--ink)]">Últimos partidos</h3>
-            <Link href={`/g/${slug}/matches`} className="text-sm font-semibold text-[var(--accent)]">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="font-display text-xl sm:text-2xl text-[var(--ink)]">Últimos partidos</h3>
+            <Link href={`/g/${slug}/matches`} className="text-xs sm:text-sm font-semibold text-[var(--accent)] whitespace-nowrap">
               Ver todos &gt;
             </Link>
           </div>
 
           {recentMatches.length === 0 ? (
-            <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 sm:p-8 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+            <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 sm:p-6 md:p-8 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
               <div className="flex flex-col items-center gap-4 sm:gap-6 text-center">
                 <div className="text-4xl sm:text-5xl">🎾</div>
                 <div className="flex flex-col gap-2">
-                  <h4 className="text-lg sm:text-xl font-semibold text-[var(--ink)]">
+                  <h4 className="text-base sm:text-lg md:text-xl font-semibold text-[var(--ink)]">
                     ¡Tu grupo está listo!
                   </h4>
-                  <p className="text-sm text-[var(--muted)]">
+                  <p className="text-xs sm:text-sm text-[var(--muted)] px-4">
                     Registra tu primer partido y empezá a medir el rendimiento de tu equipo.
                   </p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto px-4 sm:px-0">
                   <Link
                     href={`/g/${slug}/matches/new`}
-                    className="rounded-full bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[color:var(--accent)]/90"
+                    className="rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[color:var(--accent)]/90 min-h-[44px] flex items-center justify-center"
                   >
                     Registrar primer partido
                   </Link>
                   <Link
                     href={`/g/${slug}/players`}
-                    className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-6 py-2.5 text-sm font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)]/80"
+                    className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-6 py-3 text-sm font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)]/80 min-h-[44px] flex items-center justify-center"
                   >
                     Invitar amigos
                   </Link>
@@ -88,37 +88,37 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-            <div className="flex items-center justify-between gap-4">
-              <h3 className="font-display text-xl text-[var(--ink)]">Ranking ELO</h3>
-              <Link href={`/g/${slug}/ranking`} className="text-sm font-semibold text-[var(--accent)]">
+          <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 sm:p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-display text-lg sm:text-xl text-[var(--ink)]">Ranking ELO</h3>
+              <Link href={`/g/${slug}/ranking`} className="text-xs sm:text-sm font-semibold text-[var(--accent)] whitespace-nowrap">
                 Ver ranking &gt;
               </Link>
             </div>
 
-            <div className="mt-4 grid gap-3">
+            <div className="mt-3 sm:mt-4 grid gap-2 sm:gap-3">
               {leaderboard.length === 0 ? (
-                <p className="text-sm text-[var(--muted)]">Sin ELO todavía.</p>
+                <p className="text-xs sm:text-sm text-[var(--muted)]">Sin ELO todavía.</p>
               ) : (
                 leaderboard.slice(0, 8).map((entry, index) => (
                   <div
                     key={entry.playerId}
-                    className="flex items-center justify-between rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-4 py-3"
+                    className="flex items-center justify-between rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-3 sm:px-4 py-2.5 sm:py-3"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg-base)] text-sm font-semibold">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                      <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-[var(--bg-base)] text-xs sm:text-sm font-semibold shrink-0">
                         {index + 1}
                       </span>
-                      <p className="text-sm font-semibold text-[var(--ink)]">{entry.name}</p>
+                      <p className="text-xs sm:text-sm font-semibold text-[var(--ink)] truncate">{entry.name}</p>
                     </div>
-                    <span className="text-sm font-semibold text-[var(--accent)]">{entry.rating}</span>
+                    <span className="text-xs sm:text-sm font-semibold text-[var(--accent)] shrink-0">{entry.rating}</span>
                   </div>
                 ))
               )}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 text-sm text-[var(--muted)] shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+          <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 sm:p-5 text-xs sm:text-sm text-[var(--muted)] shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
             <p className="font-semibold text-[var(--ink)]">Core loop</p>
             <p className="mt-1">Asistencia → equipos → score → ranking. El resto está en Beta/Labs.</p>
           </div>

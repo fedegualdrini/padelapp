@@ -180,7 +180,7 @@ function NewMatchForm({
         <h3 className="font-display text-lg text-[var(--ink)]">
           Info del partido
         </h3>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-4 grid gap-3 sm:gap-4 sm:grid-cols-2">
           <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
             Fecha
             <input
@@ -188,7 +188,7 @@ function NewMatchForm({
               name="played_date"
               defaultValue={defaultDate}
               autoComplete="off"
-              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
+              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2.5 sm:py-3 text-sm min-h-[44px]"
             />
           </label>
           <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
@@ -197,7 +197,7 @@ function NewMatchForm({
               type="time"
               name="played_time"
               autoComplete="off"
-              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
+              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2.5 sm:py-3 text-sm min-h-[44px]"
             />
           </label>
           <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
@@ -205,7 +205,7 @@ function NewMatchForm({
             <select
               name="best_of"
               aria-label="Mejor de sets"
-              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
+              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2.5 sm:py-3 text-sm min-h-[44px]"
             >
               <option value="3">3 sets</option>
               <option value="5">5 sets</option>
@@ -218,7 +218,7 @@ function NewMatchForm({
               name="created_by"
               placeholder="Tu nombre (ej: Fede?)"
               autoComplete="off"
-              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
+              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2.5 sm:py-3 text-sm min-h-[44px]"
             />
           </label>
         </div>
@@ -256,11 +256,11 @@ function NewMatchForm({
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 sm:p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
         <h3 className="font-display text-lg text-[var(--ink)]">Equipos</h3>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4">
+          <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-3 sm:p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
               Equipo 1
             </p>
-            <div className="mt-3 grid gap-3">
+            <div className="mt-3 grid gap-2.5 sm:gap-3">
               <select
                 name="team1_player1"
                 value={team1Player1}
@@ -275,7 +275,7 @@ function NewMatchForm({
                   setTeam1Player1(nextValue);
                 }}
                 aria-label="Equipo 1 jugador 1"
-                className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
+                className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2.5 sm:py-3 text-sm min-h-[44px]"
               >
                 <option value="">Elegir jugador</option>
                 {playerOptions}
@@ -294,18 +294,18 @@ function NewMatchForm({
                   setTeam1Player2(nextValue);
                 }}
                 aria-label="Equipo 1 jugador 2"
-                className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
+                className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2.5 sm:py-3 text-sm min-h-[44px]"
               >
                 <option value="">Elegir jugador</option>
                 {playerOptions}
               </select>
             </div>
           </div>
-          <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4">
+          <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-3 sm:p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
               Equipo 2
             </p>
-            <div className="mt-3 grid gap-3">
+            <div className="mt-3 grid gap-2.5 sm:gap-3">
               <select
                 name="team2_player1"
                 value={team2Player1}
@@ -320,7 +320,7 @@ function NewMatchForm({
                   setTeam2Player1(nextValue);
                 }}
                 aria-label="Equipo 2 jugador 1"
-                className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
+                className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2.5 sm:py-3 text-sm min-h-[44px]"
               >
                 <option value="">Elegir jugador</option>
                 {playerOptions}
@@ -339,7 +339,7 @@ function NewMatchForm({
                   setTeam2Player2(nextValue);
                 }}
                 aria-label="Equipo 2 jugador 2"
-                className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
+                className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2.5 sm:py-3 text-sm min-h-[44px]"
               >
                 <option value="">Elegir jugador</option>
                 {playerOptions}
@@ -351,7 +351,7 @@ function NewMatchForm({
 
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 sm:p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
         <h3 className="font-display text-lg text-[var(--ink)]">MVP</h3>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-4 grid gap-3 sm:gap-4 sm:grid-cols-2">
           <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
             Jugador MVP (opcional)
             <select
@@ -359,7 +359,7 @@ function NewMatchForm({
               value={mvpPlayerId}
               onChange={(event) => setMvpPlayerId(event.target.value)}
               aria-label="MVP"
-              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
+              className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2.5 sm:py-3 text-sm min-h-[44px]"
             >
               <option value="">(Sin MVP)</option>
               {mvpOptions}
@@ -394,7 +394,7 @@ function NewMatchForm({
             Cargá todos los sets jugados (máx. 5)
           </p>
         </div>
-        <div className="mt-4 space-y-4">
+        <div className="mt-4 space-y-3 sm:space-y-4">
           {[1, 2, 3, 4, 5].map((setNumber) => (
             <div
               key={setNumber}
@@ -403,7 +403,7 @@ function NewMatchForm({
               <span className="text-xs uppercase tracking-[0.2em] text-[var(--muted)] block">
                 Set {setNumber}
               </span>
-              <div className="grid grid-cols-2 gap-3 sm:contents">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:contents">
                 <input
                   type="number"
                   min={0}
@@ -411,7 +411,7 @@ function NewMatchForm({
                   placeholder="Eq 1 (ej: 6?)"
                   name={`set${setNumber}_team1`}
                   aria-label={`Set ${setNumber} - Equipo 1`}
-                  className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-3 text-sm"
+                  className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-3 text-sm min-h-[44px]"
                 />
                 <input
                   type="number"
@@ -420,7 +420,7 @@ function NewMatchForm({
                   placeholder="Eq 2 (ej: 4?)"
                   name={`set${setNumber}_team2`}
                   aria-label={`Set ${setNumber} - Equipo 2`}
-                  className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-3 text-sm"
+                  className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-3 text-sm min-h-[44px]"
                 />
               </div>
             </div>
@@ -431,13 +431,13 @@ function NewMatchForm({
       <div className="flex flex-col sm:flex-row gap-3">
         <button
           type="submit"
-          className="w-full sm:w-auto rounded-full bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+          className="w-full sm:w-auto rounded-full bg-[var(--accent)] px-5 sm:px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] min-h-[44px]"
         >
           Guardar partido
         </button>
         <button
           type="button"
-          className="w-full sm:w-auto rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-4 py-3 text-sm font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+          className="w-full sm:w-auto rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-5 sm:px-6 py-3 text-sm font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] min-h-[44px]"
         >
           Cancelar
         </button>

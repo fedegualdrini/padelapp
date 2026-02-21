@@ -38,7 +38,7 @@ export default function AppShell({ groupName, slug, children, showNavigation = t
             {showNavigation && (
               <Link
                 href={`${basePath}/matches/new`}
-                className="rounded-full bg-[var(--accent)] px-3 py-2 text-xs sm:px-5 sm:py-2 sm:text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+                className="rounded-full bg-[var(--accent)] px-3 py-2 sm:px-5 text-xs sm:text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] min-h-[44px] flex items-center"
               >
                 <span className="hidden sm:inline">Nuevo partido</span>
                 <span className="sm:hidden">+ Partido</span>
@@ -48,13 +48,13 @@ export default function AppShell({ groupName, slug, children, showNavigation = t
         </div>
         {showNavigation && (
           <>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-soft)] px-4 py-3 backdrop-blur">
-              <p className="text-sm text-[var(--muted)]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-soft)] px-3 sm:px-4 py-2.5 sm:py-3 backdrop-blur">
+              <p className="text-xs sm:text-sm text-[var(--muted)]">
                 Registrá sets completos, química de parejas y ELO todo el año.
               </p>
               <Link
                 href={`${basePath}/matches`}
-                className="text-sm font-semibold text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] sm:self-start"
+                className="text-xs sm:text-sm font-semibold text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] sm:self-start whitespace-nowrap"
               >
                 Ver partidos &gt;
               </Link>
