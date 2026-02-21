@@ -78,6 +78,24 @@ export default async function ChallengesPage({ params, searchParams }: PageProps
     );
   }
 
+  // Calculate current week (Monday)
+  const now = new Date();
+  const currentWeekStart = new Date(now);
+  currentWeekStart.setDate(now.getDate() - now.getDay() + 1); // Monday of current week
+  const weekStartStr = currentWeekStart.toISOString().split("T")[0];
+
+  // Ensure weekly challenges are generated for this group (generates on Monday if not exists)
+  await supabase.rpc("get_or_create_weekly_challenges", {
+    p_group_id: group.id,
+    p_week_start: weekStartStr,
+  });
+
+  // Initialize weekly progress for this player if not exists
+  await supabase.rpc("initialize_weekly_progress", {
+    p_group_id: group.id,
+    p_week_start: weekStartStr,
+  });
+
   const { data: challengesData } = await supabase.rpc("get_player_challenges", {
     p_group_id: group.id,
     p_player_id: user.id,

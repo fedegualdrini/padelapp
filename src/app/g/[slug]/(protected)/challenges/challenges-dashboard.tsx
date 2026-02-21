@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Flame, Trophy, Users, Target, Award, SkipForward } from "lucide-react";
+import { Flame, Trophy, Users, Target, Award, SkipForward, Info, Sparkles, Calendar, Shield } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -136,12 +136,44 @@ export default function ChallengesDashboard({
   if (!challengesData) {
     return (
       <div className="flex flex-col gap-6">
+        {/* Explanation section - always visible */}
+        <section className="rounded-2xl border border-[color:var(--card-border)] bg-gradient-to-br from-[var(--accent)]/5 to-transparent p-6 shadow-[0_18px_40px_rgba(0,0,0,0.05)] backdrop-blur">
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl bg-[var(--accent)]/10 p-2">
+              <Info className="h-5 w-5 text-[var(--accent)]" />
+            </div>
+            <div>
+              <h3 className="font-display text-lg text-[var(--ink)]">¿Qué son los desafíos semanales?</h3>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+                Cada <strong className="text-[var(--ink)]">lunes</strong> se generan automáticamente 3 objetivos personalizados 
+                para mantener la motivación y la diversión. Completa los tres para mantener tu racha y ganar badges exclusivos.
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <Target className="h-4 w-4 text-[var(--accent)]" />
+                  <span className="text-[var(--muted)]"><strong className="text-[var(--ink)]">Partidos:</strong> Jugá más</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Trophy className="h-4 w-4 text-[var(--accent)]" />
+                  <span className="text-[var(--muted)]"><strong className="text-[var(--ink)]">Victorias:</strong> Ganá partidos</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Users className="h-4 w-4 text-[var(--accent)]" />
+                  <span className="text-[var(--muted)]"><strong className="text-[var(--ink)]">Socios:</strong> Jugá con distintos</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
           <div className="flex items-center gap-3">
             <Target className="h-5 w-5 text-[var(--muted)]" />
             <div>
               <h2 className="font-display text-2xl text-[var(--ink)]">Desafíos semanales</h2>
-              <p className="mt-1 text-sm text-[var(--muted)]">Todavía no hay desafíos activos. Se generan cada lunes.</p>
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                Los desafíos se generan automáticamente cada lunes. ¡Jugá tu primer partido para empezar!
+              </p>
             </div>
           </div>
         </div>
@@ -193,6 +225,54 @@ export default function ChallengesDashboard({
           </div>
         )}
       </header>
+
+      {/* What are challenges? - Explanation section */}
+      <section className="rounded-2xl border border-[color:var(--card-border)] bg-gradient-to-br from-[var(--accent)]/5 to-transparent p-6 shadow-[0_18px_40px_rgba(0,0,0,0.05)] backdrop-blur">
+        <div className="flex items-start gap-3">
+          <div className="rounded-xl bg-[var(--accent)]/10 p-2">
+            <Info className="h-5 w-5 text-[var(--accent)]" />
+          </div>
+          <div>
+            <h3 className="font-display text-lg text-[var(--ink)]">¿Qué son los desafíos semanales?</h3>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+              Cada <strong className="text-[var(--ink)]">lunes</strong> se generan automáticamente 3 objetivos personalizados 
+              para mantener la motivación y la diversión. Completa los tres para mantener tu racha y ganar badges exclusivos.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="flex items-center gap-2 text-sm">
+                <Target className="h-4 w-4 text-[var(--accent)]" />
+                <span className="text-[var(--muted)]"><strong className="text-[var(--ink)]">Partidos:</strong> Jugá más</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Trophy className="h-4 w-4 text-[var(--accent)]" />
+                <span className="text-[var(--muted)]"><strong className="text-[var(--ink)]">Victorias:</strong> Ganá partidos</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="h-4 w-4 text-[var(--accent)]" />
+                <span className="text-[var(--muted)]"><strong className="text-[var(--ink)]">Socios:</strong> Jugá con distintos</span>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-[var(--muted)]">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>Se renuevan cada lunes</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Flame className="h-3.5 w-3.5" />
+                <span>Completalos para sumar racha</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Shield className="h-3.5 w-3.5" />
+                <span>Podés saltar 1 semana por mes sin perder racha</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Ganá badges por rachas largas</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section className="grid gap-4 md:grid-cols-3">
         {challenges.map((challenge) => {
