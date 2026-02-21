@@ -92,7 +92,7 @@ export default function QuickActionsFAB({ slug }: QuickActionsFABProps) {
 
   // Dynamic positioning based on mobile/desktop
   const positionClass = isMobile ? "bottom-4 right-4" : "bottom-8 right-8";
-  const fabSize = isMobile ? "w-14 h-14" : "w-12 h-12";
+  const fabSize = isMobile ? "w-12 h-12" : "w-12 h-12";
 
   // Don't render on join page
   if (shouldHide) {
@@ -119,7 +119,7 @@ export default function QuickActionsFAB({ slug }: QuickActionsFABProps) {
               <Link
                 href={action.href}
                 onClick={() => setIsExpanded(false)}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--card-solid)] text-[var(--ink)] border border-[color:var(--card-border)] shadow-md transition-all duration-200 hover:bg-[var(--accent)] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+                className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[var(--card-solid)] text-[var(--ink)] border border-[color:var(--card-border)] shadow-md transition-all duration-200 hover:bg-[var(--accent)] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
                 aria-label={action.ariaLabel}
                 role="menuitem"
               >

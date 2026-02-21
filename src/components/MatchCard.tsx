@@ -77,18 +77,18 @@ export default function MatchCard({
       className="group flex cursor-pointer flex-col gap-3 rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur transition hover:-translate-y-0.5 hover:shadow-[0_22px_50px_rgba(0,0,0,0.12)]"
     >
       {/* Header: Date and match info */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+      <div className="flex items-center justify-between gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+          <span className="text-xs font-medium uppercase tracking-wider text-[var(--muted)] truncate">
             {playedAt}
           </span>
-          <span className="text-xs text-[var(--muted)]">•</span>
-          <span className="text-xs text-[var(--muted)]">
+          <span className="text-xs text-[var(--muted)] shrink-0">•</span>
+          <span className="text-xs text-[var(--muted)] shrink-0">
             Mejor de {bestOf}
           </span>
         </div>
         {isEdited && (
-          <span className="rounded bg-[var(--bg-base)] px-2 py-0.5 text-xs text-[var(--muted)]">
+          <span className="rounded bg-[var(--bg-base)] px-2 py-0.5 text-xs text-[var(--muted)] shrink-0">
             Editado
           </span>
         )}
@@ -97,9 +97,9 @@ export default function MatchCard({
       {/* Score table - Tennis/padel style */}
       <div className="overflow-hidden rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)]">
         {/* Header row with set numbers */}
-        <div className="grid border-b border-[color:var(--card-border)] bg-[var(--bg-base)]" 
-             style={{ gridTemplateColumns: `1fr repeat(${maxSets}, 2.5rem) 2.5rem` }}>
-          <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+        <div className="grid border-b border-[color:var(--card-border)] bg-[var(--bg-base)]"
+             style={{ gridTemplateColumns: `1fr repeat(${maxSets}, minmax(2rem, 2.5rem)) minmax(2.25rem, 2.5rem)` }}>
+          <div className="px-2 sm:px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
             Equipo
           </div>
           {(team1?.sets ?? []).map((_, idx) => (
@@ -114,10 +114,10 @@ export default function MatchCard({
 
         {/* Team 1 row */}
         <div className={`grid border-b border-[color:var(--card-border)] transition-colors ${isTeam1Winner ? 'bg-[#F2A900]/10' : ''}`}
-             style={{ gridTemplateColumns: `1fr repeat(${maxSets}, 2.5rem) 2.5rem` }}>
-          <div className="flex items-center gap-2 px-3 py-2.5">
+             style={{ gridTemplateColumns: `1fr repeat(${maxSets}, minmax(2rem, 2.5rem)) minmax(2.25rem, 2.5rem)` }}>
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2.5">
             {/* Player avatars */}
-            <div className="flex -space-x-1.5">
+            <div className="flex -space-x-1.5 shrink-0">
               {(team1?.players ?? []).slice(0, 2).map((p) => (
                 <button
                   key={p.id}
@@ -127,7 +127,7 @@ export default function MatchCard({
                     e.stopPropagation();
                     router.push(`${matchesListHref}?playerId=${encodeURIComponent(p.id)}`);
                   }}
-                  className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[var(--card-solid)] bg-[var(--accent)] text-xs font-bold text-white transition-transform hover:scale-110 hover:z-10"
+                  className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border-2 border-[var(--card-solid)] bg-[var(--accent)] text-xs font-bold text-white transition-transform hover:scale-110 hover:z-10"
                   title={p.name}
                 >
                   {PlayerInitials(p.name)}
@@ -135,13 +135,13 @@ export default function MatchCard({
               ))}
             </div>
             {/* Player names */}
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className={`truncate text-sm font-semibold ${isTeam1Winner ? 'text-[var(--ink)]' : 'text-[var(--muted)]'}`}>
+            <div className="flex flex-col min-w-0 flex-1">
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                <span className={`truncate text-xs sm:text-sm font-semibold ${isTeam1Winner ? 'text-[var(--ink)]' : 'text-[var(--muted)]'}`}>
                   {(team1?.players ?? []).map(p => p.name).join(' / ') || team1?.name || 'Equipo 1'}
                 </span>
                 {isTeam1Winner && (
-                  <svg className="h-4 w-4 shrink-0 text-[#F2A900]" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 text-[#F2A900]" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clipRule="evenodd" />
                   </svg>
                 )}
@@ -153,23 +153,23 @@ export default function MatchCard({
             const opponentScore = team1?.opponentSets?.[idx] ?? 0;
             const wonGame = score > opponentScore;
             return (
-              <div key={idx} className={`flex items-center justify-center py-2.5 text-sm font-semibold tabular-nums ${wonGame ? 'text-[var(--accent)] font-bold' : 'text-[var(--muted)]'}`}>
+              <div key={idx} className={`flex items-center justify-center py-2.5 text-xs sm:text-sm font-semibold tabular-nums ${wonGame ? 'text-[var(--accent)] font-bold' : 'text-[var(--muted)]'}`}>
                 {score}
               </div>
             );
           })}
           {/* Sets won */}
-          <div className={`flex items-center justify-center py-2.5 text-base font-bold tabular-nums ${isTeam1Winner ? 'text-[var(--accent)]' : 'text-[var(--ink)]'}`}>
+          <div className={`flex items-center justify-center py-2.5 text-sm sm:text-base font-bold tabular-nums ${isTeam1Winner ? 'text-[var(--accent)]' : 'text-[var(--ink)]'}`}>
             {team1SetsWon}
           </div>
         </div>
 
         {/* Team 2 row */}
         <div className={`grid transition-colors ${isTeam2Winner ? 'bg-[#F2A900]/10' : ''}`}
-             style={{ gridTemplateColumns: `1fr repeat(${maxSets}, 2.5rem) 2.5rem` }}>
-          <div className="flex items-center gap-2 px-3 py-2.5">
+             style={{ gridTemplateColumns: `1fr repeat(${maxSets}, minmax(2rem, 2.5rem)) minmax(2.25rem, 2.5rem)` }}>
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2.5">
             {/* Player avatars */}
-            <div className="flex -space-x-1.5">
+            <div className="flex -space-x-1.5 shrink-0">
               {(team2?.players ?? []).slice(0, 2).map((p) => (
                 <button
                   key={p.id}
@@ -179,7 +179,7 @@ export default function MatchCard({
                     e.stopPropagation();
                     router.push(`${matchesListHref}?playerId=${encodeURIComponent(p.id)}`);
                   }}
-                  className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[var(--card-solid)] bg-[var(--bg-base)] text-xs font-bold text-[var(--ink)] transition-transform hover:scale-110 hover:z-10"
+                  className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border-2 border-[var(--card-solid)] bg-[var(--bg-base)] text-xs font-bold text-[var(--ink)] transition-transform hover:scale-110 hover:z-10"
                   title={p.name}
                 >
                   {PlayerInitials(p.name)}
@@ -187,13 +187,13 @@ export default function MatchCard({
               ))}
             </div>
             {/* Player names */}
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className={`truncate text-sm font-semibold ${isTeam2Winner ? 'text-[var(--ink)]' : 'text-[var(--muted)]'}`}>
+            <div className="flex flex-col min-w-0 flex-1">
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                <span className={`truncate text-xs sm:text-sm font-semibold ${isTeam2Winner ? 'text-[var(--ink)]' : 'text-[var(--muted)]'}`}>
                   {(team2?.players ?? []).map(p => p.name).join(' / ') || team2?.name || 'Equipo 2'}
                 </span>
                 {isTeam2Winner && (
-                  <svg className="h-4 w-4 shrink-0 text-[#F2A900]" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 text-[#F2A900]" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clipRule="evenodd" />
                   </svg>
                 )}
@@ -205,39 +205,39 @@ export default function MatchCard({
             const opponentScore = team2?.opponentSets?.[idx] ?? 0;
             const wonGame = score > opponentScore;
             return (
-              <div key={idx} className={`flex items-center justify-center py-2.5 text-sm font-semibold tabular-nums ${wonGame ? 'text-[var(--accent)] font-bold' : 'text-[var(--muted)]'}`}>
+              <div key={idx} className={`flex items-center justify-center py-2.5 text-xs sm:text-sm font-semibold tabular-nums ${wonGame ? 'text-[var(--accent)] font-bold' : 'text-[var(--muted)]'}`}>
                 {score}
               </div>
             );
           })}
           {/* Sets won */}
-          <div className={`flex items-center justify-center py-2.5 text-base font-bold tabular-nums ${isTeam2Winner ? 'text-[var(--accent)]' : 'text-[var(--ink)]'}`}>
+          <div className={`flex items-center justify-center py-2.5 text-sm sm:text-base font-bold tabular-nums ${isTeam2Winner ? 'text-[var(--accent)]' : 'text-[var(--ink)]'}`}>
             {team2SetsWon}
           </div>
         </div>
       </div>
 
       {/* Result indicator */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           {isTeam1Winner && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#F2A900] px-3 py-1 text-xs font-semibold text-[#1A1A1A]">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#F2A900] px-2.5 sm:px-3 py-1 text-xs font-semibold text-[#1A1A1A] shrink-0">
               <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              Victoria {team1SetsWon}-{team2SetsWon}
+              <span className="hidden sm:inline">Victoria</span> {team1SetsWon}-{team2SetsWon}
             </span>
           )}
           {isTeam2Winner && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#F2A900] px-3 py-1 text-xs font-semibold text-[#1A1A1A]">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#F2A900] px-2.5 sm:px-3 py-1 text-xs font-semibold text-[#1A1A1A] shrink-0">
               <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              Victoria {team2SetsWon}-{team1SetsWon}
+              <span className="hidden sm:inline">Victoria</span> {team2SetsWon}-{team1SetsWon}
             </span>
           )}
         </div>
-        <div className="text-xs text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors">
+        <div className="text-xs text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors shrink-0">
           Ver detalle →
         </div>
       </div>

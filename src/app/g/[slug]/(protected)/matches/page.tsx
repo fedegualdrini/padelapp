@@ -38,12 +38,12 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-3 sm:gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
             Registro de partidos
           </p>
-          <h2 className="font-display text-2xl text-[var(--ink)]">
+          <h2 className="font-display text-xl sm:text-2xl text-[var(--ink)]">
             Todos los partidos
           </h2>
         </div>
@@ -52,7 +52,7 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
           <ClearMatchHistoryButton slug={slug} />
           <Link
             href={`/g/${slug}/matches/new`}
-            className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white"
+            className="rounded-full bg-[var(--accent)] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-white min-h-[44px] flex items-center"
           >
             Nuevo partido
           </Link>
@@ -60,7 +60,7 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
       </div>
 
       {matches.length === 0 ? (
-        <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 text-sm text-[var(--muted)] shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+        <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 sm:p-6 text-xs sm:text-sm text-[var(--muted)] shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
           No hay partidos. Cargá el primero para empezar a medir.
         </div>
       ) : (
