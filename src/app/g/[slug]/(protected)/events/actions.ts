@@ -547,3 +547,196 @@ export async function balanceTeams(players: PlayerWithElo[]): Promise<SuggestedT
     balanceScore: Math.max(0, Math.min(100, balanceScore)),
   };
 }
+
+/**
+ * Mark a past occurrence as completed
+ */
+export async function markOccurrenceCompleted(
+  slug: string,
+  occurrenceId: string
+): Promise<{ ok: boolean }> {
+  if (!hasSupabaseEnv() && slug === "demo") {
+    return { ok: true };
+  }
+
+  const group = await getGroupBySlug(slug);
+  if (!group) throw new Error("Group not found");
+
+  const member = await isGroupMember(group.id);
+  if (!member) throw new Error("Not a group member");
+
+  const supabase = await createSupabaseServerClient();
+
+  const { error } = await supabase
+    .from("event_occurrences")
+    .update({
+      status: "completed",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", occurrenceId)
+    .eq("group_id", group.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath(`/g/${slug}/events`);
+  revalidatePath(`/g/${slug}`);
+  return { ok: true };
+}
+
+/**
+ * Link an existing match to an occurrence
+ */
+export async function linkMatchToOccurrence(
+  slug: string,
+  occurrenceId: string,
+  matchId: string
+): Promise<{ ok: boolean }> {
+  if (!hasSupabaseEnv() && slug === "demo") {
+    return { ok: true };
+  }
+
+  const group = await getGroupBySlug(slug);
+  if (!group) throw new Error("Group not found");
+
+  const member = await isGroupMember(group.id);
+  if (!member) throw new Error("Not a group member");
+
+  const supabase = await createSupabaseServerClient();
+
+  // Verify the match exists and belongs to this group
+  const { data: match, error: matchError } = await supabase
+    .from("matches")
+    .select("id")
+    .eq("id", matchId)
+    .eq("group_id", group.id)
+    .maybeSingle();
+
+  if (matchError || !match) {
+    throw new Error("Match not found");
+  }
+
+  // Link the match to the occurrence and mark as completed
+  const { error } = await supabase
+    .from("event_occurrences")
+    .update({
+      loaded_match_id: matchId,
+      status: "completed",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", occurrenceId)
+    .eq("group_id", group.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath(`/g/${slug}/events`);
+  revalidatePath(`/g/${slug}`);
+  return { ok: true };
+}
+
+/**
+ * Get matches that could be linked to an occurrence (same day)
+ */
+export async function getLinkableMatches(
+  slug: string,
+  occurrenceId: string
+): Promise<Array<{ id: string; team1: string; team2: string; score: string }>> {
+  if (!hasSupabaseEnv() && slug === "demo") {
+    return [];
+  }
+
+  const group = await getGroupBySlug(slug);
+  if (!group) return [];
+
+  const supabase = await createSupabaseServerClient();
+
+  // Get the occurrence date
+  const { data: occurrence, error: occError } = await supabase
+    .from("event_occurrences")
+    .select("starts_at")
+    .eq("id", occurrenceId)
+    .eq("group_id", group.id)
+    .maybeSingle();
+
+  if (occError || !occurrence) {
+    return [];
+  }
+
+  // Get the date range (same day)
+  const occDate = new Date(occurrence.starts_at);
+  const dateStr = occDate.toISOString().slice(0, 10);
+  const dayStart = `${dateStr}T00:00:00.000Z`;
+  const dayEnd = `${dateStr}T23:59:59.999Z`;
+
+  // Get matches on the same day
+  const { data: matches, error: matchesError } = await supabase
+    .from("matches")
+    .select(`
+      id,
+      played_at,
+      match_teams (
+        team_number,
+        match_team_players (
+          players ( name )
+        )
+      ),
+      sets (
+        set_number,
+        set_scores ( team1_games, team2_games )
+      )
+    `)
+    .eq("group_id", group.id)
+    .gte("played_at", dayStart)
+    .lte("played_at", dayEnd)
+    .order("played_at", { ascending: false });
+
+  if (matchesError || !matches) {
+    return [];
+  }
+
+  // Format matches for display
+  return matches.map((match) => {
+    const teams = Array.isArray(match.match_teams)
+      ? [...match.match_teams].sort((a, b) => a.team_number - b.team_number)
+      : [];
+
+    const team1Players = teams[0]?.match_team_players
+      ?.map((mtp) => {
+        const player = Array.isArray(mtp.players) ? mtp.players[0] : mtp.players;
+        return player?.name || "";
+      })
+      .filter(Boolean)
+      .join(" / ") || "Equipo 1";
+
+    const team2Players = teams[1]?.match_team_players
+      ?.map((mtp) => {
+        const player = Array.isArray(mtp.players) ? mtp.players[0] : mtp.players;
+        return player?.name || "";
+      })
+      .filter(Boolean)
+      .join(" / ") || "Equipo 2";
+
+    // Build score
+    const sets = Array.isArray(match.sets)
+      ? [...match.sets].sort((a, b) => a.set_number - b.set_number)
+      : [];
+
+    const setScores: string[] = [];
+    for (const set of sets) {
+      const scores = Array.isArray(set.set_scores) ? set.set_scores[0] : set.set_scores;
+      if (scores) {
+        setScores.push(`${scores.team1_games}-${scores.team2_games}`);
+      }
+    }
+
+    return {
+      id: match.id,
+      team1: team1Players,
+      team2: team2Players,
+      score: setScores.join(", ") || "Sin resultado",
+    };
+  });
+}
