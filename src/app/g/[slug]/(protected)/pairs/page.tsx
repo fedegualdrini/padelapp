@@ -2,6 +2,8 @@ import { getGroupBySlug, getPairAggregates, getPlayers } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { parsePeriodFromParams } from "@/lib/period";
 import PeriodSelector from "@/components/PeriodSelector";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Users } from "lucide-react";
 
 type PairsPageProps = {
   params: Promise<{ slug: string }>;
@@ -40,11 +42,15 @@ export default async function PairsPage({ params, searchParams }: PairsPageProps
 
       <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
         {pairStats.length === 0 ? (
-          <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4 text-sm text-[var(--muted)]">
-            {period.preset !== 'all-time'
-              ? 'Sin estadísticas de parejas en este período.'
-              : 'Sin estadísticas de parejas.'}
-          </div>
+          <EmptyState
+            icon={Users}
+            title="Sin estadísticas de parejas"
+            description={
+              period.preset !== 'all-time'
+                ? 'No hay datos de parejas en este período. Probá con "Todo el tiempo" o jugá más partidos juntos.'
+                : 'Las estadísticas de parejas aparecen cuando los mismos jugadores participan en partidos juntos.'
+            }
+          />
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {pairStats.map((pair) => {
