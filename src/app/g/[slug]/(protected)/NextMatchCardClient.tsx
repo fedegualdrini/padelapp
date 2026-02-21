@@ -156,10 +156,10 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 min-[400px]:flex-nowrap">
           <Link
             href={`/g/${slug}/events`}
-            className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-solid)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+            className="rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-solid)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] min-h-[44px] flex items-center"
           >
             Abrir RSVP
           </Link>
@@ -188,7 +188,7 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
               });
             }}
             disabled={isPending || s.confirmedCount < 4 || Boolean(s.occurrence.loaded_match_id)}
-            className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+            className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] min-h-[44px] flex items-center"
             title={
               s.occurrence.loaded_match_id
                 ? "Ya hay un partido creado para esta fecha"
@@ -197,7 +197,8 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
                   : "Crear partido con equipos sugeridos"
             }
           >
-            Crear partido (equipos)
+            <span className="hidden sm:inline">Crear partido (equipos)</span>
+            <span className="sm:hidden">Crear</span>
           </button>
         </div>
       </div>
@@ -211,20 +212,20 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
         <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-4">
           <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">Asistencia</p>
-          <div className="mt-3 grid grid-cols-4 gap-2 text-center">
-            <div className="rounded-lg p-2" style={{ backgroundColor: 'var(--status-success-bg)' }}>
+          <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+            <div className="rounded-lg p-2 sm:p-2 min-h-[52px] flex flex-col justify-center" style={{ backgroundColor: 'var(--status-success-bg)' }}>
               <p className="text-lg font-bold" style={{ color: 'var(--status-success-text)' }}>{summary.confirmedCount}</p>
               <p className="text-xs" style={{ color: 'var(--status-success-text-muted)' }}>Van</p>
             </div>
-            <div className="rounded-lg p-2" style={{ backgroundColor: 'var(--status-error-bg)' }}>
+            <div className="rounded-lg p-2 sm:p-2 min-h-[52px] flex flex-col justify-center" style={{ backgroundColor: 'var(--status-error-bg)' }}>
               <p className="text-lg font-bold" style={{ color: 'var(--status-error-text)' }}>{summary.declinedCount}</p>
               <p className="text-xs" style={{ color: 'var(--status-error-text-muted)' }}>No van</p>
             </div>
-            <div className="rounded-lg p-2" style={{ backgroundColor: 'var(--status-warning-bg)' }}>
+            <div className="rounded-lg p-2 sm:p-2 min-h-[52px] flex flex-col justify-center" style={{ backgroundColor: 'var(--status-warning-bg)' }}>
               <p className="text-lg font-bold" style={{ color: 'var(--status-warning-text)' }}>{summary.maybeCount}</p>
               <p className="text-xs" style={{ color: 'var(--status-warning-text-muted)' }}>Tal vez</p>
             </div>
-            <div className="rounded-lg p-2" style={{ backgroundColor: 'var(--status-neutral-bg)' }}>
+            <div className="rounded-lg p-2 sm:p-2 min-h-[52px] flex flex-col justify-center" style={{ backgroundColor: 'var(--status-neutral-bg)' }}>
               <p className="text-lg font-bold" style={{ color: 'var(--status-neutral-text)' }}>{summary.waitlistCount}</p>
               <p className="text-xs" style={{ color: 'var(--status-neutral-text-muted)' }}>Espera</p>
             </div>
@@ -236,7 +237,7 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
               <select
                 value={selectedPlayer}
                 onChange={(e) => setSelectedPlayer(e.target.value)}
-                className="w-full rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                className="w-full rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)] min-h-[44px]"
               >
                 {usualPlayers.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -251,7 +252,7 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
                 type="button"
                 onClick={() => setStatus("confirmed")}
                 disabled={isPending}
-                className="rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-50"
+                className="rounded-lg px-3 py-2.5 text-sm font-semibold transition disabled:opacity-50 min-h-[44px]"
                 style={{
                   backgroundColor: currentStatus === "confirmed" ? 'var(--status-success-strong)' : 'var(--status-success-bg)',
                   color: currentStatus === "confirmed" ? 'var(--status-success-strong-text)' : 'var(--status-success-text)'
@@ -263,7 +264,7 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
                 type="button"
                 onClick={() => setStatus("maybe")}
                 disabled={isPending}
-                className="rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-50"
+                className="rounded-lg px-3 py-2.5 text-sm font-semibold transition disabled:opacity-50 min-h-[44px]"
                 style={{
                   backgroundColor: currentStatus === "maybe" ? 'var(--status-warning-strong)' : 'var(--status-warning-bg)',
                   color: currentStatus === "maybe" ? 'var(--status-warning-strong-text)' : 'var(--status-warning-text)'
@@ -275,7 +276,7 @@ export default function NextMatchCardClient({ slug, summary, players }: NextMatc
                 type="button"
                 onClick={() => setStatus("declined")}
                 disabled={isPending}
-                className="rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-50"
+                className="rounded-lg px-3 py-2.5 text-sm font-semibold transition disabled:opacity-50 min-h-[44px]"
                 style={{
                   backgroundColor: currentStatus === "declined" ? 'var(--status-error-strong)' : 'var(--status-error-bg)',
                   color: currentStatus === "declined" ? 'var(--status-error-strong-text)' : 'var(--status-error-text)'
