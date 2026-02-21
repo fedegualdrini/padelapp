@@ -4,6 +4,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { calculateMatchPrediction } from "./prediction-actions";
+import { autoCloseEventsForMatch } from "@/lib/data";
 
 const isValidSetScore = (team1: number, team2: number) => {
   const valid =
@@ -267,6 +268,17 @@ export async function createMatch(
   } catch (error) {
     console.error('Failed to update weekly challenges progress:', error);
     // Don't fail the match creation if weekly challenges update fails
+  }
+
+  // Auto-close events when match is created with same 4 confirmed players
+  try {
+    const closedCount = await autoCloseEventsForMatch(groupId, playedAt, playerIds);
+    if (closedCount > 0) {
+      console.log(`Auto-closed ${closedCount} event(s) for match ${match.id}`);
+    }
+  } catch (error) {
+    console.error('Failed to auto-close events for match:', error);
+    // Don't fail the match creation if auto-close fails
   }
 
   redirect(`/g/${groupSlug}/matches/${match.id}`);

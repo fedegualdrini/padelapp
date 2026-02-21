@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
-import { getGroupBySlug, isGroupMember } from "@/lib/data";
+import { getGroupBySlug, isGroupMember, autoCloseEventsForMatch } from "@/lib/data";
 
 export type AttendanceStatus = 'confirmed' | 'declined' | 'maybe' | 'waitlist';
 
@@ -430,6 +430,18 @@ export async function createMatchFromOccurrence(
     } catch (error) {
       console.error('Failed to check achievements for player:', playerId, error);
     }
+  }
+
+  // Auto-close events when match is created with same 4 confirmed players
+  // This will mark the occurrence (and any other matching occurrences) as completed
+  try {
+    const closedCount = await autoCloseEventsForMatch(group.id, now, allPlayerIds);
+    if (closedCount > 0) {
+      console.log(`Auto-closed ${closedCount} event(s) for match ${match.id}`);
+    }
+  } catch (error) {
+    console.error('Failed to auto-close events for match:', error);
+    // Don't fail the match creation if auto-close fails
   }
 
   revalidatePath(`/g/${slug}/events`);

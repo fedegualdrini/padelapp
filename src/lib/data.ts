@@ -3850,3 +3850,103 @@ export async function getWinRateTrend(
   };
 }
 
+/**
+ * Auto-close events when a match is created with the same 4 confirmed players.
+ * 
+ * When a match is created/loaded with the same 4 players as a confirmed event 
+ * on the same day, automatically mark the event as completed.
+ * 
+ * @param groupId - The group ID
+ * @param matchDate - The match date (ISO string or Date)
+ * @param playerIds - Array of exactly 4 player IDs in the match
+ * @returns The number of events that were auto-closed
+ */
+export async function autoCloseEventsForMatch(
+  groupId: string,
+  matchDate: string | Date,
+  playerIds: string[]
+): Promise<number> {
+  // Validate inputs
+  if (!groupId || playerIds.length !== 4) {
+    return 0;
+  }
+
+  // Demo mode doesn't support event auto-close
+  if (groupId === DEMO_GROUP.id || isDemoMode()) {
+    return 0;
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Normalize the match date to get the date range (start and end of day in UTC)
+  const matchDateObj = typeof matchDate === 'string' ? new Date(matchDate) : matchDate;
+  const dateStr = matchDateObj.toISOString().slice(0, 10); // YYYY-MM-DD
+  const dayStart = `${dateStr}T00:00:00.000Z`;
+  const dayEnd = `${dateStr}T23:59:59.999Z`;
+
+  // Find all open/locked occurrences on the same day
+  const { data: occurrences, error: occError } = await supabaseServer
+    .from('event_occurrences')
+    .select('id, starts_at, status')
+    .eq('group_id', groupId)
+    .in('status', ['open', 'locked'])
+    .gte('starts_at', dayStart)
+    .lte('starts_at', dayEnd);
+
+  if (occError || !occurrences || occurrences.length === 0) {
+    return 0;
+  }
+
+  const matchPlayerSet = new Set(playerIds);
+  let closedCount = 0;
+
+  // Check each occurrence
+  for (const occurrence of occurrences) {
+    // Get confirmed attendees for this occurrence
+    const { data: attendance, error: attError } = await supabaseServer
+      .from('attendance')
+      .select('player_id')
+      .eq('occurrence_id', occurrence.id)
+      .eq('status', 'confirmed');
+
+    if (attError || !attendance) {
+      continue;
+    }
+
+    // Check if exactly 4 players are confirmed
+    if (attendance.length !== 4) {
+      continue;
+    }
+
+    // Compare the sets of players
+    const confirmedPlayerSet = new Set(attendance.map(a => a.player_id));
+    
+    // Check if the sets are equal (same 4 players)
+    const setsEqual = 
+      matchPlayerSet.size === confirmedPlayerSet.size &&
+      [...matchPlayerSet].every(playerId => confirmedPlayerSet.has(playerId));
+
+    if (setsEqual) {
+      // Auto-close the event
+      const { error: updateError } = await supabaseServer
+        .from('event_occurrences')
+        .update({
+          status: 'completed',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', occurrence.id);
+
+      if (!updateError) {
+        closedCount++;
+      } else {
+        console.error('Failed to auto-close event occurrence:', {
+          occurrenceId: occurrence.id,
+          error: updateError,
+        });
+      }
+    }
+  }
+
+  return closedCount;
+}
+
