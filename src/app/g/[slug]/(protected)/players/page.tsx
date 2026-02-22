@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getGroupBySlug, getPlayers, getPlayerStats } from "@/lib/data";
 import { notFound } from "next/navigation";
 import PlayerDirectory from "@/components/PlayerDirectory";
@@ -8,6 +9,20 @@ type PlayersPageProps = {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+
+export async function generateMetadata({
+  params,
+}: PlayersPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const group = await getGroupBySlug(slug);
+
+  return {
+    title: group ? `Players — ${group.name}` : "Players",
+    description: group
+      ? `View all players in ${group.name}. Track individual stats, win rates, and performance.`
+      : "View all players in the group.",
+  };
+}
 
 export default async function PlayersPage({ params, searchParams }: PlayersPageProps) {
   const { slug } = await params;

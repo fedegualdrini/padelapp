@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getGroupBySlug, getPairAggregates, getPlayers } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { parsePeriodFromParams } from "@/lib/period";
@@ -9,6 +10,20 @@ type PairsPageProps = {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+
+export async function generateMetadata({
+  params,
+}: PairsPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const group = await getGroupBySlug(slug);
+
+  return {
+    title: group ? `Pairs — ${group.name}` : "Pair Statistics",
+    description: group
+      ? `View partnership statistics for ${group.name}. See which pairs have the best chemistry and win rates.`
+      : "View partnership statistics and pair win rates.",
+  };
+}
 
 export default async function PairsPage({ params, searchParams }: PairsPageProps) {
   const { slug } = await params;

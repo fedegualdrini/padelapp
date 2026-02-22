@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getGroupBySlug, isGroupMember } from "@/lib/data";
 import { notFound } from "next/navigation";
@@ -7,6 +8,18 @@ import ChallengesDashboard from "./challenges-dashboard";
 interface PageProps {
   params: Promise<{ slug: string }>;
   searchParams: { week?: string };
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const group = await getGroupBySlug(slug);
+
+  return {
+    title: group ? `Challenges — ${group.name}` : "Weekly Challenges",
+    description: group
+      ? `Weekly challenges and badges for ${group.name}. Track your progress and compete with your group.`
+      : "Weekly challenges and badges.",
+  };
 }
 
 export default async function ChallengesPage({ params, searchParams }: PageProps) {

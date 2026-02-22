@@ -1,8 +1,28 @@
+import type { Metadata } from "next";
+import { getGroupBySlug } from "@/lib/data";
 import JoinForm from "./JoinForm";
 
 type JoinGroupPageProps = {
   params: Promise<{ slug: string }>;
 };
+
+export async function generateMetadata({
+  params,
+}: JoinGroupPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const group = await getGroupBySlug(slug);
+
+  return {
+    title: group ? `Join ${group.name}` : "Join Group",
+    description: group
+      ? `Enter the passphrase to join ${group.name} and start tracking your padel matches.`
+      : "Enter the passphrase to join this padel group.",
+    robots: {
+      index: false,
+      follow: true,
+    },
+  };
+}
 
 export default async function JoinGroupPage({ params }: JoinGroupPageProps) {
   const { slug } = await params;

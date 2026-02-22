@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import MatchCard from "@/components/MatchCard";
@@ -15,6 +16,20 @@ import {
 type GroupPageProps = {
   params: Promise<{ slug: string }>;
 };
+
+export async function generateMetadata({
+  params,
+}: GroupPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const group = await getGroupBySlug(slug);
+
+  return {
+    title: group ? `Dashboard — ${group.name}` : "Group Dashboard",
+    description: group
+      ? `View recent matches, ELO rankings, and upcoming games for ${group.name}.`
+      : "Group dashboard with matches and rankings.",
+  };
+}
 
 export default async function GroupDashboard({ params }: GroupPageProps) {
   const { slug } = await params;

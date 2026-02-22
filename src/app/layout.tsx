@@ -15,9 +15,80 @@ const sans = Space_Grotesk({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://padel.app";
+
 export const metadata: Metadata = {
-  title: "Padel Tracker",
-  description: "Registro de partidos dobles, stats anuales y parejas.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Padel Tracker - Track Your Matches, Stats & ELO Rankings",
+    template: "%s | Padel Tracker",
+  },
+  description:
+    "Multi-group padel tracker with group-scoped data, ELO rankings, match tracking, and passphrase-based access. Track your doubles matches, annual stats, and partnerships.",
+  keywords: [
+    "padel",
+    "padel tennis",
+    "padel tracker",
+    "padel statistics",
+    "ELO ranking",
+    "doubles matches",
+    "padel scores",
+    "padel app",
+    "sports tracking",
+  ],
+  authors: [{ name: "Padel Tracker" }],
+  creator: "Padel Tracker",
+  publisher: "Padel Tracker",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: "website",
+    locale: "es_ES",
+    url: siteUrl,
+    siteName: "Padel Tracker",
+    title: "Padel Tracker - Track Your Matches, Stats & ELO Rankings",
+    description:
+      "Multi-group padel tracker with group-scoped data, ELO rankings, match tracking, and passphrase-based access. Track your doubles matches, annual stats, and partnerships.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Padel Tracker - Track Your Padel Games",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Padel Tracker - Track Your Matches, Stats & ELO Rankings",
+    description:
+      "Multi-group padel tracker with ELO rankings, match tracking, and partnership stats.",
+    images: ["/og-image.png"],
+    creator: "@padeltracker",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: siteUrl,
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
@@ -27,6 +98,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+      </head>
       <body className={`${display.variable} ${sans.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system">
           <ToastHandlerWrapper />
@@ -55,4 +129,3 @@ export default function RootLayout({
     </html>
   );
 }
-
