@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useTransition } from "react";
 import { addPlayer } from "@/app/players/actions";
 import { toast } from "sonner";
+import { Spinner } from "@/components/Spinner";
 
 type AddPlayerFormProps = {
   groupId: string;
@@ -15,6 +16,7 @@ type AddPlayerState = {
 };
 
 export default function AddPlayerForm({ groupId, groupSlug }: AddPlayerFormProps) {
+  const [isPending, startTransition] = useTransition();
   const [state, formAction] = useActionState<AddPlayerState, FormData>(
     addPlayer,
     {}
@@ -31,11 +33,17 @@ export default function AddPlayerForm({ groupId, groupSlug }: AddPlayerFormProps
     }
   }, [state?.success, state?.error]);
 
+  const handleSubmit = (formData: FormData) => {
+    startTransition(() => {
+      formAction(formData);
+    });
+  };
+
   return (
     <form
       ref={formRef}
       id="add-player"
-      action={formAction}
+      action={handleSubmit}
       className="flex flex-wrap items-center gap-2"
     >
       <input type="hidden" name="group_id" value={groupId} />
@@ -66,9 +74,11 @@ export default function AddPlayerForm({ groupId, groupSlug }: AddPlayerFormProps
       />
       <button
         type="submit"
-        className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+        disabled={isPending}
+        className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] disabled:opacity-50"
       >
-        Agregar jugador
+        {isPending && <Spinner size="sm" />}
+        {isPending ? "Agregando..." : "Agregar jugador"}
       </button>
     </form>
   );

@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { updatePlayer } from "@/app/players/actions";
 import { toast } from "sonner";
+import { Spinner } from "@/components/Spinner";
 
 type EditPlayerFormProps = {
   playerId: string;
@@ -25,6 +26,7 @@ export default function EditPlayerForm({
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(initialName);
   const [draftName, setDraftName] = useState(initialName);
+  const [isPending, startTransition] = useTransition();
 
   // Wrap the server action so we can update local UI state *outside* of an effect.
   const [state, formAction] = useActionState<UpdatePlayerState, FormData>(
@@ -44,6 +46,12 @@ export default function EditPlayerForm({
     {}
   );
 
+  const handleSubmit = (formData: FormData) => {
+    startTransition(() => {
+      formAction(formData);
+    });
+  };
+
   return (
     <div className="mt-1">
       <div className="flex items-center justify-between gap-3">
@@ -62,7 +70,7 @@ export default function EditPlayerForm({
       </div>
 
       {isEditing ? (
-        <form action={formAction} className="mt-3 grid gap-2">
+        <form action={handleSubmit} className="mt-3 grid gap-2">
           <input type="hidden" name="player_id" value={playerId} />
           <input type="hidden" name="group_id" value={groupId} />
           <input type="hidden" name="group_slug" value={groupSlug} />
@@ -76,13 +84,16 @@ export default function EditPlayerForm({
               placeholder="Nuevo nombre (ej: Nico?)"
               aria-label="Nuevo nombre del jugador"
               autoComplete="off"
-              className="flex-1 rounded-full border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-1.5 text-sm"
+              disabled={isPending}
+              className="flex-1 rounded-full border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-1.5 text-sm disabled:opacity-50"
             />
             <button
               type="submit"
-              className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+              disabled={isPending}
+              className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] disabled:opacity-50"
             >
-              Guardar
+              {isPending && <Spinner size="sm" />}
+              {isPending ? "Guardando..." : "Guardar"}
             </button>
             <button
               type="button"
@@ -90,7 +101,8 @@ export default function EditPlayerForm({
                 setDraftName(name);
                 setIsEditing(false);
               }}
-              className="rounded-full border border-[color:var(--card-border)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+              disabled={isPending}
+              className="rounded-full border border-[color:var(--card-border)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] disabled:opacity-50"
             >
               Cancelar
             </button>
