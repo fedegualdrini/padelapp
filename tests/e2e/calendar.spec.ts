@@ -265,10 +265,8 @@ test.describe('Calendar', () => {
       // Press Escape
       await page.keyboard.press('Escape');
       
-      // Modal should close
-      await page.waitForTimeout(300);
-      const modalVisible = await page.getByRole('heading', { name: 'Evento demo 2025-01' }).isVisible().catch(() => false);
-      expect(modalVisible).toBe(false);
+      // Modal should close (use proper assertion with timeout)
+      await expect(page.getByTestId('calendar-day-modal-backdrop')).not.toBeVisible({ timeout: 2000 });
     });
 
     test('events persist across month navigation', async ({ page }) => {
@@ -347,10 +345,8 @@ test.describe('Calendar', () => {
       // Press Escape
       await page.keyboard.press('Escape');
       
-      // Modal should close
-      await page.waitForTimeout(300);
-      const modalVisible = await page.getByRole('heading', { name: 'Partidos', exact: true }).isVisible().catch(() => false);
-      expect(modalVisible).toBe(false);
+      // Modal should close (use proper assertion with timeout)
+      await expect(page.getByTestId('calendar-day-modal-backdrop')).not.toBeVisible({ timeout: 2000 });
     });
   });
 
@@ -513,10 +509,8 @@ test.describe('Calendar', () => {
       // Close with Escape
       await page.keyboard.press('Escape');
       
-      // Modal should close
-      await page.waitForTimeout(300);
-      const modalVisible = await page.getByRole('heading', { name: 'Evento demo 2025-01' }).isVisible().catch(() => false);
-      expect(modalVisible).toBe(false);
+      // Modal should close (use proper assertion with timeout)
+      await expect(page.getByTestId('calendar-day-modal-backdrop')).not.toBeVisible({ timeout: 2000 });
     });
   });
 
