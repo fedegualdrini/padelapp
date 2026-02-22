@@ -6,7 +6,7 @@ import AddPlayerForm from "@/app/g/[slug]/(protected)/players/AddPlayerForm";
 import EditPlayerForm from "@/app/g/[slug]/(protected)/players/EditPlayerForm";
 import FormIndicator from '@/components/FormIndicator';
 import { fetchGroupStreaksAction } from '@/lib/streaks-actions';
-import PlayerDirectoryControls from '@/components/PlayerDirectoryControls';
+import { PlayerStatusButtons, PlayerSearchInput } from '@/components/PlayerDirectoryControls';
 import PeriodSelector, { type PeriodRange } from '@/components/PeriodSelector';
 import ComparePlayersDialog from '@/components/ComparePlayersDialog';
 import PlayerAchievementsRow from '@/components/PlayerAchievementsRow';
@@ -188,13 +188,24 @@ export default function PlayerDirectory({
             </button>
           </div>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <PlayerDirectoryControls />
-            <PeriodSelector />
+          {/* Status filter buttons row */}
+          <div className="mt-4">
+            <PlayerStatusButtons />
           </div>
 
+          {/* Search and Add Player row - aligned together at same baseline */}
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="w-full sm:flex-1">
+              <PlayerSearchInput />
+            </div>
+            <div className="flex-shrink-0 self-start sm:self-auto">
+              <AddPlayerForm groupId={groupId} groupSlug={groupSlug} compact />
+            </div>
+          </div>
+
+          {/* Period selector row */}
           <div className="mt-4">
-            <AddPlayerForm groupId={groupId} groupSlug={groupSlug} />
+            <PeriodSelector />
           </div>
         </section>
 
