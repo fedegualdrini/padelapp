@@ -14,6 +14,7 @@ import {
 } from "./actions";
 import { getConfirmedPlayersWithElo, balanceTeams, type SuggestedTeams } from "./actions";
 import TeamSuggestionModal from "./TeamSuggestionModal";
+import { Spinner } from "@/components/Spinner";
 
 type WeeklyEvent = {
   id: string;
@@ -336,8 +337,9 @@ export default function EventsClient({
               <button
                 type="submit"
                 disabled={loading === 'create'}
-                className="rounded-full bg-[var(--accent)] px-6 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
+                {loading === 'create' && <Spinner size="sm" />}
                 {loading === 'create' ? 'Creando...' : 'Crear evento'}
               </button>
             </div>
@@ -361,8 +363,9 @@ export default function EventsClient({
                 <button
                   onClick={() => handleGenerateOccurrences(event.id)}
                   disabled={loading === `generate-${event.id}`}
-                  className="rounded-full border border-[var(--accent)] px-4 py-1.5 text-sm font-medium text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--accent)] px-4 py-1.5 text-sm font-medium text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white disabled:opacity-50"
                 >
+                  {loading === `generate-${event.id}` && <Spinner size="sm" />}
                   {loading === `generate-${event.id}` ? 'Generando...' : 'Generar fechas'}
                 </button>
               </div>
@@ -598,34 +601,37 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
             <button
               onClick={() => onAttendance(summary.occurrence.id, selectedPlayer, 'confirmed')}
               disabled={loading === `${summary.occurrence.id}-${selectedPlayer}`}
-              className="rounded-lg px-3 py-2.5 text-sm font-medium transition disabled:opacity-50 min-h-[44px]"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition disabled:opacity-50 min-h-[44px]"
               style={{
                 backgroundColor: currentPlayerStatus === 'confirmed' ? 'var(--status-success-strong)' : 'var(--status-success-bg)',
                 color: currentPlayerStatus === 'confirmed' ? 'var(--status-success-strong-text)' : 'var(--status-success-text)'
               }}
             >
-              {loading === `${summary.occurrence.id}-${selectedPlayer}` ? '...' : 'Voy'}
+              {loading === `${summary.occurrence.id}-${selectedPlayer}` && <Spinner size="sm" />}
+              Voy
             </button>
             <button
               onClick={() => onAttendance(summary.occurrence.id, selectedPlayer, 'maybe')}
               disabled={loading === `${summary.occurrence.id}-${selectedPlayer}`}
-              className="rounded-lg px-3 py-2.5 text-sm font-medium transition disabled:opacity-50 min-h-[44px]"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition disabled:opacity-50 min-h-[44px]"
               style={{
                 backgroundColor: currentPlayerStatus === 'maybe' ? 'var(--status-warning-strong)' : 'var(--status-warning-bg)',
                 color: currentPlayerStatus === 'maybe' ? 'var(--status-warning-strong-text)' : 'var(--status-warning-text)'
               }}
             >
+              {loading === `${summary.occurrence.id}-${selectedPlayer}` && <Spinner size="sm" />}
               Tal vez
             </button>
             <button
               onClick={() => onAttendance(summary.occurrence.id, selectedPlayer, 'declined')}
               disabled={loading === `${summary.occurrence.id}-${selectedPlayer}`}
-              className="rounded-lg px-3 py-2.5 text-sm font-medium transition disabled:opacity-50 min-h-[44px]"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition disabled:opacity-50 min-h-[44px]"
               style={{
                 backgroundColor: currentPlayerStatus === 'declined' ? 'var(--status-error-strong)' : 'var(--status-error-bg)',
                 color: currentPlayerStatus === 'declined' ? 'var(--status-error-strong-text)' : 'var(--status-error-text)'
               }}
             >
+              {loading === `${summary.occurrence.id}-${selectedPlayer}` && <Spinner size="sm" />}
               No voy
             </button>
           </div>
@@ -635,8 +641,9 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
             <button
               onClick={() => onCreateMatch(summary.occurrence.id)}
               disabled={loading === `match-${summary.occurrence.id}`}
-              className="w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50 min-h-[44px]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50 min-h-[44px]"
             >
+              {loading === `match-${summary.occurrence.id}` && <Spinner size="sm" />}
               {loading === `match-${summary.occurrence.id}` ? 'Cargando...' : 'Crear partido'}
             </button>
           )}
@@ -742,8 +749,9 @@ function PastEventActions({
         <button
           onClick={handleOpenLinkModal}
           disabled={isPending}
-          className="w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50 min-h-[44px]"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50 min-h-[44px]"
         >
+          {isPending && <Spinner size="sm" />}
           Vincular partido
         </button>
         <button
@@ -817,8 +825,9 @@ function PastEventActions({
                   type="button"
                   onClick={handleLinkMatch}
                   disabled={isPending || !selectedMatchId}
-                  className="rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50 min-h-[44px]"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50 min-h-[44px]"
                 >
+                  {isPending && <Spinner size="sm" />}
                   {isPending ? "Vinculando..." : "Vincular"}
                 </button>
               )}
