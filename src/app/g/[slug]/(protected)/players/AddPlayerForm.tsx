@@ -8,6 +8,7 @@ import { Spinner } from "@/components/Spinner";
 type AddPlayerFormProps = {
   groupId: string;
   groupSlug: string;
+  compact?: boolean;
 };
 
 type AddPlayerState = {
@@ -15,7 +16,7 @@ type AddPlayerState = {
   success?: boolean;
 };
 
-export default function AddPlayerForm({ groupId, groupSlug }: AddPlayerFormProps) {
+export default function AddPlayerForm({ groupId, groupSlug, compact = false }: AddPlayerFormProps) {
   const [isPending, startTransition] = useTransition();
   const [state, formAction] = useActionState<AddPlayerState, FormData>(
     addPlayer,
@@ -39,6 +40,46 @@ export default function AddPlayerForm({ groupId, groupSlug }: AddPlayerFormProps
     });
   };
 
+  if (compact) {
+    // Compact mode: just the essentials in a single row
+    return (
+      <form
+        ref={formRef}
+        id="add-player"
+        action={handleSubmit}
+        className="flex flex-wrap items-center gap-2"
+      >
+        <input type="hidden" name="group_id" value={groupId} />
+        <input type="hidden" name="group_slug" value={groupSlug} />
+        <input
+          type="text"
+          name="player_name"
+          placeholder="Nombre"
+          aria-label="Nombre del jugador"
+          autoComplete="off"
+          className="w-32 rounded-full border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-4 py-2 text-sm sm:w-40"
+        />
+        <select
+          name="player_status"
+          aria-label="Estado del jugador"
+          className="rounded-full border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
+        >
+          <option value="invite">Invitado</option>
+          <option value="usual">Habitual</option>
+        </select>
+        <button
+          type="submit"
+          disabled={isPending}
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] disabled:opacity-50"
+        >
+          {isPending && <Spinner size="sm" />}
+          {isPending ? "..." : "+ Agregar"}
+        </button>
+      </form>
+    );
+  }
+
+  // Full mode: original layout
   return (
     <form
       ref={formRef}

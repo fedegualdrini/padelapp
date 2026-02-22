@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import AchievementsRow from './AchievementsRow';
 import { getPlayerAchievements } from '@/lib/supabase/achievements';
 
@@ -17,30 +17,51 @@ type PlayerAchievementsRowProps = {
   playerId: string;
 };
 
-export default function PlayerAchievementsRow({
-  groupId,
-  playerId,
-}: PlayerAchievementsRowProps) {
+// Simple skeleton loader for achievements
+function AchievementSkeleton() {
+  return (
+    <div className="flex items-center gap-1">
+      <div className="h-5 w-5 animate-pulse rounded-full bg-[color:var(--card-border)]" />
+      <div className="h-5 w-5 animate-pulse rounded-full bg-[color:var(--card-border)]" />
+    </div>
+  );
+}
+
+function PlayerAchievementsRowComponent({ groupId, playerId }: PlayerAchievementsRowProps) {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+    
+    // Use a small delay to batch requests
+    const timeoutId = setTimeout(() => {
+      loadAchievements();
+    }, 50);
+
     async function loadAchievements() {
       try {
         const data = await getPlayerAchievements(groupId, playerId);
-        setAchievements(data.unlocked);
+        if (!cancelled) {
+          setAchievements(data.unlocked);
+        }
       } catch (error) {
         console.error('Error loading achievements:', error);
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
-    loadAchievements();
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, [groupId, playerId]);
 
   if (loading) {
-    return null;
+    return <AchievementSkeleton />;
   }
 
   if (achievements.length === 0) {
@@ -49,3 +70,8 @@ export default function PlayerAchievementsRow({
 
   return <AchievementsRow achievements={achievements} max={3} size="sm" />;
 }
+
+// Memoize to prevent unnecessary re-renders
+export default memo(PlayerAchievementsRowComponent, (prev, next) => {
+  return prev.groupId === next.groupId && prev.playerId === next.playerId;
+});
