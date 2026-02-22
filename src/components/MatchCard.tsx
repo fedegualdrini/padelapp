@@ -95,9 +95,9 @@ export default function MatchCard({
       </div>
 
       {/* Score table - Tennis/padel style */}
-      <div className="overflow-hidden rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)]">
+      <div className="overflow-x-auto rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] -mx-1 px-1 sm:mx-0 sm:px-0">
         {/* Header row with set numbers */}
-        <div className="grid border-b border-[color:var(--card-border)] bg-[var(--bg-base)]"
+        <div className="grid border-b border-[color:var(--card-border)] bg-[var(--bg-base)] min-w-[280px]"
              style={{ gridTemplateColumns: `1fr repeat(${maxSets}, minmax(2rem, 2.5rem)) minmax(2.25rem, 2.5rem)` }}>
           <div className="px-2 sm:px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
             Equipo
