@@ -17,7 +17,14 @@
     "test:with-timeout": "./scripts/test-with-timeout.sh",
     "gateway:check": "./scripts/check-gateway-health.sh",
     "gateway:retry": "./scripts/retry-cron-op.sh",
-    "cron:update": "./scripts/safe-cron-update.sh"
+    "cron:update": "./scripts/safe-cron-update.sh",
+    "bundle:analyze": "ANALYZE=true npm run build",
+    "bundle:size": "du -sh .next/static/chunks/*.js | awk '{sum+=$1} END {print \"Total JS: \" sum \"MB\"}'"
+  },
+  "bundleSizeLimits": {
+    "maxChunkSize": "300KB",
+    "maxTotalJS": "2MB",
+    "maxCSS": "150KB"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -32,6 +39,7 @@
     "swr": "^2.4.0"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.1.6",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
