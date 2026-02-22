@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGroupBySlug } from "@/lib/data";
@@ -8,6 +9,20 @@ import AchievementBadge from "@/components/AchievementBadge";
 type AchievementsPageProps = {
   params: Promise<{ slug: string }>;
 };
+
+export async function generateMetadata({
+  params,
+}: AchievementsPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const group = await getGroupBySlug(slug);
+
+  return {
+    title: group ? `Achievements — ${group.name}` : "Achievements",
+    description: group
+      ? `Unlock achievements and earn badges in ${group.name}. Track your milestones and accomplishments.`
+      : "Unlock achievements and earn badges.",
+  };
+}
 
 type AchievementDefinition = {
   key: string;

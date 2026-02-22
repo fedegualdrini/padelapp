@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import MatchCard from "@/components/MatchCard";
 import ClearMatchHistoryButton from "@/components/ClearMatchHistoryButton";
@@ -9,6 +10,20 @@ type MatchesPageProps = {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+
+export async function generateMetadata({
+  params,
+}: MatchesPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const group = await getGroupBySlug(slug);
+
+  return {
+    title: group ? `Matches — ${group.name}` : "Matches",
+    description: group
+      ? `View and manage all padel matches for ${group.name}. Track scores and game history.`
+      : "View and manage padel matches.",
+  };
+}
 
 const isIsoDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 

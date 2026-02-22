@@ -1,7 +1,19 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { createGroup } from "@/app/actions";
 import { getGroups } from "@/lib/data";
 import { hasSupabaseEnv } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  title: "Home",
+  description:
+    "Join or create a padel group to track your matches, ELO rankings, and partnership stats with friends.",
+  openGraph: {
+    title: "Padel Tracker - Track Your Padel Games",
+    description:
+      "Join or create a padel group to track your matches, ELO rankings, and partnership stats.",
+  },
+};
 
 function SetupRequired() {
   return (

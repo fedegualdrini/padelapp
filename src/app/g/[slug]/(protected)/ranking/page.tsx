@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { TradingViewRankingLayout } from "@/components/TradingViewRankingLayout";
@@ -10,6 +11,20 @@ type RankingPageProps = {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+
+export async function generateMetadata({
+  params,
+}: RankingPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const group = await getGroupBySlug(slug);
+
+  return {
+    title: group ? `Ranking — ${group.name}` : "ELO Ranking",
+    description: group
+      ? `ELO ranking and leaderboard for ${group.name}. Track player performance over time.`
+      : "ELO ranking and leaderboard.",
+  };
+}
 
 export default async function RankingPage({ params, searchParams }: RankingPageProps) {
   const { slug } = await params;
