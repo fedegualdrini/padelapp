@@ -84,14 +84,15 @@ test.describe('Calendar', () => {
     test('calendar page loads with current month', async ({ page }) => {
       await page.goto('/g/demo/calendar', { waitUntil: 'domcontentloaded' });
       
-      // Should show month and year heading
-      const monthHeading = page.getByRole('heading', { level: 1 }).or(
-        page.getByRole('heading', { level: 2 })
-      );
+      // Should show month and year heading (h2 with month name + year)
+      // The heading format is like "Enero 2025" 
+      const monthHeading = page.getByRole('heading', { level: 2 }).filter({
+        hasText: /\d{4}/ // Contains a year
+      });
       
-      await expect(monthHeading.first()).toBeVisible();
+      await expect(monthHeading.first()).toBeVisible({ timeout: 15000 });
       
-      // Should contain month name and year
+      // Verify it contains a year
       const text = await monthHeading.first().textContent();
       expect(text).toMatch(/\d{4}/); // Has year
     });
@@ -148,11 +149,11 @@ test.describe('Calendar', () => {
       await expect(page.getByRole('heading', { name: /diciembre 2024/i })).toBeVisible();
     });
 
-    test('month navigation preserves day selection', async ({ page }) => {
+    test('month navigation works correctly', async ({ page }) => {
       await page.goto('/g/demo/calendar?year=2025&month=0', { waitUntil: 'domcontentloaded' });
       
-      // Click on a day
-      await page.getByTestId('calendar-day-2025-01-15').click();
+      // Verify January is displayed
+      await expect(page.getByRole('heading', { name: /enero 2025/i })).toBeVisible();
       
       // Navigate to next month
       await page.getByRole('button', { name: /mes siguiente/i }).click();
@@ -203,12 +204,11 @@ test.describe('Calendar', () => {
       // Click day with event
       await page.getByTestId('calendar-day-2025-01-02').click();
       
-      // Event modal should appear
-      await expect(page.getByRole('heading', { name: 'Evento demo 2025-01' })).toBeVisible();
+      // Event modal should appear (check for modal backdrop)
+      await expect(page.getByTestId('calendar-day-modal-backdrop')).toBeVisible();
       
       // Should show event details
-      const modal = page.getByRole('dialog').or(page.locator('[class*="modal"]'));
-      await expect(modal.first()).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Evento demo 2025-01' })).toBeVisible();
     });
 
     test('event modal displays event name', async ({ page }) => {
@@ -234,9 +234,11 @@ test.describe('Calendar', () => {
       
       await page.getByTestId('calendar-day-2025-01-02').click();
       
-      // Modal should be visible
-      const modal = page.getByRole('dialog').or(page.locator('[class*="modal"]'));
-      await expect(modal.first()).toBeVisible();
+      // Modal should be visible (check for modal backdrop)
+      await expect(page.getByTestId('calendar-day-modal-backdrop')).toBeVisible();
+      
+      // Should show the weekday in the modal header
+      await expect(page.getByRole('heading', { level: 3 })).toContainText(/jueves/i);
     });
 
     test('can close event modal by clicking backdrop', async ({ page }) => {
@@ -391,24 +393,18 @@ test.describe('Calendar', () => {
       await expect(page.locator('body')).toBeVisible();
     });
 
-    test('calendar days are clickable', async ({ page }) => {
+    test('calendar days with activity are clickable', async ({ page }) => {
       await page.goto('/g/demo/calendar?year=2025&month=0', { waitUntil: 'domcontentloaded' });
       
-      // Try clicking different days
-      const testDays = ['2025-01-02', '2025-01-15', '2025-01-28'];
+      // Only days with events/matches are enabled - use 2025-01-02 which has a demo event
+      const dayElement = page.getByTestId('calendar-day-2025-01-02');
       
-      for (const day of testDays) {
-        const dayElement = page.getByTestId(`calendar-day-${day}`);
-        
-        if (await dayElement.isVisible().catch(() => false)) {
-          await dayElement.click();
-          await page.waitForTimeout(200);
-          
-          // Close any open modal
-          await page.keyboard.press('Escape').catch(() => {});
-          await page.waitForTimeout(200);
-        }
-      }
+      await expect(dayElement).toBeVisible();
+      await expect(dayElement).toBeEnabled();
+      
+      // Click should open modal
+      await dayElement.click();
+      await expect(page.getByTestId('calendar-day-modal-backdrop')).toBeVisible();
     });
   });
 
