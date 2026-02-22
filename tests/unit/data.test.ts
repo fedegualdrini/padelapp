@@ -434,12 +434,12 @@ describe('Data Layer Functions', () => {
       });
 
       it('returns 0 for null groupId', async () => {
-        const closed = await autoCloseEventsForMatch(null as any, '2024-01-15', ['p1', 'p2', 'p3', 'p4']);
+        const closed = await autoCloseEventsForMatch(null as unknown as string, '2024-01-15', ['p1', 'p2', 'p3', 'p4']);
         expect(closed).toBe(0);
       });
 
       it('returns 0 for undefined groupId', async () => {
-        const closed = await autoCloseEventsForMatch(undefined as any, '2024-01-15', ['p1', 'p2', 'p3', 'p4']);
+        const closed = await autoCloseEventsForMatch(undefined as unknown as string, '2024-01-15', ['p1', 'p2', 'p3', 'p4']);
         expect(closed).toBe(0);
       });
 
