@@ -11,7 +11,7 @@ import {
 } from "@/lib/data";
 import { getPlayerStreaks } from "@/lib/streaks";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import MiniEloChart from "./MiniEloChart";
+import MiniEloChartWrapper from "./MiniEloChartWrapper";
 import StreakHistoryChart from "./StreakHistoryChart";
 import AchievementsSection from "@/components/AchievementsSection";
 import PlayerPartnerships from "@/components/PlayerPartnerships";
@@ -205,7 +205,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
         <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
           <h3 className="font-display text-lg text-[var(--ink)]">Evolución ELO</h3>
           <div className="mt-4">
-            <MiniEloChart data={playerEloData.points} />
+            <MiniEloChartWrapper data={playerEloData.points} />
           </div>
         </section>
       )}
