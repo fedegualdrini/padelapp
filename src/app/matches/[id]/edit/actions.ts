@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { assertRateLimit } from "@/lib/rate-limit";
 import { setScoreSchema, uuidSchema, matchBestOfSchema, dateStringSchema, timeStringSchema } from "@/lib/validation";
 
 /**
@@ -126,6 +127,9 @@ function validateMatchUpdateInput(data: {
 }
 
 export async function updateMatch(formData: FormData) {
+  // Rate limit check
+  await assertRateLimit("match");
+
   const supabaseServer = await createSupabaseServerClient();
   
   // Extract all input data

@@ -3,6 +3,7 @@
 // (removed) previously used next/server.after
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { assertRateLimit } from "@/lib/rate-limit";
 import { calculateMatchPrediction } from "./prediction-actions";
 import { autoCloseEventsForMatch } from "@/lib/data";
 import { setScoreSchema, uuidSchema, matchBestOfSchema, dateStringSchema, timeStringSchema } from "@/lib/validation";
@@ -131,6 +132,9 @@ export async function createMatch(
   _prevState: CreateMatchState,
   formData: FormData
 ): Promise<CreateMatchState> {
+  // Rate limit check
+  await assertRateLimit("match");
+
   const supabaseServer = await createSupabaseServerClient();
   
   // Extract all input data

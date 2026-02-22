@@ -8,6 +8,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { assertRateLimit } from '@/lib/rate-limit';
 import {
   createVenue as createVenueData,
   updateVenue as updateVenueData,
@@ -55,6 +56,16 @@ import type {
 export async function createVenue(
   input: VenueCreateInput
 ): Promise<{ success: boolean; venue?: Venue; error?: string }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("venue");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     const venue = await createVenueData(input);
     revalidatePath(`/g/[slug]/venues`);
@@ -76,6 +87,16 @@ export async function updateVenue(
   id: string,
   updates: VenueUpdateInput
 ): Promise<{ success: boolean; venue?: Venue; error?: string }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("venue");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     const venue = await updateVenueData(id, updates);
     revalidatePath(`/g/[slug]/venues/[venue-slug]`);
@@ -97,6 +118,16 @@ export async function updateVenue(
 export async function deleteVenue(
   id: string
 ): Promise<{ success: boolean; error?: string }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("venue");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     await deleteVenueData(id);
     revalidatePath(`/g/[slug]/venues`);
@@ -186,6 +217,16 @@ export async function fetchVenues(
 export async function submitVenueRating(
   input: VenueRatingCreateInput
 ): Promise<{ success: boolean; rating?: VenueRating; error?: string }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("venue");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     const rating = await createVenueRatingData(input);
     revalidatePath(`/g/[slug]/venues/[venue-slug]`);
@@ -225,6 +266,16 @@ export async function submitVenueRatingBySlugs({
   atmosphere: number;
   review_text?: string;
 }): Promise<{ success: boolean; rating?: VenueRating; error?: string }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("venue");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     const supabase = await createSupabaseServerClient();
     
@@ -314,6 +365,16 @@ export async function editVenueRating(
   ratingId: string,
   updates: VenueRatingUpdateInput
 ): Promise<{ success: boolean; rating?: VenueRating; error?: string }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("venue");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     const rating = await updateVenueRatingData(ratingId, updates);
     revalidatePath(`/g/[slug]/venues/[venue-slug]`);
@@ -335,6 +396,16 @@ export async function editVenueRating(
 export async function removeVenueRating(
   ratingId: string
 ): Promise<{ success: boolean; error?: string }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("venue");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     await deleteVenueRatingData(ratingId);
     revalidatePath(`/g/[slug]/venues/[venue-slug]`);
@@ -422,6 +493,16 @@ export async function submitVenueComment(
   group_id: string,
   comment_text: string
 ): Promise<{ success: boolean; error?: string }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("venue");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     await createVenueComment({ rating_id, player_id, group_id, comment_text });
     revalidatePath(`/g/[slug]/venues/[venue-slug]`);
@@ -441,6 +522,16 @@ export async function submitVenueComment(
 export async function removeVenueComment(
   commentId: string
 ): Promise<{ success: boolean; error?: string }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("venue");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     await deleteVenueComment(commentId);
     revalidatePath(`/g/[slug]/venues/[venue-slug]`);
@@ -467,6 +558,16 @@ export async function voteOnReviewHelpful(
   groupId: string,
   isHelpful: boolean
 ): Promise<{ success: boolean; error?: string }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("venue");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     await voteOnReview(ratingId, playerId, groupId, isHelpful);
     revalidatePath(`/g/[slug]/venues/[venue-slug]`);
@@ -487,6 +588,16 @@ export async function removeReviewVote(
   ratingId: string,
   playerId: string
 ): Promise<{ success: boolean; error?: string }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("venue");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     await removeVoteOnReview(ratingId, playerId);
     revalidatePath(`/g/[slug]/venues/[venue-slug]`);

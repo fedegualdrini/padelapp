@@ -7,6 +7,7 @@ import {
   deleteGroupInvite,
   type GroupInvite,
 } from "@/lib/data";
+import { assertRateLimit } from "@/lib/rate-limit";
 import {
   createInviteSchema,
   validateInviteSchema,
@@ -31,6 +32,16 @@ export async function createInviteAction(
   if (!validationResult.success) {
     const errorMessage = validationResult.error.issues[0]?.message || "Error de validación";
     return { success: false, invite: null, error: errorMessage };
+  }
+
+  // Rate limit check
+  try {
+    await assertRateLimit("invite");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, invite: null, error: error.message };
+    }
+    throw error;
   }
 
   try {
@@ -66,6 +77,16 @@ export async function validateAndUseInviteAction(
   if (!validationResult.success) {
     const errorMessage = validationResult.error.issues[0]?.message || "Error de validación";
     return { success: false, groupId: "", error: errorMessage };
+  }
+
+  // Rate limit check
+  try {
+    await assertRateLimit("invite");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, groupId: "", error: error.message };
+    }
+    throw error;
   }
 
   try {
@@ -104,6 +125,16 @@ export async function deleteInviteAction(
     return { success: false, error: errorMessage };
   }
 
+  // Rate limit check
+  try {
+    await assertRateLimit("invite");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     const { error } = await deleteGroupInvite(inviteId);
 
@@ -131,6 +162,16 @@ export async function deleteInviteAction(
 export async function copyInviteLinkAction(
   token: string
 ): Promise<{ success: boolean; error: string | null }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("invite");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     // Generate the invite URL
     const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')}/invite/${token}`;
