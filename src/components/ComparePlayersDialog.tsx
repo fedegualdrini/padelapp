@@ -44,10 +44,15 @@ export default function ComparePlayersDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="compare-dialog-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+    >
       <div className="mx-4 max-w-md rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] p-6 shadow-xl">
         <div className="mb-4">
-          <h3 className="font-display text-xl text-[var(--ink)]">
+          <h3 id="compare-dialog-title" className="font-display text-xl text-[var(--ink)]">
             Comparar jugadores
           </h3>
           <p className="mt-1 text-sm text-[var(--muted)]">
@@ -95,20 +100,20 @@ export default function ComparePlayersDialog({
           </label>
 
           {error && (
-            <p className="text-sm text-red-500">{error}</p>
+            <p role="alert" className="text-sm text-red-500">{error}</p>
           )}
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="rounded-xl border border-[color:var(--card-border)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:border-[color:var(--card-border-strong)]"
+            className="rounded-xl border border-[color:var(--card-border)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:border-[color:var(--card-border-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
           >
             Cancelar
           </button>
           <button
             onClick={handleCompare}
-            className="rounded-xl bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent)]/90"
+            className="rounded-xl bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
           >
             Comparar
           </button>

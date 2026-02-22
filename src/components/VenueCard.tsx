@@ -31,7 +31,8 @@ export function VenueCard({ venue, groupSlug }: VenueCardProps) {
   return (
     <Link
       href={`/g/${groupSlug}/venues/${v.slug}`}
-      className="block overflow-hidden rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur transition hover:-translate-y-0.5"
+      aria-label={`${v.name}, ${v.address}${hasRatings ? `, ${avgRating.toFixed(1)} estrellas` : ''}`}
+      className="block overflow-hidden rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
       data-testid="venue-card"
     >
       <div className="p-5">
@@ -67,30 +68,30 @@ export function VenueCard({ venue, groupSlug }: VenueCardProps) {
           )}
         </div>
 
-        <div className="mb-4 flex gap-3 text-[var(--muted)]">
+        <div className="mb-4 flex gap-3 text-[var(--muted)]" aria-label="Amenities">
           {v.has_parking && (
-            <div title="Estacionamiento">
-              <Car className="h-4 w-4" />
+            <div aria-label="Estacionamiento" title="Estacionamiento">
+              <Car className="h-4 w-4" aria-hidden="true" />
             </div>
           )}
           {v.has_showers && (
-            <div title="Duchas">
-              <Droplets className="h-4 w-4" />
+            <div aria-label="Duchas" title="Duchas">
+              <Droplets className="h-4 w-4" aria-hidden="true" />
             </div>
           )}
           {v.has_bar_restaurant && (
-            <div title="Bar / Restaurante">
-              <Coffee className="h-4 w-4" />
+            <div aria-label="Bar / Restaurante" title="Bar / Restaurante">
+              <Coffee className="h-4 w-4" aria-hidden="true" />
             </div>
           )}
           {v.has_wifi && (
-            <div title="WiFi">
-              <Wifi className="h-4 w-4" />
+            <div aria-label="WiFi" title="WiFi">
+              <Wifi className="h-4 w-4" aria-hidden="true" />
             </div>
           )}
           {v.has_equipment_rental && (
-            <div title="Alquiler de equipos">
-              <Package className="h-4 w-4" />
+            <div aria-label="Alquiler de equipos" title="Alquiler de equipos">
+              <Package className="h-4 w-4" aria-hidden="true" />
             </div>
           )}
         </div>
