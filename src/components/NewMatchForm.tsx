@@ -1,8 +1,9 @@
 "use client";
 
-import { memo, useMemo, useState, type FormEvent, useActionState } from "react";
+import { memo, useMemo, useState, type FormEvent, useActionState, useTransition } from "react";
 import { createMatch } from "@/app/matches/new/actions";
 import MatchPredictionBanner from "./MatchPredictionBanner";
+import { Spinner } from "./Spinner";
 
 type Player = {
   id: string;
@@ -33,6 +34,7 @@ function NewMatchForm({
   groupId,
   groupSlug,
 }: NewMatchFormProps) {
+  const [isPending, startTransition] = useTransition();
   const [state, formAction] = useActionState(createMatch, { error: null });
   const [team1Player1, setTeam1Player1] = useState("");
   const [team1Player2, setTeam1Player2] = useState("");
@@ -157,6 +159,12 @@ function NewMatchForm({
       setClientError("El partido está incompleto. Cargá todos los sets jugados.");
       return;
     }
+
+    // Wrap form action in transition for loading state
+    event.preventDefault();
+    startTransition(() => {
+      formAction(formData);
+    });
   };
 
   return (
@@ -431,13 +439,16 @@ function NewMatchForm({
       <div className="flex flex-col sm:flex-row gap-3">
         <button
           type="submit"
-          className="w-full sm:w-auto rounded-full bg-[var(--accent)] px-5 sm:px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] min-h-[44px]"
+          disabled={isPending}
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 sm:px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] min-h-[44px] disabled:opacity-50"
         >
-          Guardar partido
+          {isPending && <Spinner size="sm" />}
+          {isPending ? "Guardando..." : "Guardar partido"}
         </button>
         <button
           type="button"
-          className="w-full sm:w-auto rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-5 sm:px-6 py-3 text-sm font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] min-h-[44px]"
+          disabled={isPending}
+          className="w-full sm:w-auto rounded-full border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] px-5 sm:px-6 py-3 text-sm font-semibold text-[var(--ink)] transition hover:bg-[color:var(--card-solid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] min-h-[44px] disabled:opacity-50"
         >
           Cancelar
         </button>

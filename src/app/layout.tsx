@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Fraunces, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { Toaster } from "sonner";
+import { ToastHandlerWrapper } from "@/components/ToastHandlerWrapper";
 import "./globals.css";
 
 const display = Fraunces({
@@ -27,6 +29,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className={`${display.variable} ${sans.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system">
+          <ToastHandlerWrapper />
           <div className="relative min-h-screen overflow-hidden bg-[var(--bg-base)] text-[var(--ink)]">
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,rgba(13,107,95,0.25),transparent_70%)] blur-2xl" />
@@ -36,6 +39,17 @@ export default function RootLayout({
 
             <div className="relative">{children}</div>
           </div>
+          <Toaster 
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: 'var(--card-solid)',
+                border: '1px solid var(--card-border)',
+                color: 'var(--ink)',
+              },
+              className: 'rounded-xl shadow-lg',
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>

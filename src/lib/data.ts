@@ -1,3 +1,47 @@
+/**
+ * Data Access Layer for Padel App
+ *
+ * DATABASE PERFORMANCE & N+1 QUERY AUDIT (2026-02-22)
+ * =====================================================
+ *
+ * This file was audited for N+1 query patterns. Below is a summary of findings
+ * and optimizations applied:
+ *
+ * OPTIMIZED FUNCTIONS (no N+1 issues):
+ * - getMatchEloDeltas: Uses batch RPC get_players_elo_before instead of N calls
+ * - getAttendanceSummary: Batch queries all attendance at once
+ * - getPlayerPartnerStats: Batch queries (marked with OPTIMIZED comments)
+ * - getPlayerRecentMatches: Batch queries (marked with OPTIMIZED comments)
+ * - getCalendarData: Batch attendance queries (marked with OPTIMIZED comments)
+ * - getRecentMatches: Single query with Supabase relation joins
+ * - getMatches: Single query with Supabase relation joins
+ * - getTopStats: Uses Promise.all for parallel queries
+ * - getEloTimeline: Single query with Supabase relation joins
+ *
+ * INDEXES VERIFIED (present in migrations):
+ * - idx_players_group on players(group_id)
+ * - idx_matches_group_played_at on matches(group_id, played_at desc)
+ * - idx_match_teams_match on match_teams(match_id)
+ * - idx_match_team_players_team on match_team_players(match_team_id)
+ * - idx_match_team_players_player on match_team_players(player_id)
+ * - idx_elo_player on elo_ratings(player_id)
+ * - idx_elo_match on elo_ratings(as_of_match_id)
+ * - idx_attendance_occurrence on attendance(occurrence_id, status)
+ * - idx_event_occurrences_group on event_occurrences(group_id, starts_at)
+ *
+ * QUERY PATTERNS USED:
+ * 1. Supabase relation joins (select with nested tables) - fetches related data in 1 query
+ * 2. Promise.all for parallel independent queries
+ * 3. Batch queries with .in() filter instead of loops
+ * 4. Materialized views (mv_player_stats_v2, mv_pair_aggregates) for pre-computed stats
+ *
+ * BEST PRACTICES:
+ * - Use Promise.all for parallel queries
+ * - Use .in() filters for batch queries
+ * - Avoid loops with await inside
+ * - Use materialized views for expensive aggregations
+ */
+
 import { cache } from "react";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 
@@ -803,6 +847,20 @@ export async function getMatchById(groupId: string, id: string) {
   return buildMatchView(data as unknown as MatchRow);
 }
 
+/**
+ * Get ELO rating changes for all players in a match.
+ *
+ * OPTIMIZED: Uses batch RPC `get_players_elo_before` to fetch previous ELO ratings
+ * for all players in a single query, avoiding the N+1 pattern of calling
+ * `get_player_elo_before` for each player individually.
+ *
+ * Query pattern:
+ * 1. Fetch match teams (1 query)
+ * 2. Fetch players and current ratings in parallel (2 queries)
+ * 3. Fetch previous ELO for all players at once via batch RPC (1 query)
+ *
+ * Total: 4 queries regardless of player count (was N+4 before optimization)
+ */
 export async function getMatchEloDeltas(matchId: string) {
   const supabaseServer = await getSupabaseServerClient();
   const { data: teams, error: teamsError } = await supabaseServer
@@ -839,40 +897,47 @@ export async function getMatchEloDeltas(matchId: string) {
     return [];
   }
 
-  const ratingsByPlayer = new Map(
+  const currentRatingsByPlayer = new Map(
     matchRatings.map((row) => [row.player_id, row.rating])
   );
 
-  const deltas = await Promise.all(
-    matchPlayers.map(async (row) => {
-      const player = (Array.isArray(row.players)
-        ? row.players[0]
-        : row.players) as { name: string } | null;
-      const current = ratingsByPlayer.get(row.player_id);
-      if (!player || current === undefined || current === null) {
-        return null;
-      }
-      const currentRating = Number(current);
-      const { data: prev, error: prevError } = await supabaseServer.rpc(
-        "get_player_elo_before",
-        {
-          p_player_id: row.player_id,
-          p_match_id: matchId,
-        }
-      );
-      if (prevError) {
-        return null;
-      }
-      const previous = Number(prev ?? 1000);
-      return {
-        playerId: row.player_id,
-        name: player.name,
-        previous,
-        current: currentRating,
-        delta: currentRating - previous,
-      };
-    })
+  // OPTIMIZED: Batch fetch previous ELO for all players at once
+  // instead of N individual RPC calls
+  const playerIds = matchPlayers.map((row) => row.player_id);
+  const { data: previousRatings, error: prevError } = await supabaseServer.rpc(
+    "get_players_elo_before",
+    {
+      p_player_ids: playerIds,
+      p_match_id: matchId,
+    }
   );
+
+  // Fallback to empty map if batch query fails
+  const previousRatingsByPlayer = new Map<string, number>();
+  if (!prevError && previousRatings) {
+    for (const row of previousRatings) {
+      previousRatingsByPlayer.set(row.player_id, row.previous_elo);
+    }
+  }
+
+  const deltas = matchPlayers.map((row) => {
+    const player = (Array.isArray(row.players)
+      ? row.players[0]
+      : row.players) as { name: string } | null;
+    const current = currentRatingsByPlayer.get(row.player_id);
+    if (!player || current === undefined || current === null) {
+      return null;
+    }
+    const currentRating = Number(current);
+    const previous = previousRatingsByPlayer.get(row.player_id) ?? 1000;
+    return {
+      playerId: row.player_id,
+      name: player.name,
+      previous,
+      current: currentRating,
+      delta: currentRating - previous,
+    };
+  });
 
   return deltas.filter(Boolean) as {
     playerId: string;
@@ -2606,6 +2671,20 @@ export type AttendanceSummary = {
   spotsAvailable: number;
 };
 
+/**
+ * Get attendance summaries for multiple event occurrences.
+ *
+ * OPTIMIZED: Batch queries all attendance records for all occurrences at once
+ * instead of making N individual queries (one per occurrence). This avoids
+ * the N+1 query pattern where getAttendanceForOccurrence was called in a loop.
+ *
+ * Query pattern:
+ * 1. Fetch all attendance records for all occurrence IDs in a single query
+ * 2. Group attendance by occurrence_id in memory
+ * 3. Build summaries from the grouped data
+ *
+ * Total: 1 query regardless of occurrence count (was N+1 before optimization)
+ */
 export async function getAttendanceSummary(
   groupId: string,
   occurrences: EventOccurrence[],
@@ -2659,45 +2738,72 @@ export async function getAttendanceSummary(
     ];
   }
 
+  if (occurrences.length === 0) {
+    return [];
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
   const weeklyEventMap = new Map(weeklyEvents.map(we => [we.id, we]));
 
-  const summaries = await Promise.all(
-    occurrences.map(async (occurrence) => {
-      const attendance = await getAttendanceForOccurrence(occurrence.id);
-      const weeklyEvent = weeklyEventMap.get(occurrence.weekly_event_id);
-      const capacity = weeklyEvent?.capacity ?? 4;
+  // OPTIMIZED: Batch fetch all attendance records for all occurrences at once
+  const occurrenceIds = occurrences.map(o => o.id);
+  const { data: allAttendance, error: attendanceError } = await supabaseServer
+    .from('attendance')
+    .select('*, players(id, name)')
+    .in('occurrence_id', occurrenceIds)
+    .order('created_at', { ascending: true });
 
-      const confirmedCount = attendance.filter(a => a.status === 'confirmed').length;
-      const declinedCount = attendance.filter(a => a.status === 'declined').length;
-      const maybeCount = attendance.filter(a => a.status === 'maybe').length;
-      const waitlistCount = attendance.filter(a => a.status === 'waitlist').length;
+  if (attendanceError) {
+    console.error('Error fetching attendance:', attendanceError);
+    return [];
+  }
 
-      return {
-        occurrence,
-        weeklyEvent: weeklyEvent ?? {
-          id: '',
-          group_id: groupId,
-          name: 'Evento',
-          weekday: 0,
-          start_time: '20:00',
-          capacity: 4,
-          cutoff_weekday: 2,
-          cutoff_time: '14:00',
-          is_active: true,
-          active_occurrence_id: null,
-          created_at: '',
-          updated_at: '',
-        },
-        attendance,
-        confirmedCount,
-        declinedCount,
-        maybeCount,
-        waitlistCount,
-        isFull: confirmedCount >= capacity,
-        spotsAvailable: Math.max(0, capacity - confirmedCount),
-      };
-    })
-  );
+  // Group attendance by occurrence_id
+  const attendanceByOccurrence = new Map<string, AttendanceRecord[]>();
+  if (allAttendance) {
+    for (const record of allAttendance as AttendanceRecord[]) {
+      const existing = attendanceByOccurrence.get(record.occurrence_id) ?? [];
+      existing.push(record);
+      attendanceByOccurrence.set(record.occurrence_id, existing);
+    }
+  }
+
+  // Build summaries from the grouped data (no additional queries needed)
+  const summaries: AttendanceSummary[] = occurrences.map((occurrence) => {
+    const attendance = attendanceByOccurrence.get(occurrence.id) ?? [];
+    const weeklyEvent = weeklyEventMap.get(occurrence.weekly_event_id);
+    const capacity = weeklyEvent?.capacity ?? 4;
+
+    const confirmedCount = attendance.filter(a => a.status === 'confirmed').length;
+    const declinedCount = attendance.filter(a => a.status === 'declined').length;
+    const maybeCount = attendance.filter(a => a.status === 'maybe').length;
+    const waitlistCount = attendance.filter(a => a.status === 'waitlist').length;
+
+    return {
+      occurrence,
+      weeklyEvent: weeklyEvent ?? {
+        id: '',
+        group_id: groupId,
+        name: 'Evento',
+        weekday: 0,
+        start_time: '20:00',
+        capacity: 4,
+        cutoff_weekday: 2,
+        cutoff_time: '14:00',
+        is_active: true,
+        active_occurrence_id: null,
+        created_at: '',
+        updated_at: '',
+      },
+      attendance,
+      confirmedCount,
+      declinedCount,
+      maybeCount,
+      waitlistCount,
+      isFull: confirmedCount >= capacity,
+      spotsAvailable: Math.max(0, capacity - confirmedCount),
+    };
+  });
 
   return summaries;
 }

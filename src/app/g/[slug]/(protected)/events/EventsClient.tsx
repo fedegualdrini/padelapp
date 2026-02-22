@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { 
   updateAttendance, 
   createWeeklyEvent, 
@@ -13,6 +14,10 @@ import {
 } from "./actions";
 import { getConfirmedPlayersWithElo, balanceTeams, type SuggestedTeams } from "./actions";
 import TeamSuggestionModal from "./TeamSuggestionModal";
+import DeleteEventButton from "./DeleteEventButton";
+import { Spinner } from "@/components/Spinner";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Calendar, CalendarDays } from "lucide-react";
 
 type WeeklyEvent = {
   id: string;
@@ -129,8 +134,18 @@ export default function EventsClient({
     setError(null);
     try {
       await updateAttendance(slug, occurrenceId, playerId, status);
+      // Show success toast based on status
+      const messages: Record<AttendanceStatus, string> = {
+        confirmed: "Asistencia confirmada",
+        declined: "Asistencia cancelada",
+        maybe: "Marcado como tal vez",
+        waitlist: "Agregado a lista de espera",
+      };
+      toast.success(messages[status]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error updating attendance');
+      const errorMessage = err instanceof Error ? err.message : 'Error al actualizar asistencia';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(null);
     }
@@ -154,8 +169,11 @@ export default function EventsClient({
     try {
       await createWeeklyEvent(slug, data);
       setShowCreateForm(false);
+      toast.success("Evento creado correctamente");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error creating event');
+      const errorMessage = err instanceof Error ? err.message : 'Error al crear evento';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(null);
     }
@@ -166,8 +184,11 @@ export default function EventsClient({
     setError(null);
     try {
       await generateOccurrences(slug, weeklyEventId, 4);
+      toast.success("Fechas generadas correctamente");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error generating occurrences');
+      const errorMessage = err instanceof Error ? err.message : 'Error al generar fechas';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(null);
     }
@@ -188,7 +209,9 @@ export default function EventsClient({
         teams,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error fetching players');
+      const errorMessage = err instanceof Error ? err.message : 'Error al obtener jugadores';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(null);
     }
@@ -317,8 +340,9 @@ export default function EventsClient({
               <button
                 type="submit"
                 disabled={loading === 'create'}
-                className="rounded-full bg-[var(--accent)] px-6 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
+                {loading === 'create' && <Spinner size="sm" />}
                 {loading === 'create' ? 'Creando...' : 'Crear evento'}
               </button>
             </div>
@@ -339,13 +363,21 @@ export default function EventsClient({
                     {WEEKDAYS[event.weekday]} {event.start_time.slice(0, 5)} • Capacidad: {event.capacity}
                   </p>
                 </div>
-                <button
-                  onClick={() => handleGenerateOccurrences(event.id)}
-                  disabled={loading === `generate-${event.id}`}
-                  className="rounded-full border border-[var(--accent)] px-4 py-1.5 text-sm font-medium text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white disabled:opacity-50"
-                >
-                  {loading === `generate-${event.id}` ? 'Generando...' : 'Generar fechas'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleGenerateOccurrences(event.id)}
+                    disabled={loading === `generate-${event.id}`}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--accent)] px-4 py-1.5 text-sm font-medium text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white disabled:opacity-50"
+                  >
+                    {loading === `generate-${event.id}` && <Spinner size="sm" />}
+                    {loading === `generate-${event.id}` ? 'Generando...' : 'Generar fechas'}
+                  </button>
+                  <DeleteEventButton
+                    slug={slug}
+                    eventId={event.id}
+                    eventName={event.name}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -356,14 +388,23 @@ export default function EventsClient({
       <div>
         <h3 className="mb-4 font-display text-xl text-[var(--ink)]">Próximos eventos</h3>
         {upcomingSummaries.length === 0 ? (
-          <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-8 text-center shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-            <p className="text-[var(--muted)]">No hay eventos próximos</p>
-            {weeklyEvents.length > 0 && (
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                Genera fechas usando el botón &quot;Generar fechas&quot; arriba
-              </p>
-            )}
-          </div>
+          weeklyEvents.length === 0 ? (
+            <EmptyState
+              icon={Calendar}
+              title="No hay eventos configurados"
+              description="Creá un evento semanal para organizar partidos recurrentes y llevar el control de asistencia."
+              action={{
+                label: "Crear evento",
+                onClick: () => setShowCreateForm(true),
+              }}
+            />
+          ) : (
+            <EmptyState
+              icon={CalendarDays}
+              title="No hay eventos próximos"
+              description="Generá fechas para los eventos configurados usando el botón 'Generar fechas' arriba."
+            />
+          )
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {upcomingSummaries.map(summary => (
@@ -480,22 +521,22 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
       </div>
 
       {/* Stats */}
-      <div className="mb-4 grid grid-cols-4 gap-1 sm:gap-2 text-center">
-        <div className="rounded-lg p-1.5 sm:p-2" style={{ backgroundColor: 'var(--status-success-bg)' }}>
-          <p className="text-base sm:text-lg font-bold" style={{ color: 'var(--status-success-text)' }}>{summary.confirmedCount}</p>
-          <p className="text-[10px] sm:text-xs" style={{ color: 'var(--status-success-text-muted)' }}>Van</p>
+      <div className="mb-4 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2 text-center">
+        <div className="rounded-lg p-2 sm:p-2 min-h-[52px] flex flex-col justify-center" style={{ backgroundColor: 'var(--status-success-bg)' }}>
+          <p className="text-lg sm:text-lg font-bold" style={{ color: 'var(--status-success-text)' }}>{summary.confirmedCount}</p>
+          <p className="text-xs sm:text-xs" style={{ color: 'var(--status-success-text-muted)' }}>Van</p>
         </div>
-        <div className="rounded-lg p-1.5 sm:p-2" style={{ backgroundColor: 'var(--status-error-bg)' }}>
-          <p className="text-base sm:text-lg font-bold" style={{ color: 'var(--status-error-text)' }}>{summary.declinedCount}</p>
-          <p className="text-[10px] sm:text-xs" style={{ color: 'var(--status-error-text-muted)' }}>No van</p>
+        <div className="rounded-lg p-2 sm:p-2 min-h-[52px] flex flex-col justify-center" style={{ backgroundColor: 'var(--status-error-bg)' }}>
+          <p className="text-lg sm:text-lg font-bold" style={{ color: 'var(--status-error-text)' }}>{summary.declinedCount}</p>
+          <p className="text-xs sm:text-xs" style={{ color: 'var(--status-error-text-muted)' }}>No van</p>
         </div>
-        <div className="rounded-lg p-1.5 sm:p-2" style={{ backgroundColor: 'var(--status-warning-bg)' }}>
-          <p className="text-base sm:text-lg font-bold" style={{ color: 'var(--status-warning-text)' }}>{summary.maybeCount}</p>
-          <p className="text-[10px] sm:text-xs" style={{ color: 'var(--status-warning-text-muted)' }}>Tal vez</p>
+        <div className="rounded-lg p-2 sm:p-2 min-h-[52px] flex flex-col justify-center" style={{ backgroundColor: 'var(--status-warning-bg)' }}>
+          <p className="text-lg sm:text-lg font-bold" style={{ color: 'var(--status-warning-text)' }}>{summary.maybeCount}</p>
+          <p className="text-xs sm:text-xs" style={{ color: 'var(--status-warning-text-muted)' }}>Tal vez</p>
         </div>
-        <div className="rounded-lg p-1.5 sm:p-2" style={{ backgroundColor: 'var(--status-neutral-bg)' }}>
-          <p className="text-base sm:text-lg font-bold" style={{ color: 'var(--status-neutral-text)' }}>{summary.waitlistCount}</p>
-          <p className="text-[10px] sm:text-xs" style={{ color: 'var(--status-neutral-text-muted)' }}>Espera</p>
+        <div className="rounded-lg p-2 sm:p-2 min-h-[52px] flex flex-col justify-center" style={{ backgroundColor: 'var(--status-neutral-bg)' }}>
+          <p className="text-lg sm:text-lg font-bold" style={{ color: 'var(--status-neutral-text)' }}>{summary.waitlistCount}</p>
+          <p className="text-xs sm:text-xs" style={{ color: 'var(--status-neutral-text-muted)' }}>Espera</p>
         </div>
       </div>
 
@@ -556,7 +597,7 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
             <select
               value={selectedPlayer}
               onChange={(e) => setSelectedPlayer(e.target.value)}
-              className="w-full rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+              className="w-full rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)] min-h-[44px]"
             >
               {players.filter(p => p.status === 'usual' || p.status === 'invite').map(player => (
                 <option key={player.id} value={player.id}>{player.name}</option>
@@ -579,34 +620,37 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
             <button
               onClick={() => onAttendance(summary.occurrence.id, selectedPlayer, 'confirmed')}
               disabled={loading === `${summary.occurrence.id}-${selectedPlayer}`}
-              className="rounded-lg px-3 py-2 text-sm font-medium transition disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition disabled:opacity-50 min-h-[44px]"
               style={{
                 backgroundColor: currentPlayerStatus === 'confirmed' ? 'var(--status-success-strong)' : 'var(--status-success-bg)',
                 color: currentPlayerStatus === 'confirmed' ? 'var(--status-success-strong-text)' : 'var(--status-success-text)'
               }}
             >
-              {loading === `${summary.occurrence.id}-${selectedPlayer}` ? '...' : 'Voy'}
+              {loading === `${summary.occurrence.id}-${selectedPlayer}` && <Spinner size="sm" />}
+              Voy
             </button>
             <button
               onClick={() => onAttendance(summary.occurrence.id, selectedPlayer, 'maybe')}
               disabled={loading === `${summary.occurrence.id}-${selectedPlayer}`}
-              className="rounded-lg px-3 py-2 text-sm font-medium transition disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition disabled:opacity-50 min-h-[44px]"
               style={{
                 backgroundColor: currentPlayerStatus === 'maybe' ? 'var(--status-warning-strong)' : 'var(--status-warning-bg)',
                 color: currentPlayerStatus === 'maybe' ? 'var(--status-warning-strong-text)' : 'var(--status-warning-text)'
               }}
             >
+              {loading === `${summary.occurrence.id}-${selectedPlayer}` && <Spinner size="sm" />}
               Tal vez
             </button>
             <button
               onClick={() => onAttendance(summary.occurrence.id, selectedPlayer, 'declined')}
               disabled={loading === `${summary.occurrence.id}-${selectedPlayer}`}
-              className="rounded-lg px-3 py-2 text-sm font-medium transition disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition disabled:opacity-50 min-h-[44px]"
               style={{
                 backgroundColor: currentPlayerStatus === 'declined' ? 'var(--status-error-strong)' : 'var(--status-error-bg)',
                 color: currentPlayerStatus === 'declined' ? 'var(--status-error-strong-text)' : 'var(--status-error-text)'
               }}
             >
+              {loading === `${summary.occurrence.id}-${selectedPlayer}` && <Spinner size="sm" />}
               No voy
             </button>
           </div>
@@ -616,8 +660,9 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
             <button
               onClick={() => onCreateMatch(summary.occurrence.id)}
               disabled={loading === `match-${summary.occurrence.id}`}
-              className="w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50 min-h-[44px]"
             >
+              {loading === `match-${summary.occurrence.id}` && <Spinner size="sm" />}
               {loading === `match-${summary.occurrence.id}` ? 'Cargando...' : 'Crear partido'}
             </button>
           )}
@@ -625,7 +670,7 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
           {summary.occurrence.loaded_match_id && (
             <a
               href={`/g/${slug}/matches/${summary.occurrence.loaded_match_id}`}
-              className="block w-full rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-4 py-2.5 text-center text-sm font-medium text-[var(--ink)] transition hover:border-[var(--accent)]"
+              className="block w-full rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-4 py-2.5 text-center text-sm font-medium text-[var(--ink)] transition hover:border-[var(--accent)] min-h-[44px] flex items-center justify-center"
             >
               Ver partido creado
             </a>
@@ -639,12 +684,12 @@ function OccurrenceCard({ summary, players, playerMap, loading, onAttendance, on
           {summary.occurrence.loaded_match_id ? (
             <a
               href={`/g/${slug}/matches/${summary.occurrence.loaded_match_id}`}
-              className="block w-full rounded-lg border border-[color:var(--status-success-border)] bg-[color:var(--status-success-bg)] px-4 py-2.5 text-center text-sm font-medium text-[var(--status-success-text)] transition hover:border-[var(--accent)]"
+              className="block w-full rounded-lg border border-[color:var(--status-success-border)] bg-[color:var(--status-success-bg)] px-4 py-2.5 text-center text-sm font-medium text-[var(--status-success-text)] transition hover:border-[var(--accent)] min-h-[44px] flex items-center justify-center"
             >
               ✓ Ver partido vinculado
             </a>
           ) : summary.occurrence.status === 'completed' ? (
-            <div className="rounded-lg bg-[color:var(--status-success-bg)] px-4 py-2.5 text-center text-sm font-medium text-[var(--status-success-text)]">
+            <div className="rounded-lg bg-[color:var(--status-success-bg)] px-4 py-2.5 text-center text-sm font-medium text-[var(--status-success-text)] min-h-[44px] flex items-center justify-center">
               ✓ Marcado como jugado
             </div>
           ) : (
@@ -678,8 +723,11 @@ function PastEventActions({
       try {
         setError(null);
         await markOccurrenceCompleted(slug, occurrenceId);
+        toast.success("Evento marcado como jugado");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al marcar como jugado");
+        const errorMessage = err instanceof Error ? err.message : "Error al marcar como jugado";
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     });
   };
@@ -691,7 +739,9 @@ function PastEventActions({
       setLinkableMatches(matches);
       setShowLinkModal(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al buscar partidos");
+      const errorMessage = err instanceof Error ? err.message : "Error al buscar partidos";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -703,8 +753,11 @@ function PastEventActions({
         setError(null);
         await linkMatchToOccurrence(slug, occurrenceId, selectedMatchId);
         setShowLinkModal(false);
+        toast.success("Partido vinculado correctamente");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al vincular partido");
+        const errorMessage = err instanceof Error ? err.message : "Error al vincular partido";
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     });
   };
@@ -715,14 +768,15 @@ function PastEventActions({
         <button
           onClick={handleOpenLinkModal}
           disabled={isPending}
-          className="w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50 min-h-[44px]"
         >
+          {isPending && <Spinner size="sm" />}
           Vincular partido
         </button>
         <button
           onClick={handleMarkCompleted}
           disabled={isPending}
-          className="w-full rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-4 py-2.5 text-sm font-medium text-[var(--ink)] transition hover:border-[var(--accent)] disabled:opacity-50"
+          className="w-full rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-solid)] px-4 py-2.5 text-sm font-medium text-[var(--ink)] transition hover:border-[var(--accent)] disabled:opacity-50 min-h-[44px]"
         >
           Marcar como jugado
         </button>
@@ -771,17 +825,17 @@ function PastEventActions({
             )}
 
             {error && (
-              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <div className="mt-4 rounded-xl border border-[color:var(--status-error-border)] bg-[color:var(--status-error-bg)] p-3 text-sm text-[color:var(--status-error-text)]">
                 {error}
               </div>
             )}
 
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setShowLinkModal(false)}
                 disabled={isPending}
-                className="rounded-full border border-[color:var(--card-border)] px-5 py-2 text-sm font-semibold text-[var(--ink)] disabled:opacity-50"
+                className="rounded-full border border-[color:var(--card-border)] px-5 py-2.5 text-sm font-semibold text-[var(--ink)] disabled:opacity-50 min-h-[44px]"
               >
                 Cancelar
               </button>
@@ -790,8 +844,9 @@ function PastEventActions({
                   type="button"
                   onClick={handleLinkMatch}
                   disabled={isPending || !selectedMatchId}
-                  className="rounded-full bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50 min-h-[44px]"
                 >
+                  {isPending && <Spinner size="sm" />}
                   {isPending ? "Vinculando..." : "Vincular"}
                 </button>
               )}

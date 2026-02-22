@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CalendarDays, Trophy } from "lucide-react";
 import type { CalendarData } from "@/lib/data";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 type CalendarClientProps = {
   slug: string;
@@ -109,6 +110,11 @@ export default function CalendarClient({
     return dayData.events.length > 0 || dayData.matches.length > 0;
   };
 
+  // Check if the entire month has any activity
+  const monthHasActivity = calendarData.days.some(dayData => 
+    dayData.date && (dayData.events.length > 0 || dayData.matches.length > 0)
+  );
+
   // Find selected day data
   const selectedDayData = selectedDay
     ? calendarData.days.find(d => d.date === selectedDay)
@@ -152,14 +158,14 @@ export default function CalendarClient({
             </div>
 
             {/* Filter toggle */}
-            <div className="flex items-center space-x-2 overflow-x-auto">
+            <div className="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0">
               <span className="text-sm text-[var(--muted)] whitespace-nowrap">Filtrar:</span>
               <button
                 onClick={() => {
                   setShowOnlyEvents(false);
                   setShowOnlyMatches(false);
                 }}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors shrink-0"
+                className="px-3 py-2 text-sm font-medium rounded-lg transition-colors shrink-0 min-h-[40px]"
                 style={{
                   backgroundColor: !showOnlyEvents && !showOnlyMatches ? 'var(--status-info-bg)' : 'var(--status-neutral-bg)',
                   color: !showOnlyEvents && !showOnlyMatches ? 'var(--status-info-text)' : 'var(--status-neutral-text-muted)'
@@ -172,7 +178,7 @@ export default function CalendarClient({
                   setShowOnlyEvents(!showOnlyEvents);
                   setShowOnlyMatches(false);
                 }}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors shrink-0"
+                className="px-3 py-2 text-sm font-medium rounded-lg transition-colors shrink-0 min-h-[40px]"
                 style={{
                   backgroundColor: showOnlyEvents ? 'var(--status-success-bg)' : 'var(--card-solid)',
                   color: showOnlyEvents ? 'var(--status-success-text)' : 'var(--ink)'
@@ -185,7 +191,7 @@ export default function CalendarClient({
                   setShowOnlyEvents(false);
                   setShowOnlyMatches(!showOnlyMatches);
                 }}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors shrink-0"
+                className="px-3 py-2 text-sm font-medium rounded-lg transition-colors shrink-0 min-h-[40px]"
                 style={{
                   backgroundColor: showOnlyMatches ? 'var(--status-info-bg)' : 'var(--card-solid)',
                   color: showOnlyMatches ? 'var(--status-info-text)' : 'var(--ink)'
@@ -218,7 +224,7 @@ export default function CalendarClient({
             {calendarData.days.map((dayData, index) => {
               if (!dayData.date) {
                 // Empty cell for padding
-                return <div key={`empty-${index}`} className="h-16 sm:h-24 border-r border-b bg-[var(--bg-hover)]" />;
+                return <div key={`empty-${index}`} className="h-20 sm:h-24 border-r border-b bg-[var(--bg-hover)]" />;
               }
 
               const dayNum = parseDateKeyUtc(dayData.date).getUTCDate();
@@ -235,9 +241,10 @@ export default function CalendarClient({
                   aria-label={`Día ${dayNum} (${dayData.date})`}
                   onClick={() => setSelectedDay(dayData.date)}
                   className={`
-                    h-16 sm:h-24 border-r border-b p-1 sm:p-2 text-left transition-colors border-[color:var(--card-border)]
+                    h-20 sm:h-24 border-r border-b p-1.5 sm:p-2 text-left transition-colors border-[color:var(--card-border)]
                     ${isTodayCell ? "bg-[var(--accent)]/10 ring-1 sm:ring-2 ring-inset ring-[var(--accent)]" : "hover:bg-[var(--bg-hover)]"}
                     ${isPast ? "text-[var(--muted)]" : "text-[var(--ink)]"}
+                    ${hasActivity ? "cursor-pointer" : "cursor-default"}
                   `}
                   disabled={!hasActivity}
                 >
@@ -292,6 +299,17 @@ export default function CalendarClient({
             })}
           </div>
         </div>
+
+        {/* Empty state for month with no activity */}
+        {!monthHasActivity && (
+          <div className="mt-6">
+            <EmptyState
+              icon={CalendarDays}
+              title="Sin actividad este mes"
+              description="No hay eventos ni partidos programados para este mes. Navegá a otros meses o creá eventos para organizar partidos."
+            />
+          </div>
+        )}
       </div>
 
       {/* Day Details Modal */}

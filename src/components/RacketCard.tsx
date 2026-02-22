@@ -56,13 +56,15 @@ export default function RacketCard({
                   e.stopPropagation();
                   onEdit();
                 }}
-                className="rounded-lg p-1.5 text-[var(--muted)] transition hover:bg-[color:var(--input-bg)] hover:text-[var(--ink)]"
+                aria-label={`Editar ${racket.brand} ${racket.model}`}
+                className="rounded-lg p-1.5 text-[var(--muted)] transition hover:bg-[color:var(--input-bg)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
               >
                 <svg
                   className="h-4 w-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
@@ -79,7 +81,8 @@ export default function RacketCard({
                   e.stopPropagation();
                   handleDelete();
                 }}
-                className={`rounded-lg p-1.5 transition ${
+                aria-label={showDeleteConfirm ? `Confirmar eliminación de ${racket.brand} ${racket.model}` : `Eliminar ${racket.brand} ${racket.model}`}
+                className={`rounded-lg p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 ${
                   showDeleteConfirm
                     ? "bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
                     : "text-[var(--muted)] hover:bg-[color:var(--input-bg)] hover:text-red-600"
@@ -90,6 +93,7 @@ export default function RacketCard({
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"

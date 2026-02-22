@@ -64,9 +64,10 @@ export default function MatchCard({
   const maxSets = Math.max(team1?.sets?.length ?? 0, team2?.sets?.length ?? 0, 1);
 
   return (
-    <div
+    <article
       role="link"
       tabIndex={0}
+      aria-label={`Partido del ${playedAt}, ${team1?.name || 'Equipo 1'} vs ${team2?.name || 'Equipo 2'}`}
       onClick={() => router.push(matchHref)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -74,7 +75,7 @@ export default function MatchCard({
           router.push(matchHref);
         }
       }}
-      className="group flex cursor-pointer flex-col gap-3 rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur transition hover:-translate-y-0.5 hover:shadow-[0_22px_50px_rgba(0,0,0,0.12)]"
+      className="group flex cursor-pointer flex-col gap-3 rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur transition hover:-translate-y-0.5 hover:shadow-[0_22px_50px_rgba(0,0,0,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
     >
       {/* Header: Date and match info */}
       <div className="flex items-center justify-between gap-2 sm:gap-3">
@@ -95,9 +96,9 @@ export default function MatchCard({
       </div>
 
       {/* Score table - Tennis/padel style */}
-      <div className="overflow-hidden rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)]">
+      <div className="overflow-x-auto rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-solid)] -mx-1 px-1 sm:mx-0 sm:px-0">
         {/* Header row with set numbers */}
-        <div className="grid border-b border-[color:var(--card-border)] bg-[var(--bg-base)]"
+        <div className="grid border-b border-[color:var(--card-border)] bg-[var(--bg-base)] min-w-[280px]"
              style={{ gridTemplateColumns: `1fr repeat(${maxSets}, minmax(2rem, 2.5rem)) minmax(2.25rem, 2.5rem)` }}>
           <div className="px-2 sm:px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
             Equipo
@@ -127,8 +128,8 @@ export default function MatchCard({
                     e.stopPropagation();
                     router.push(`${matchesListHref}?playerId=${encodeURIComponent(p.id)}`);
                   }}
-                  className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border-2 border-[var(--card-solid)] bg-[var(--accent)] text-xs font-bold text-white transition-transform hover:scale-110 hover:z-10"
-                  title={p.name}
+                  aria-label={`Ver partidos de ${p.name}`}
+                  className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border-2 border-[var(--card-solid)] bg-[var(--accent)] text-xs font-bold text-white transition-transform hover:scale-110 hover:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
                 >
                   {PlayerInitials(p.name)}
                 </button>
@@ -179,8 +180,8 @@ export default function MatchCard({
                     e.stopPropagation();
                     router.push(`${matchesListHref}?playerId=${encodeURIComponent(p.id)}`);
                   }}
-                  className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border-2 border-[var(--card-solid)] bg-[var(--bg-base)] text-xs font-bold text-[var(--ink)] transition-transform hover:scale-110 hover:z-10"
-                  title={p.name}
+                  aria-label={`Ver partidos de ${p.name}`}
+                  className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border-2 border-[var(--card-solid)] bg-[var(--bg-base)] text-xs font-bold text-[var(--ink)] transition-transform hover:scale-110 hover:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
                 >
                   {PlayerInitials(p.name)}
                 </button>
@@ -241,6 +242,6 @@ export default function MatchCard({
           Ver detalle →
         </div>
       </div>
-    </div>
+    </article>
   );
 }
