@@ -80,7 +80,7 @@ export default function TeamSuggestionModal({
           <h3 className="font-display text-xl text-[var(--ink)]">Equipos sugeridos</h3>
           <button
             onClick={onClose}
-            className="text-[var(--muted)] hover:text-[var(--ink)]"
+            className="flex items-center justify-center w-10 h-10 rounded-full text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--bg-hover)] transition min-h-[44px]"
           >
             ✕
           </button>
@@ -151,18 +151,18 @@ export default function TeamSuggestionModal({
         </div>
 
         {/* Actions */}
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
           <button
             onClick={onClose}
             disabled={loading}
-            className="rounded-full border border-[color:var(--card-border)] px-6 py-2 text-sm font-medium text-[var(--ink)] transition hover:bg-[color:var(--card-border)] disabled:opacity-50"
+            className="rounded-full border border-[color:var(--card-border)] px-6 py-2.5 text-sm font-medium text-[var(--ink)] transition hover:bg-[color:var(--card-border)] disabled:opacity-50 min-h-[44px]"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
             disabled={loading || !canCreate}
-            className="rounded-full bg-[var(--accent)] px-6 py-2 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-full bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(13,107,95,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
           >
             {loading ? "Creando..." : "Confirmar y crear partido"}
           </button>

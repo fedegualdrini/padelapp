@@ -12,6 +12,16 @@ const isValidSetScore = (team1: number, team2: number) => {
   return valid;
 };
 
+/**
+ * Build redirect URL with toast notification params
+ */
+function redirectWithToast(path: string, type: "success" | "error", message: string): string {
+  const url = new URL(path, "http://dummy.com");
+  url.searchParams.set("toast", type);
+  url.searchParams.set("message", encodeURIComponent(message));
+  return url.pathname + url.search;
+}
+
 export async function updateMatch(formData: FormData) {
   const supabaseServer = await createSupabaseServerClient();
   const matchId = String(formData.get("match_id") ?? "").trim();
@@ -216,5 +226,5 @@ export async function updateMatch(formData: FormData) {
   await supabaseServer.rpc("recompute_all_elo", { p_k: 32 });
   await supabaseServer.rpc("refresh_stats_views");
 
-  redirect(`/g/${groupSlug}/matches/${matchId}`);
+  redirect(redirectWithToast(`/g/${groupSlug}/matches/${matchId}`, "success", "Partido actualizado correctamente"));
 }

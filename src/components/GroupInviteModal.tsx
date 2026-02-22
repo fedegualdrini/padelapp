@@ -142,12 +142,17 @@ export default function GroupInviteModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="invite-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    >
       <div className="w-full max-w-lg rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h3 className="font-display text-xl text-[var(--ink)]">Invite Members</h3>
+            <h3 id="invite-modal-title" className="font-display text-xl text-[var(--ink)]">Invite Members</h3>
             <p className="mt-1 text-sm text-[var(--muted)]">
               {invite ? "Share invite link" : "Create a new invite link"}
             </p>
@@ -163,7 +168,7 @@ export default function GroupInviteModal({
 
         {/* Error message */}
         {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+          <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
             {error}
           </div>
         )}
