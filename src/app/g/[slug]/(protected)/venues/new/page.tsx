@@ -1,17 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 
-import { getGroupBySlug, isGroupMember } from "@/lib/data";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
+import { createVenueAndRedirect } from "../actions";
 
 type VenueNewPageProps = {
   params: Promise<{ slug: string }>;
@@ -22,65 +11,7 @@ export default async function VenueNewPage({ params }: VenueNewPageProps) {
 
   async function actionCreateVenue(formData: FormData) {
     "use server";
-
-    const group = await getGroupBySlug(slug);
-    if (!group) throw new Error("Group not found");
-
-    const member = await isGroupMember(group.id);
-    if (!member) throw new Error("Not a group member");
-
-    const name = String(formData.get("name") ?? "").trim();
-    const address = String(formData.get("address") ?? "").trim();
-    const num_courts = Number(formData.get("num_courts") ?? 1);
-    const surface_type = String(formData.get("surface_type") ?? "glass");
-    const indoor_outdoor = String(formData.get("indoor_outdoor") ?? "indoor");
-    const lighting = String(formData.get("lighting") ?? "led");
-
-    if (!name) throw new Error("El nombre es obligatorio");
-    if (!address) throw new Error("La dirección es obligatoria");
-    if (!Number.isFinite(num_courts) || num_courts <= 0) {
-      throw new Error("La cantidad de canchas debe ser mayor a 0");
-    }
-
-    const supabase = await createSupabaseServerClient();
-    const { error: authError } = await supabase.auth.getUser();
-    if (authError) throw new Error("No hay sesión");
-
-    const { data, error } = await supabase
-      .from("venues")
-      .insert({
-        group_id: group.id,
-        name,
-        slug: slugify(name),
-        address,
-        num_courts,
-        surface_type,
-        indoor_outdoor,
-        lighting,
-        created_by: null,
-        // venues.created_by references players(id); we don't map user -> player, so leave null
-      })
-      .select("slug")
-      .single();
-
-    if (error) {
-      // Most common cause here is RLS (admin-only venue creation)
-      console.error("create venue failed", {
-        code: error.code,
-        message: error.message,
-        details: (error as unknown as { details?: string }).details,
-        hint: (error as unknown as { hint?: string }).hint,
-      });
-      throw new Error(error.message);
-    }
-
-    revalidatePath(`/g/${slug}/venues`);
-
-    if (data?.slug) {
-      redirect(`/g/${slug}/venues/${data.slug}`);
-    }
-
-    redirect(`/g/${slug}/venues`);
+    await createVenueAndRedirect(slug, formData);
   }
 
   return (

@@ -3,6 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { getGroupBySlug, isGroupMember, autoCloseEventsForMatch } from "@/lib/data";
+import {
+  createWeeklyEventSchema,
+  updateWeeklyEventSchema,
+  updateAttendanceSchema,
+  createMatchFromOccurrenceSchema,
+  uuidSchema,
+  attendanceStatusSchema,
+} from "@/lib/validation";
+import { z } from "zod";
 
 export type AttendanceStatus = 'confirmed' | 'declined' | 'maybe' | 'waitlist';
 
@@ -17,6 +26,20 @@ export async function updateAttendance(
 
   const member = await isGroupMember(group.id);
   if (!member) throw new Error("Not a group member");
+
+  // Validate inputs
+  try {
+    updateAttendanceSchema.parse({
+      occurrenceId,
+      playerId,
+      status,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error(error.issues[0]?.message || "Error de validación");
+    }
+    throw error;
+  }
 
   const supabase = await createSupabaseServerClient();
 
@@ -78,6 +101,16 @@ export async function cancelOccurrence(slug: string, occurrenceId: string) {
   const member = await isGroupMember(group.id);
   if (!member) throw new Error("Not a group member");
 
+  // Validate occurrenceId
+  try {
+    uuidSchema.parse(occurrenceId);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error("ID de ocurrencia inválido");
+    }
+    throw error;
+  }
+
   const supabase = await createSupabaseServerClient();
 
   const { error } = await supabase
@@ -116,6 +149,24 @@ export async function createWeeklyEvent(
   const member = await isGroupMember(group.id);
   if (!member) throw new Error("Not a group member");
 
+  // Validate inputs
+  let validatedData;
+  try {
+    validatedData = createWeeklyEventSchema.parse({
+      name: data.name,
+      weekday: data.weekday,
+      startTime: data.startTime,
+      capacity: data.capacity,
+      cutoffWeekday: data.cutoffWeekday,
+      cutoffTime: data.cutoffTime,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error(error.issues[0]?.message || "Error de validación");
+    }
+    throw error;
+  }
+
   // Check if user is admin
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -127,12 +178,12 @@ export async function createWeeklyEvent(
     .from("weekly_events")
     .insert({
       group_id: group.id,
-      name: data.name,
-      weekday: data.weekday,
-      start_time: data.startTime,
-      capacity: data.capacity,
-      cutoff_weekday: data.cutoffWeekday,
-      cutoff_time: data.cutoffTime,
+      name: validatedData.name,
+      weekday: validatedData.weekday,
+      start_time: validatedData.startTime,
+      capacity: validatedData.capacity,
+      cutoff_weekday: validatedData.cutoffWeekday,
+      cutoff_time: validatedData.cutoffTime,
       is_active: true,
     });
 
@@ -162,18 +213,36 @@ export async function updateWeeklyEvent(
   const member = await isGroupMember(group.id);
   if (!member) throw new Error("Not a group member");
 
+  // Validate inputs (partial validation)
+  let validatedData;
+  try {
+    validatedData = updateWeeklyEventSchema.parse({
+      name: data.name,
+      weekday: data.weekday,
+      startTime: data.startTime,
+      capacity: data.capacity,
+      cutoffWeekday: data.cutoffWeekday,
+      cutoffTime: data.cutoffTime,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error(error.issues[0]?.message || "Error de validación");
+    }
+    throw error;
+  }
+
   const supabase = await createSupabaseServerClient();
 
   const updateData: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
 
-  if (data.name !== undefined) updateData.name = data.name;
-  if (data.weekday !== undefined) updateData.weekday = data.weekday;
-  if (data.startTime !== undefined) updateData.start_time = data.startTime;
-  if (data.capacity !== undefined) updateData.capacity = data.capacity;
-  if (data.cutoffWeekday !== undefined) updateData.cutoff_weekday = data.cutoffWeekday;
-  if (data.cutoffTime !== undefined) updateData.cutoff_time = data.cutoffTime;
+  if (validatedData.name !== undefined) updateData.name = validatedData.name;
+  if (validatedData.weekday !== undefined) updateData.weekday = validatedData.weekday;
+  if (validatedData.startTime !== undefined) updateData.start_time = validatedData.startTime;
+  if (validatedData.capacity !== undefined) updateData.capacity = validatedData.capacity;
+  if (validatedData.cutoffWeekday !== undefined) updateData.cutoff_weekday = validatedData.cutoffWeekday;
+  if (validatedData.cutoffTime !== undefined) updateData.cutoff_time = validatedData.cutoffTime;
   if (data.isActive !== undefined) updateData.is_active = data.isActive;
 
   const { error } = await supabase
@@ -195,6 +264,16 @@ export async function deleteWeeklyEvent(slug: string, eventId: string) {
 
   const member = await isGroupMember(group.id);
   if (!member) throw new Error("Not a group member");
+
+  // Validate eventId
+  try {
+    uuidSchema.parse(eventId);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error("ID de evento inválido");
+    }
+    throw error;
+  }
 
   const supabase = await createSupabaseServerClient();
 
@@ -221,6 +300,21 @@ export async function generateOccurrences(
 
   const member = await isGroupMember(group.id);
   if (!member) throw new Error("Not a group member");
+
+  // Validate weeklyEventId
+  try {
+    uuidSchema.parse(weeklyEventId);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error("ID de evento semanal inválido");
+    }
+    throw error;
+  }
+
+  // Validate weeksAhead
+  if (typeof weeksAhead !== 'number' || weeksAhead < 1 || weeksAhead > 52) {
+    throw new Error("La cantidad de semanas debe estar entre 1 y 52");
+  }
 
   const supabase = await createSupabaseServerClient();
 
@@ -341,6 +435,21 @@ export async function createMatchFromOccurrence(
 
   const member = await isGroupMember(group.id);
   if (!member) throw new Error("Not a group member");
+
+  // Validate inputs
+  try {
+    createMatchFromOccurrenceSchema.parse({
+      occurrenceId,
+      teamAPlayerIds,
+      teamBPlayerIds,
+      createdBy,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error(error.issues[0]?.message || "Error de validación");
+    }
+    throw error;
+  }
 
   const supabase = await createSupabaseServerClient();
 

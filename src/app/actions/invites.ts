@@ -7,6 +7,11 @@ import {
   deleteGroupInvite,
   type GroupInvite,
 } from "@/lib/data";
+import {
+  createInviteSchema,
+  validateInviteSchema,
+  deleteInviteSchema,
+} from "@/lib/validation";
 
 /**
  * Server Action: Create a new group invite link
@@ -16,6 +21,18 @@ export async function createInviteAction(
   expiresInDays: number | null = null,
   maxUses: number | null = null
 ): Promise<{ success: boolean; invite: GroupInvite | null; error: string | null }> {
+  // Validate inputs
+  const validationResult = createInviteSchema.safeParse({
+    groupId,
+    expiresInDays,
+    maxUses,
+  });
+
+  if (!validationResult.success) {
+    const errorMessage = validationResult.error.issues[0]?.message || "Error de validación";
+    return { success: false, invite: null, error: errorMessage };
+  }
+
   try {
     const { invite, error } = await createGroupInvite(groupId, expiresInDays, maxUses);
 
@@ -43,6 +60,14 @@ export async function createInviteAction(
 export async function validateAndUseInviteAction(
   token: string
 ): Promise<{ success: boolean; groupId: string; error: string | null }> {
+  // Validate inputs
+  const validationResult = validateInviteSchema.safeParse({ token });
+
+  if (!validationResult.success) {
+    const errorMessage = validationResult.error.issues[0]?.message || "Error de validación";
+    return { success: false, groupId: "", error: errorMessage };
+  }
+
   try {
     const result = await validateAndUseInvite(token);
 
@@ -71,6 +96,14 @@ export async function validateAndUseInviteAction(
 export async function deleteInviteAction(
   inviteId: string
 ): Promise<{ success: boolean; error: string | null }> {
+  // Validate inputs
+  const validationResult = deleteInviteSchema.safeParse({ inviteId });
+
+  if (!validationResult.success) {
+    const errorMessage = validationResult.error.issues[0]?.message || "Error de validación";
+    return { success: false, error: errorMessage };
+  }
+
   try {
     const { error } = await deleteGroupInvite(inviteId);
 
