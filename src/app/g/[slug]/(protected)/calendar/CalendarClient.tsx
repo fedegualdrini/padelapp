@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CalendarDays, Trophy } from "lucide-react";
 import type { CalendarData } from "@/lib/data";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 type CalendarClientProps = {
   slug: string;
@@ -108,6 +109,11 @@ export default function CalendarClient({
     if (showOnlyMatches) return dayData.matches.length > 0;
     return dayData.events.length > 0 || dayData.matches.length > 0;
   };
+
+  // Check if the entire month has any activity
+  const monthHasActivity = calendarData.days.some(dayData => 
+    dayData.date && (dayData.events.length > 0 || dayData.matches.length > 0)
+  );
 
   // Find selected day data
   const selectedDayData = selectedDay
@@ -292,6 +298,17 @@ export default function CalendarClient({
             })}
           </div>
         </div>
+
+        {/* Empty state for month with no activity */}
+        {!monthHasActivity && (
+          <div className="mt-6">
+            <EmptyState
+              icon={CalendarDays}
+              title="Sin actividad este mes"
+              description="No hay eventos ni partidos programados para este mes. Navegá a otros meses o creá eventos para organizar partidos."
+            />
+          </div>
+        )}
       </div>
 
       {/* Day Details Modal */}
