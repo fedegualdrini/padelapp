@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { assertRateLimit } from "@/lib/rate-limit";
 import { addPlayerSchema, updatePlayerSchema } from "@/lib/validation";
 
 type AddPlayerState = {
@@ -20,6 +21,9 @@ export async function addPlayer(
   prevState: AddPlayerState | null,
   formData: FormData
 ): Promise<AddPlayerState> {
+  // Rate limit check
+  await assertRateLimit("player");
+
   const supabaseServer = await createSupabaseServerClient();
   
   // Validate and sanitize input
@@ -88,6 +92,9 @@ export async function updatePlayer(
   prevState: UpdatePlayerState | null,
   formData: FormData
 ): Promise<UpdatePlayerState> {
+  // Rate limit check
+  await assertRateLimit("player");
+
   const supabaseServer = await createSupabaseServerClient();
   
   // Validate and sanitize input
