@@ -70,13 +70,14 @@ export function FilterPanel({
   };
 
   return (
-    <div className="space-y-4 rounded-lg border border-[var(--card-border)] bg-[var(--card-glass)] p-4 backdrop-blur-sm">
+    <div aria-labelledby="filter-panel-title" className="space-y-4 rounded-lg border border-[var(--card-border)] bg-[var(--card-glass)] p-4 backdrop-blur-sm">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Filters</h3>
+        <h3 id="filter-panel-title" className="text-sm font-semibold">Filters</h3>
         {hasActiveFilters && (
           <button
             onClick={handleReset}
-            className="text-xs text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+            aria-label="Reset all filters"
+            className="text-xs text-[var(--muted)] hover:text-[var(--ink)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 rounded px-2 py-1"
           >
             Reset
           </button>
@@ -92,7 +93,7 @@ export function FilterPanel({
           <button
             onClick={() => handleStatusChange("all")}
             aria-pressed={filters.status === "all"}
-            className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 ${
               filters.status === "all"
                 ? "bg-[var(--accent)] text-white"
                 : "bg-[var(--card-solid)] text-[var(--ink)] hover:bg-[var(--card-border)]"
@@ -103,7 +104,7 @@ export function FilterPanel({
           <button
             onClick={() => handleStatusChange("usual")}
             aria-pressed={filters.status === "usual"}
-            className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 ${
               filters.status === "usual"
                 ? "bg-[var(--accent)] text-white"
                 : "bg-[var(--card-solid)] text-[var(--ink)] hover:bg-[var(--card-border)]"
@@ -114,7 +115,7 @@ export function FilterPanel({
           <button
             onClick={() => handleStatusChange("invite")}
             aria-pressed={filters.status === "invite"}
-            className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 ${
               filters.status === "invite"
                 ? "bg-[var(--accent)] text-white"
                 : "bg-[var(--card-solid)] text-[var(--ink)] hover:bg-[var(--card-border)]"

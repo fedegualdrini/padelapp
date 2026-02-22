@@ -26,7 +26,7 @@ export default function NavBar({ basePath }: NavBarProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="relative flex gap-2 overflow-x-auto rounded-2xl border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] p-2 backdrop-blur scrollbar-hide">
+    <nav aria-label="Navegación principal" className="relative flex gap-2 overflow-x-auto rounded-2xl border border-[color:var(--card-border-strong)] bg-[color:var(--card-glass)] p-2 backdrop-blur scrollbar-hide">
       {links.map((link) => {
         const href = `${basePath}${link.href}`;
         const matchesPath = `${basePath}/matches`;
@@ -46,9 +46,10 @@ export default function NavBar({ basePath }: NavBarProps) {
               ${isMobileSecondary ? 'px-2.5 py-2 sm:px-4 sm:py-2' : 'px-3 py-2 sm:px-4 sm:py-2'}`}
           >
             <span
+              aria-current={isActive ? "page" : undefined}
               className={
                 isActive
-                  ? "bg-[var(--accent)] text-white shadow-[0_12px_24px_rgba(0,0,0,0.18)] rounded-full px-2.5 py-1 sm:px-3 sm:py-1 block"
+                  ? "bg-[var(--accent)] text-white shadow-[0x12px_24px_rgba(0,0,0,0.18)] rounded-full px-2.5 py-1 sm:px-3 sm:py-1 block"
                   : "text-[var(--ink)] hover:bg-[color:var(--card-solid)] rounded-full px-2.5 py-1 sm:px-3 sm:py-1 block"
               }
             >
