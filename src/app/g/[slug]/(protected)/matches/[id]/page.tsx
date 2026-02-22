@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGroupBySlug, getMatchById, getMatchEloDeltas } from "@/lib/data";
 import { ShareMatchButton } from "./ShareMatchButton";
+import DeleteMatchButton from "./DeleteMatchButton";
 
 type MatchPageProps = {
   params: Promise<{ slug: string; id: string }>;
@@ -61,6 +62,11 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
           >
             Editar partido
           </Link>
+          <DeleteMatchButton
+            slug={slug}
+            matchId={match.id}
+            matchName={`${match.teams[0].name} vs ${match.teams[1].name}`}
+          />
         </div>
       </div>
 

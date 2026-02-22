@@ -14,6 +14,7 @@ import {
 } from "./actions";
 import { getConfirmedPlayersWithElo, balanceTeams, type SuggestedTeams } from "./actions";
 import TeamSuggestionModal from "./TeamSuggestionModal";
+import DeleteEventButton from "./DeleteEventButton";
 import { Spinner } from "@/components/Spinner";
 
 type WeeklyEvent = {
@@ -360,14 +361,21 @@ export default function EventsClient({
                     {WEEKDAYS[event.weekday]} {event.start_time.slice(0, 5)} • Capacidad: {event.capacity}
                   </p>
                 </div>
-                <button
-                  onClick={() => handleGenerateOccurrences(event.id)}
-                  disabled={loading === `generate-${event.id}`}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--accent)] px-4 py-1.5 text-sm font-medium text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white disabled:opacity-50"
-                >
-                  {loading === `generate-${event.id}` && <Spinner size="sm" />}
-                  {loading === `generate-${event.id}` ? 'Generando...' : 'Generar fechas'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleGenerateOccurrences(event.id)}
+                    disabled={loading === `generate-${event.id}`}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--accent)] px-4 py-1.5 text-sm font-medium text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white disabled:opacity-50"
+                  >
+                    {loading === `generate-${event.id}` && <Spinner size="sm" />}
+                    {loading === `generate-${event.id}` ? 'Generando...' : 'Generar fechas'}
+                  </button>
+                  <DeleteEventButton
+                    slug={slug}
+                    eventId={event.id}
+                    eventName={event.name}
+                  />
+                </div>
               </div>
             ))}
           </div>
