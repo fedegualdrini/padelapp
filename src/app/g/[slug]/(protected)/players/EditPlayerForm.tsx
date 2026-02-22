@@ -69,9 +69,9 @@ export default function EditPlayerForm({
       formData.append("player_id", playerId);
       formData.append("group_id", groupId);
       formData.append("group_slug", groupSlug);
-      
+
       const result = await removePlayer(null, formData);
-      
+
       if (result?.success) {
         toast.success("Jugador eliminado correctamente");
         setShowRemoveConfirm(false);

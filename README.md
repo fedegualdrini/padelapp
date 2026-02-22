@@ -1,5 +1,7 @@
 # Padel App (Supabase)
 
+[![CI](https://github.com/fedegualdrini/padelapp/actions/workflows/ci.yml/badge.svg)](https://github.com/fedegualdrini/padelapp/actions/workflows/ci.yml)
+
 > Multi-group padel tracker with group-scoped data, ELO rankings, and passphrase-based access.
 
 ## Quick Start

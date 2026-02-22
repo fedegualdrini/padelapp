@@ -16,6 +16,8 @@ import { getConfirmedPlayersWithElo, balanceTeams, type SuggestedTeams } from ".
 import TeamSuggestionModal from "./TeamSuggestionModal";
 import DeleteEventButton from "./DeleteEventButton";
 import { Spinner } from "@/components/Spinner";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Calendar, CalendarDays } from "lucide-react";
 
 type WeeklyEvent = {
   id: string;
@@ -386,14 +388,23 @@ export default function EventsClient({
       <div>
         <h3 className="mb-4 font-display text-xl text-[var(--ink)]">Próximos eventos</h3>
         {upcomingSummaries.length === 0 ? (
-          <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-8 text-center shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-            <p className="text-[var(--muted)]">No hay eventos próximos</p>
-            {weeklyEvents.length > 0 && (
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                Genera fechas usando el botón &quot;Generar fechas&quot; arriba
-              </p>
-            )}
-          </div>
+          weeklyEvents.length === 0 ? (
+            <EmptyState
+              icon={Calendar}
+              title="No hay eventos configurados"
+              description="Creá un evento semanal para organizar partidos recurrentes y llevar el control de asistencia."
+              action={{
+                label: "Crear evento",
+                onClick: () => setShowCreateForm(true),
+              }}
+            />
+          ) : (
+            <EmptyState
+              icon={CalendarDays}
+              title="No hay eventos próximos"
+              description="Generá fechas para los eventos configurados usando el botón 'Generar fechas' arriba."
+            />
+          )
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {upcomingSummaries.map(summary => (
@@ -814,7 +825,7 @@ function PastEventActions({
             )}
 
             {error && (
-              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <div className="mt-4 rounded-xl border border-[color:var(--status-error-border)] bg-[color:var(--status-error-bg)] p-3 text-sm text-[color:var(--status-error-text)]">
                 {error}
               </div>
             )}
