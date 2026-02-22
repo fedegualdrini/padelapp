@@ -5,66 +5,19 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { calculateMatchPrediction } from "./prediction-actions";
 import { autoCloseEventsForMatch } from "@/lib/data";
-
-const isValidSetScore = (team1: number, team2: number) => {
-  const valid =
-    (team1 === 6 && team2 >= 0 && team2 <= 4) ||
-    (team2 === 6 && team1 >= 0 && team1 <= 4) ||
-    (team1 === 7 && (team2 === 5 || team2 === 6)) ||
-    (team2 === 7 && (team1 === 5 || team1 === 6));
-  return valid;
-};
+import { setScoreSchema, uuidSchema, matchBestOfSchema, dateStringSchema, timeStringSchema } from "@/lib/validation";
 
 type CreateMatchState = {
   error?: string | null;
 };
 
-export async function createMatch(
-  _prevState: CreateMatchState,
-  formData: FormData
-): Promise<CreateMatchState> {
-  const supabaseServer = await createSupabaseServerClient();
-  const groupId = String(formData.get("group_id") ?? "").trim();
-  const groupSlug = String(formData.get("group_slug") ?? "").trim();
-  const date = String(formData.get("played_date") ?? "").trim();
-  const time = String(formData.get("played_time") ?? "").trim();
-  const bestOf = Number(formData.get("best_of") ?? 3);
-  const createdBy = String(formData.get("created_by") ?? "").trim();
-
-  const team1Player1 = String(formData.get("team1_player1") ?? "").trim();
-  const team1Player2 = String(formData.get("team1_player2") ?? "").trim();
-  const team2Player1 = String(formData.get("team2_player1") ?? "").trim();
-  const team2Player2 = String(formData.get("team2_player2") ?? "").trim();
-
-  const mvpPlayerId = String(formData.get("mvp_player_id") ?? "").trim();
-
-  if (!groupId || !groupSlug || !date || !time || !createdBy) {
-    return { error: "Faltan datos obligatorios del partido." };
-  }
-  if (![3, 5].includes(bestOf)) {
-    return { error: "El mejor de debe ser 3 o 5." };
-  }
-
-  const players = [
-    team1Player1,
-    team1Player2,
-    team2Player1,
-    team2Player2,
-  ].filter(Boolean);
-  if (players.length !== 4) {
-    return { error: "Cada equipo debe tener dos jugadores." };
-  }
-  const uniquePlayers = new Set(players);
-  if (uniquePlayers.size !== 4) {
-    return { error: "Los jugadores deben ser únicos entre equipos." };
-  }
-
-  if (mvpPlayerId && !uniquePlayers.has(mvpPlayerId)) {
-    return { error: "El MVP debe ser uno de los jugadores del partido." };
-  }
-
+/**
+ * Extract and validate set scores from form data
+ */
+function extractAndValidateSetScores(formData: FormData, bestOf: number): Array<{ setNumber: number; team1: number; team2: number }> {
   const requiredSets = Math.floor(bestOf / 2) + 1;
-  const setScores: { setNumber: number; team1: number; team2: number }[] = [];
+  const setScores: Array<{ setNumber: number; team1: number; team2: number }> = [];
+  
   for (let i = 1; i <= 5; i += 1) {
     const team1ScoreRaw = formData.get(`set${i}_team1`);
     const team2ScoreRaw = formData.get(`set${i}_team2`);
@@ -76,24 +29,160 @@ export async function createMatch(
       continue;
     }
     if (team1Raw === "" || team2Raw === "") {
-      return { error: `Set ${i} debe tener ambos puntajes.` };
+      throw new Error(`Set ${i} debe tener ambos puntajes.`);
     }
 
     const team1Score = Number(team1Raw);
     const team2Score = Number(team2Raw);
 
-    if (Number.isNaN(team1Score) || Number.isNaN(team2Score)) {
-      return { error: `Set ${i} debe tener puntajes válidos.` };
-    }
-    if (!isValidSetScore(team1Score, team2Score)) {
-      return { error: `Set ${i} tiene un marcador inválido.` };
+    // Validate set score with Zod
+    const validationResult = setScoreSchema.safeParse({ team1: team1Score, team2: team2Score });
+    if (!validationResult.success) {
+      const errorMessage = validationResult.error.issues[0]?.message || "Puntaje inválido";
+      throw new Error(`Set ${i}: ${errorMessage}`);
     }
 
     setScores.push({ setNumber: i, team1: team1Score, team2: team2Score });
   }
 
   if (setScores.length < requiredSets) {
-    return { error: "El partido está incompleto. Cargá todos los sets jugados." };
+    throw new Error("El partido está incompleto. Cargá todos los sets jugados.");
+  }
+
+  return setScores;
+}
+
+/**
+ * Validate match input data comprehensively
+ */
+function validateMatchInput(data: {
+  groupId: string;
+  groupSlug: string;
+  createdBy: string;
+  playedDate: string;
+  playedTime: string;
+  bestOf: number;
+  team1Player1: string;
+  team1Player2: string;
+  team2Player1: string;
+  team2Player2: string;
+  mvpPlayerId?: string;
+}): string | null {
+  // Validate group ID
+  const groupIdResult = uuidSchema.safeParse(data.groupId);
+  if (!groupIdResult.success) {
+    return "ID de grupo inválido";
+  }
+
+  // Validate created by
+  const createdByResult = uuidSchema.safeParse(data.createdBy);
+  if (!createdByResult.success) {
+    return "ID de creador inválido";
+  }
+
+  // Validate date
+  const dateResult = dateStringSchema.safeParse(data.playedDate);
+  if (!dateResult.success) {
+    return dateResult.error.issues[0]?.message || "Formato de fecha inválido";
+  }
+
+  // Validate time
+  const timeResult = timeStringSchema.safeParse(data.playedTime);
+  if (!timeResult.success) {
+    return timeResult.error.issues[0]?.message || "Formato de hora inválido";
+  }
+
+  // Validate best of
+  const bestOfResult = matchBestOfSchema.safeParse(data.bestOf);
+  if (!bestOfResult.success) {
+    return bestOfResult.error.issues[0]?.message || "El mejor de debe ser 3 o 5";
+  }
+
+  // Validate player IDs
+  const playerIds = [data.team1Player1, data.team1Player2, data.team2Player1, data.team2Player2];
+  for (const playerId of playerIds) {
+    const playerResult = uuidSchema.safeParse(playerId);
+    if (!playerResult.success) {
+      return "ID de jugador inválido";
+    }
+  }
+
+  // Check unique players
+  const uniquePlayers = new Set(playerIds);
+  if (uniquePlayers.size !== 4) {
+    return "Los jugadores deben ser únicos entre equipos";
+  }
+
+  // Validate MVP if provided
+  if (data.mvpPlayerId) {
+    const mvpResult = uuidSchema.safeParse(data.mvpPlayerId);
+    if (!mvpResult.success) {
+      return "ID de MVP inválido";
+    }
+    if (!uniquePlayers.has(data.mvpPlayerId)) {
+      return "El MVP debe ser uno de los jugadores del partido";
+    }
+  }
+
+  return null;
+}
+
+export async function createMatch(
+  _prevState: CreateMatchState,
+  formData: FormData
+): Promise<CreateMatchState> {
+  const supabaseServer = await createSupabaseServerClient();
+  
+  // Extract all input data
+  const groupId = String(formData.get("group_id") ?? "").trim();
+  const groupSlug = String(formData.get("group_slug") ?? "").trim();
+  const createdBy = String(formData.get("created_by") ?? "").trim();
+  const playedDate = String(formData.get("played_date") ?? "").trim();
+  const playedTime = String(formData.get("played_time") ?? "").trim();
+  const bestOf = Number(formData.get("best_of") ?? 3);
+  const team1Player1 = String(formData.get("team1_player1") ?? "").trim();
+  const team1Player2 = String(formData.get("team1_player2") ?? "").trim();
+  const team2Player1 = String(formData.get("team2_player1") ?? "").trim();
+  const team2Player2 = String(formData.get("team2_player2") ?? "").trim();
+  const mvpPlayerId = String(formData.get("mvp_player_id") ?? "").trim();
+
+  // Basic required field check
+  if (!groupId || !groupSlug || !createdBy) {
+    return { error: "Faltan datos obligatorios del partido." };
+  }
+
+  if (!playedDate || !playedTime) {
+    return { error: "La fecha y hora son obligatorias." };
+  }
+
+  // Comprehensive input validation
+  const validationError = validateMatchInput({
+    groupId,
+    groupSlug,
+    createdBy,
+    playedDate,
+    playedTime,
+    bestOf,
+    team1Player1,
+    team1Player2,
+    team2Player1,
+    team2Player2,
+    mvpPlayerId: mvpPlayerId || undefined,
+  });
+
+  if (validationError) {
+    return { error: validationError };
+  }
+
+  // Extract and validate set scores
+  let setScores;
+  try {
+    setScores = extractAndValidateSetScores(formData, bestOf);
+  } catch (error) {
+    if (error instanceof Error) {
+      return { error: error.message };
+    }
+    throw error;
   }
 
   const team1Wins = setScores.reduce(
@@ -105,14 +194,14 @@ export async function createMatch(
     0
   );
 
-  if (team1Wins < requiredSets && team2Wins < requiredSets) {
+  if (team1Wins < bestOf && team2Wins < bestOf) {
     return { error: "El partido debe incluir el set ganador." };
   }
   if (setScores.length !== team1Wins + team2Wins) {
     return { error: "Hay sets de más luego de completar el partido." };
   }
 
-  const playedAt = new Date(`${date}T${time}`).toISOString();
+  const playedAt = new Date(`${playedDate}T${playedTime}`).toISOString();
 
   const { data: match, error: matchError } = await supabaseServer
     .from("matches")

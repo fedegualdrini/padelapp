@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
+import { joinGroupSchema } from "@/lib/validation";
 
 type JoinGroupState = {
   error?: string;
@@ -11,27 +12,29 @@ export async function joinGroup(
   prevState: JoinGroupState | null,
   formData: FormData
 ): Promise<JoinGroupState> {
-  const slug = String(formData.get("group_slug") ?? "").trim();
-  const passphrase = String(formData.get("group_passphrase") ?? "").trim();
+  // Validate and sanitize input
+  const validationResult = joinGroupSchema.safeParse({
+    groupSlug: formData.get("group_slug"),
+    groupPassphrase: formData.get("group_passphrase"),
+  });
+
+  if (!validationResult.success) {
+    const errorMessage = validationResult.error.issues[0]?.message || "Error de validación";
+    return { error: errorMessage };
+  }
+
+  const { groupSlug, groupPassphrase } = validationResult.data;
 
   // Demo mode: mimic the join flow without Supabase.
   if (!hasSupabaseEnv()) {
-    if (!slug || !passphrase) {
-      return { error: "La clave del grupo es obligatoria." };
-    }
-
-    if (passphrase !== "padel") {
+    if (groupPassphrase !== "padel") {
       return { error: "Clave incorrecta. Por favor, intentá de nuevo." };
     }
 
-    redirect(`/g/${slug}`);
+    redirect(`/g/${groupSlug}`);
   }
 
   const supabaseServer = await createSupabaseServerClient();
-
-  if (!slug || !passphrase) {
-    return { error: "La clave del grupo es obligatoria." };
-  }
 
   const { data: authData, error: authError } =
     await supabaseServer.auth.getUser();
@@ -54,8 +57,8 @@ export async function joinGroup(
   const { data, error } = await supabase.rpc(
     "join_group_with_passphrase",
     {
-      p_slug: slug,
-      p_passphrase: passphrase,
+      p_slug: groupSlug,
+      p_passphrase: groupPassphrase,
     }
   );
 
@@ -70,5 +73,5 @@ export async function joinGroup(
     return { error: "No se pudo ingresar al grupo. Verificá la clave e intentá nuevamente." };
   }
 
-  redirect(`/g/${slug}`);
+  redirect(`/g/${groupSlug}`);
 }

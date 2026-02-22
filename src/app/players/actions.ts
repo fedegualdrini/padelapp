@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { addPlayerSchema, updatePlayerSchema } from "@/lib/validation";
 
 type AddPlayerState = {
   error?: string;
@@ -20,20 +21,22 @@ export async function addPlayer(
   formData: FormData
 ): Promise<AddPlayerState> {
   const supabaseServer = await createSupabaseServerClient();
-  const name = String(formData.get("player_name") ?? "").trim();
-  const status = String(formData.get("player_status") ?? "invite").trim();
-  const createdBy = String(formData.get("created_by") ?? "").trim();
-  const groupId = String(formData.get("group_id") ?? "").trim();
-  const groupSlug = String(formData.get("group_slug") ?? "").trim();
+  
+  // Validate and sanitize input
+  const validationResult = addPlayerSchema.safeParse({
+    playerName: formData.get("player_name"),
+    playerStatus: formData.get("player_status"),
+    groupId: formData.get("group_id"),
+    groupSlug: formData.get("group_slug"),
+    createdBy: formData.get("created_by") || undefined,
+  });
 
-  if (!name || !groupId || !groupSlug) {
-    return { error: "El nombre del jugador es obligatorio." };
+  if (!validationResult.success) {
+    const errorMessage = validationResult.error.issues[0]?.message || "Error de validación";
+    return { error: errorMessage };
   }
 
-  // Validate status
-  if (status !== "usual" && status !== "invite") {
-    return { error: "Estado de jugador inválido." };
-  }
+  const { playerName, playerStatus, groupId, groupSlug, createdBy } = validationResult.data;
 
   const { data: authData, error: authError } =
     await supabaseServer.auth.getUser();
@@ -61,8 +64,8 @@ export async function addPlayer(
 
   const { error } = await supabaseServer.from("players").insert({
     group_id: groupId,
-    name,
-    status: status as "usual" | "invite",
+    name: playerName,
+    status: playerStatus,
     updated_by: createdBy || null,
   });
 
@@ -86,16 +89,23 @@ export async function updatePlayer(
   formData: FormData
 ): Promise<UpdatePlayerState> {
   const supabaseServer = await createSupabaseServerClient();
-  const name = String(formData.get("player_name") ?? "").trim();
-  const updatedBy = String(formData.get("updated_by") ?? "").trim();
-  const playerId = String(formData.get("player_id") ?? "").trim();
-  const groupId = String(formData.get("group_id") ?? "").trim();
-  const groupSlug = String(formData.get("group_slug") ?? "").trim();
-  const editKey = String(formData.get("edit_key") ?? "").trim();
+  
+  // Validate and sanitize input
+  const validationResult = updatePlayerSchema.safeParse({
+    playerId: formData.get("player_id"),
+    playerName: formData.get("player_name"),
+    groupId: formData.get("group_id"),
+    groupSlug: formData.get("group_slug"),
+    updatedBy: formData.get("updated_by") || undefined,
+    editKey: formData.get("edit_key") || undefined,
+  });
 
-  if (!name || !playerId || !groupId || !groupSlug) {
-    return { error: "El nombre del jugador es obligatorio." };
+  if (!validationResult.success) {
+    const errorMessage = validationResult.error.issues[0]?.message || "Error de validación";
+    return { error: errorMessage };
   }
+
+  const { playerId, playerName, groupId, groupSlug, updatedBy, editKey } = validationResult.data;
 
   const { data: authData, error: authError } =
     await supabaseServer.auth.getUser();
@@ -123,7 +133,7 @@ export async function updatePlayer(
 
   const { error } = await supabaseServer
     .from("players")
-    .update({ name, updated_by: updatedBy || null })
+    .update({ name: playerName, updated_by: updatedBy || null })
     .eq("id", playerId)
     .eq("group_id", groupId);
 
@@ -139,5 +149,5 @@ export async function updatePlayer(
   }
 
   revalidatePath(`/g/${groupSlug}/players`);
-  return { success: true, name, editKey };
+  return { success: true, name: playerName, editKey };
 }
