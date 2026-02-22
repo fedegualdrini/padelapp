@@ -10,6 +10,8 @@ import PlayerDirectoryControls from '@/components/PlayerDirectoryControls';
 import PeriodSelector, { type PeriodRange } from '@/components/PeriodSelector';
 import ComparePlayersDialog from '@/components/ComparePlayersDialog';
 import PlayerAchievementsRow from '@/components/PlayerAchievementsRow';
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Users, UserPlus } from "lucide-react";
 
 type Player = { id: string; name: string; status: string };
 
@@ -200,7 +202,13 @@ export default function PlayerDirectory({
           <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
             <h3 className="font-display text-lg text-[var(--ink)]">Habituales</h3>
             {usuals.length === 0 ? (
-              <p className="mt-4 text-sm text-[var(--muted)]">Sin resultados.</p>
+              <div className="mt-4">
+                <EmptyState
+                  icon={Users}
+                  title="No hay jugadores habituales"
+                  description="Agregá jugadores habituales al grupo para empezar a llevar el registro de partidos."
+                />
+              </div>
             ) : (
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {usuals.map(renderCard)}
@@ -213,7 +221,13 @@ export default function PlayerDirectory({
           <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
             <h3 className="font-display text-lg text-[var(--ink)]">Invitados</h3>
             {invites.length === 0 ? (
-              <p className="mt-4 text-sm text-[var(--muted)]">Sin resultados.</p>
+              <div className="mt-4">
+                <EmptyState
+                  icon={UserPlus}
+                  title="No hay invitados"
+                  description="Los invitados son jugadores ocasionales que participan de algunos partidos."
+                />
+              </div>
             ) : (
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {invites.map(renderCard)}

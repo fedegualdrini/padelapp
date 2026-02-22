@@ -44,7 +44,7 @@ export default function CancelOccurrenceButton({
             </p>
 
             {error && (
-              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <div className="mt-4 rounded-xl border border-[color:var(--status-error-border)] bg-[color:var(--status-error-bg)] p-3 text-sm text-[color:var(--status-error-text)]">
                 {error}
               </div>
             )}
