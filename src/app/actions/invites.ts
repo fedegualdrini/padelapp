@@ -8,6 +8,11 @@ import {
   type GroupInvite,
 } from "@/lib/data";
 import { assertRateLimit } from "@/lib/rate-limit";
+import {
+  createInviteSchema,
+  validateInviteSchema,
+  deleteInviteSchema,
+} from "@/lib/validation";
 
 /**
  * Server Action: Create a new group invite link
@@ -17,6 +22,18 @@ export async function createInviteAction(
   expiresInDays: number | null = null,
   maxUses: number | null = null
 ): Promise<{ success: boolean; invite: GroupInvite | null; error: string | null }> {
+  // Validate inputs
+  const validationResult = createInviteSchema.safeParse({
+    groupId,
+    expiresInDays,
+    maxUses,
+  });
+
+  if (!validationResult.success) {
+    const errorMessage = validationResult.error.issues[0]?.message || "Error de validación";
+    return { success: false, invite: null, error: errorMessage };
+  }
+
   // Rate limit check
   try {
     await assertRateLimit("invite");
@@ -54,6 +71,14 @@ export async function createInviteAction(
 export async function validateAndUseInviteAction(
   token: string
 ): Promise<{ success: boolean; groupId: string; error: string | null }> {
+  // Validate inputs
+  const validationResult = validateInviteSchema.safeParse({ token });
+
+  if (!validationResult.success) {
+    const errorMessage = validationResult.error.issues[0]?.message || "Error de validación";
+    return { success: false, groupId: "", error: errorMessage };
+  }
+
   // Rate limit check
   try {
     await assertRateLimit("invite");
@@ -92,6 +117,14 @@ export async function validateAndUseInviteAction(
 export async function deleteInviteAction(
   inviteId: string
 ): Promise<{ success: boolean; error: string | null }> {
+  // Validate inputs
+  const validationResult = deleteInviteSchema.safeParse({ inviteId });
+
+  if (!validationResult.success) {
+    const errorMessage = validationResult.error.issues[0]?.message || "Error de validación";
+    return { success: false, error: errorMessage };
+  }
+
   // Rate limit check
   try {
     await assertRateLimit("invite");
@@ -129,6 +162,16 @@ export async function deleteInviteAction(
 export async function copyInviteLinkAction(
   token: string
 ): Promise<{ success: boolean; error: string | null }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("invite");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     // Generate the invite URL
     const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')}/invite/${token}`;

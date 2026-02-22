@@ -58,6 +58,33 @@ When working as a specialized padel agent (Chris, Jordan, Taylor, Maya, Sam), in
 4. If multiple contexts apply, it loads multiple skills (e.g., React + Tailwind).
 5. If working as a padel agent, also use the skills listed for your role in the table above.
 
+## ⚠️ Pre-Push Validation (MANDATORY)
+
+Before pushing ANY code changes to a PR branch, you MUST run these checks:
+
+1. **Fetch and merge latest base branch:**
+   ```bash
+   git fetch origin claudio
+   git merge origin/claudio
+   ```
+   If there are conflicts, RESOLVE THEM before proceeding.
+
+2. **Run linting:**
+   ```bash
+   npm run lint
+   ```
+   Fix ALL errors before pushing. Warnings are acceptable.
+
+3. **Run TypeScript check:**
+   ```bash
+   npx tsc --noEmit
+   ```
+   Fix ALL type errors before pushing.
+
+4. **Commit and push only after all checks pass.**
+
+If you skip these checks, your PR will fail CI and waste human time fixing it.
+
 ## Key Commands
 
 ```bash

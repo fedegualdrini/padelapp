@@ -2,8 +2,10 @@ import Link from "next/link";
 import MatchCard from "@/components/MatchCard";
 import ClearMatchHistoryButton from "@/components/ClearMatchHistoryButton";
 import MatchFiltersButton from "@/components/MatchFiltersButton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { getGroupBySlug, getMatches, getPlayers } from "@/lib/data";
 import { notFound } from "next/navigation";
+import { Trophy } from "lucide-react";
 
 type MatchesPageProps = {
   params: Promise<{ slug: string }>;
@@ -60,9 +62,15 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
       </div>
 
       {matches.length === 0 ? (
-        <div className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-5 sm:p-6 text-xs sm:text-sm text-[var(--muted)] shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
-          No hay partidos. Cargá el primero para empezar a medir.
-        </div>
+        <EmptyState
+          icon={Trophy}
+          title="Aún no hay partidos"
+          description="Cargá el primer partido para empezar a medir el rendimiento del grupo."
+          action={{
+            label: "Crear primer partido",
+            href: `/g/${slug}/matches/new`,
+          }}
+        />
       ) : (
         <div className="grid gap-4">
           {matches.map((match) => (
