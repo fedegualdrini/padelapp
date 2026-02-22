@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { assertRateLimit } from "@/lib/rate-limit";
 
 type AddPlayerState = {
   error?: string;
@@ -19,6 +20,16 @@ export async function addPlayer(
   prevState: AddPlayerState | null,
   formData: FormData
 ): Promise<AddPlayerState> {
+  // Rate limit check
+  try {
+    await assertRateLimit("player");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+
   const supabaseServer = await createSupabaseServerClient();
   const name = String(formData.get("player_name") ?? "").trim();
   const status = String(formData.get("player_status") ?? "invite").trim();
@@ -85,6 +96,16 @@ export async function updatePlayer(
   prevState: UpdatePlayerState | null,
   formData: FormData
 ): Promise<UpdatePlayerState> {
+  // Rate limit check
+  try {
+    await assertRateLimit("player");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+
   const supabaseServer = await createSupabaseServerClient();
   const name = String(formData.get("player_name") ?? "").trim();
   const updatedBy = String(formData.get("updated_by") ?? "").trim();

@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { assertRateLimit } from "@/lib/rate-limit";
 
 const isValidSetScore = (team1: number, team2: number) => {
   const valid =
@@ -13,6 +14,9 @@ const isValidSetScore = (team1: number, team2: number) => {
 };
 
 export async function updateMatch(formData: FormData) {
+  // Rate limit check
+  await assertRateLimit("match");
+  
   const supabaseServer = await createSupabaseServerClient();
   const matchId = String(formData.get("match_id") ?? "").trim();
   const groupId = String(formData.get("group_id") ?? "").trim();

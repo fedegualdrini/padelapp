@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { calculateMatchPrediction } from "./prediction-actions";
 import { autoCloseEventsForMatch } from "@/lib/data";
+import { assertRateLimit } from "@/lib/rate-limit";
 
 const isValidSetScore = (team1: number, team2: number) => {
   const valid =
@@ -23,6 +24,16 @@ export async function createMatch(
   _prevState: CreateMatchState,
   formData: FormData
 ): Promise<CreateMatchState> {
+  // Rate limit check
+  try {
+    await assertRateLimit("match");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+
   const supabaseServer = await createSupabaseServerClient();
   const groupId = String(formData.get("group_id") ?? "").trim();
   const groupSlug = String(formData.get("group_slug") ?? "").trim();

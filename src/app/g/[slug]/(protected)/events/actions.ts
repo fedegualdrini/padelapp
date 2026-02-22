@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { getGroupBySlug, isGroupMember, autoCloseEventsForMatch } from "@/lib/data";
+import { assertRateLimit } from "@/lib/rate-limit";
 
 export type AttendanceStatus = 'confirmed' | 'declined' | 'maybe' | 'waitlist';
 
@@ -12,6 +13,9 @@ export async function updateAttendance(
   playerId: string,
   status: AttendanceStatus
 ) {
+  // Rate limit check
+  await assertRateLimit("attendance");
+
   const group = await getGroupBySlug(slug);
   if (!group) throw new Error("Group not found");
 
@@ -68,6 +72,9 @@ export async function updateAttendance(
 }
 
 export async function cancelOccurrence(slug: string, occurrenceId: string) {
+  // Rate limit check
+  await assertRateLimit("event");
+
   if (!hasSupabaseEnv() && slug === "demo") {
     return { ok: true };
   }
@@ -110,6 +117,9 @@ export async function createWeeklyEvent(
     cutoffTime: string;
   }
 ) {
+  // Rate limit check
+  await assertRateLimit("event");
+
   const group = await getGroupBySlug(slug);
   if (!group) throw new Error("Group not found");
 
@@ -156,6 +166,9 @@ export async function updateWeeklyEvent(
     isActive?: boolean;
   }
 ) {
+  // Rate limit check
+  await assertRateLimit("event");
+
   const group = await getGroupBySlug(slug);
   if (!group) throw new Error("Group not found");
 
@@ -190,6 +203,9 @@ export async function updateWeeklyEvent(
 }
 
 export async function deleteWeeklyEvent(slug: string, eventId: string) {
+  // Rate limit check
+  await assertRateLimit("event");
+
   const group = await getGroupBySlug(slug);
   if (!group) throw new Error("Group not found");
 
@@ -216,6 +232,9 @@ export async function generateOccurrences(
   weeklyEventId: string,
   weeksAhead = 4
 ) {
+  // Rate limit check
+  await assertRateLimit("event");
+
   const group = await getGroupBySlug(slug);
   if (!group) throw new Error("Group not found");
 
@@ -332,6 +351,9 @@ export async function createMatchFromOccurrence(
   teamBPlayerIds: string[],
   createdBy: string
 ) {
+  // Rate limit check (use match type since this creates a match)
+  await assertRateLimit("match");
+
   if (!hasSupabaseEnv() && slug === "demo") {
     // Demo mode: pretend we created it.
     return { matchId: "demo-match-1" };

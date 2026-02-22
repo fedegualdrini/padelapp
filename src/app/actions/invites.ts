@@ -7,6 +7,7 @@ import {
   deleteGroupInvite,
   type GroupInvite,
 } from "@/lib/data";
+import { assertRateLimit } from "@/lib/rate-limit";
 
 /**
  * Server Action: Create a new group invite link
@@ -16,6 +17,16 @@ export async function createInviteAction(
   expiresInDays: number | null = null,
   maxUses: number | null = null
 ): Promise<{ success: boolean; invite: GroupInvite | null; error: string | null }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("invite");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, invite: null, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     const { invite, error } = await createGroupInvite(groupId, expiresInDays, maxUses);
 
@@ -43,6 +54,16 @@ export async function createInviteAction(
 export async function validateAndUseInviteAction(
   token: string
 ): Promise<{ success: boolean; groupId: string; error: string | null }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("invite");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, groupId: "", error: error.message };
+    }
+    throw error;
+  }
+
   try {
     const result = await validateAndUseInvite(token);
 
@@ -71,6 +92,16 @@ export async function validateAndUseInviteAction(
 export async function deleteInviteAction(
   inviteId: string
 ): Promise<{ success: boolean; error: string | null }> {
+  // Rate limit check
+  try {
+    await assertRateLimit("invite");
+  } catch (error) {
+    if (error instanceof Error && "rateLimitExceeded" in error) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   try {
     const { error } = await deleteGroupInvite(inviteId);
 
