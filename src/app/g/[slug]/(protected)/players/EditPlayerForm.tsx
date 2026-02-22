@@ -1,9 +1,11 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { updatePlayer } from "@/app/players/actions";
+import { useRouter } from "next/navigation";
+import { updatePlayer, removePlayer } from "@/app/players/actions";
 import { toast } from "sonner";
 import { Spinner } from "@/components/Spinner";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 type EditPlayerFormProps = {
   playerId: string;
@@ -17,16 +19,24 @@ type UpdatePlayerState = {
   success?: boolean;
 };
 
+type RemovePlayerState = {
+  error?: string;
+  success?: boolean;
+};
+
 export default function EditPlayerForm({
   playerId,
   initialName,
   groupId,
   groupSlug,
 }: EditPlayerFormProps) {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(initialName);
   const [draftName, setDraftName] = useState(initialName);
   const [isPending, startTransition] = useTransition();
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   // Wrap the server action so we can update local UI state *outside* of an effect.
   const [state, formAction] = useActionState<UpdatePlayerState, FormData>(
@@ -50,6 +60,32 @@ export default function EditPlayerForm({
     startTransition(() => {
       formAction(formData);
     });
+  };
+
+  const handleRemovePlayer = async () => {
+    setIsRemoving(true);
+    try {
+      const formData = new FormData();
+      formData.append("player_id", playerId);
+      formData.append("group_id", groupId);
+      formData.append("group_slug", groupSlug);
+
+      const result = await removePlayer(null, formData);
+
+      if (result?.success) {
+        toast.success("Jugador eliminado correctamente");
+        setShowRemoveConfirm(false);
+        setIsEditing(false);
+        router.refresh();
+      } else if (result?.error) {
+        toast.error(result.error);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Error al eliminar el jugador";
+      toast.error(errorMessage);
+    } finally {
+      setIsRemoving(false);
+    }
   };
 
   return (
@@ -106,9 +142,30 @@ export default function EditPlayerForm({
             >
               Cancelar
             </button>
+            <button
+              type="button"
+              onClick={() => setShowRemoveConfirm(true)}
+              disabled={isPending}
+              className="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] disabled:opacity-50 dark:text-red-300"
+            >
+              Eliminar
+            </button>
           </div>
         </form>
       ) : null}
+
+      <ConfirmDialog
+        open={showRemoveConfirm}
+        onClose={() => setShowRemoveConfirm(false)}
+        onConfirm={handleRemovePlayer}
+        title="¿Eliminar este jugador?"
+        message={`Estás por eliminar a "${name}". Si no tiene partidos registrados, se eliminará permanentemente. Si tiene partidos, no se podrá eliminar (podés cambiar su estado a "invitado" en su lugar).`}
+        confirmText="Sí, eliminar"
+        cancelText="No, volver"
+        variant="danger"
+        loading={isRemoving}
+        loadingText="Eliminando..."
+      />
     </div>
   );
 }
