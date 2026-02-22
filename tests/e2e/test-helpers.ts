@@ -195,6 +195,13 @@ export async function goToGroupEvents(page: Page, groupSlug: string = 'padel'): 
 }
 
 /**
+ * Navigate to group players page
+ */
+export async function goToGroupPlayers(page: Page, groupSlug: string = 'padel'): Promise<void> {
+  await navigateAndReady(page, `/g/${groupSlug}/players`);
+}
+
+/**
  * Get text content from element with fallback
  */
 export async function getTextContent(
