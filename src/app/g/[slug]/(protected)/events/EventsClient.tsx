@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { 
   updateAttendance, 
   createWeeklyEvent, 
@@ -131,8 +132,18 @@ export default function EventsClient({
     setError(null);
     try {
       await updateAttendance(slug, occurrenceId, playerId, status);
+      // Show success toast based on status
+      const messages: Record<AttendanceStatus, string> = {
+        confirmed: "Asistencia confirmada",
+        declined: "Asistencia cancelada",
+        maybe: "Marcado como tal vez",
+        waitlist: "Agregado a lista de espera",
+      };
+      toast.success(messages[status]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error updating attendance');
+      const errorMessage = err instanceof Error ? err.message : 'Error al actualizar asistencia';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(null);
     }
@@ -156,8 +167,11 @@ export default function EventsClient({
     try {
       await createWeeklyEvent(slug, data);
       setShowCreateForm(false);
+      toast.success("Evento creado correctamente");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error creating event');
+      const errorMessage = err instanceof Error ? err.message : 'Error al crear evento';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(null);
     }
@@ -168,8 +182,11 @@ export default function EventsClient({
     setError(null);
     try {
       await generateOccurrences(slug, weeklyEventId, 4);
+      toast.success("Fechas generadas correctamente");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error generating occurrences');
+      const errorMessage = err instanceof Error ? err.message : 'Error al generar fechas';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(null);
     }
@@ -190,7 +207,9 @@ export default function EventsClient({
         teams,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error fetching players');
+      const errorMessage = err instanceof Error ? err.message : 'Error al obtener jugadores';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(null);
     }
@@ -689,8 +708,11 @@ function PastEventActions({
       try {
         setError(null);
         await markOccurrenceCompleted(slug, occurrenceId);
+        toast.success("Evento marcado como jugado");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al marcar como jugado");
+        const errorMessage = err instanceof Error ? err.message : "Error al marcar como jugado";
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     });
   };
@@ -702,7 +724,9 @@ function PastEventActions({
       setLinkableMatches(matches);
       setShowLinkModal(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al buscar partidos");
+      const errorMessage = err instanceof Error ? err.message : "Error al buscar partidos";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -714,8 +738,11 @@ function PastEventActions({
         setError(null);
         await linkMatchToOccurrence(slug, occurrenceId, selectedMatchId);
         setShowLinkModal(false);
+        toast.success("Partido vinculado correctamente");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al vincular partido");
+        const errorMessage = err instanceof Error ? err.message : "Error al vincular partido";
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     });
   };

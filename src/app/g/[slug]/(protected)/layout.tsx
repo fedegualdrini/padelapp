@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import { getGroupBySlug, isGroupMember } from "@/lib/data";
 import { hasSupabaseEnv } from "@/lib/supabase/server";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 type ProtectedLayoutProps = {
   children: React.ReactNode;
@@ -28,7 +29,9 @@ export default async function ProtectedLayout({ children, params }: ProtectedLay
     // This keeps e2e + local/dev usage working without external dependencies.
     return (
       <AppShell groupName="Demo — Jueves Padel" slug={slug} showNavigation={true}>
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </AppShell>
     );
   }
@@ -48,7 +51,9 @@ export default async function ProtectedLayout({ children, params }: ProtectedLay
   // Always show navigation in protected area
   return (
     <AppShell groupName={group.name} slug={group.slug} showNavigation={true}>
-      {children}
+      <ErrorBoundary>
+        {children}
+      </ErrorBoundary>
     </AppShell>
   );
 }

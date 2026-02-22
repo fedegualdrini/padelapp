@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { updatePlayer } from "@/app/players/actions";
+import { toast } from "sonner";
 
 type EditPlayerFormProps = {
   playerId: string;
@@ -34,6 +35,9 @@ export default function EditPlayerForm({
         setName(nextName || name);
         setDraftName(nextName || name);
         setIsEditing(false);
+        toast.success("Jugador actualizado correctamente");
+      } else if (result?.error) {
+        toast.error(result.error);
       }
       return result;
     },
@@ -62,16 +66,6 @@ export default function EditPlayerForm({
           <input type="hidden" name="player_id" value={playerId} />
           <input type="hidden" name="group_id" value={groupId} />
           <input type="hidden" name="group_slug" value={groupSlug} />
-
-          {state?.error ? (
-            <div
-              className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-400"
-              role="status"
-              aria-live="polite"
-            >
-              {state.error}
-            </div>
-          ) : null}
 
           <div className="flex flex-wrap items-center gap-2">
             <input

@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { addPlayer } from "@/app/players/actions";
+import { toast } from "sonner";
 
 type AddPlayerFormProps = {
   groupId: string;
@@ -23,8 +24,12 @@ export default function AddPlayerForm({ groupId, groupSlug }: AddPlayerFormProps
   useEffect(() => {
     if (state?.success) {
       formRef.current?.reset();
+      toast.success("Jugador agregado correctamente");
     }
-  }, [state?.success]);
+    if (state?.error) {
+      toast.error(state.error);
+    }
+  }, [state?.success, state?.error]);
 
   return (
     <form
@@ -35,24 +40,6 @@ export default function AddPlayerForm({ groupId, groupSlug }: AddPlayerFormProps
     >
       <input type="hidden" name="group_id" value={groupId} />
       <input type="hidden" name="group_slug" value={groupSlug} />
-      {state?.error ? (
-        <div
-          className="w-full rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400"
-          role="status"
-          aria-live="polite"
-        >
-          {state.error}
-        </div>
-      ) : null}
-      {state?.success && !state?.error ? (
-        <div
-          className="w-full rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"
-          role="status"
-          aria-live="polite"
-        >
-          Jugador agregado.
-        </div>
-      ) : null}
       <input
         type="text"
         name="player_name"
