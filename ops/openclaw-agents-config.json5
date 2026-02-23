@@ -1,0 +1,47 @@
+// OpenClaw agents config for Padel team
+// Merge this into ~/.openclaw/openclaw.json on EC2
+// See ops/EC2_OPENCLAW_SETUP.md for full setup instructions
+//
+// If your orchestrator has a different id (e.g. "main"), change "alex" to match
+// and ensure subagents.allowAgents lists the worker agent ids.
+
+{
+  agents: {
+    defaults: {
+      workspace: "/home/ubuntu/.openclaw/workspace/padelapp",
+      subagents: {
+        maxSpawnDepth: 2,
+        maxChildrenPerAgent: 5,
+        maxConcurrent: 8
+      }
+    },
+    list: [
+      {
+        id: "alex",
+        default: true,
+        workspace: "/home/ubuntu/.openclaw/workspace/padelapp",
+        subagents: { allowAgents: ["chris", "jordan", "taylor", "maya", "sam"] }
+      },
+      {
+        id: "chris",
+        workspace: "/home/ubuntu/.openclaw/workspace/padel-backend"
+      },
+      {
+        id: "jordan",
+        workspace: "/home/ubuntu/.openclaw/workspace/padel-frontend"
+      },
+      {
+        id: "taylor",
+        workspace: "/home/ubuntu/.openclaw/workspace/padel-qa"
+      },
+      {
+        id: "maya",
+        workspace: "/home/ubuntu/.openclaw/workspace/padel-product"
+      },
+      {
+        id: "sam",
+        workspace: "/home/ubuntu/.openclaw/workspace/padel-growth"
+      }
+    ]
+  }
+}
