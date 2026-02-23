@@ -41,6 +41,26 @@ export const RATE_LIMITS = {
     maxRequests: 30,
     windowMs: 60 * 1000, // 30 requests per minute
   },
+  // Booking operations
+  booking: {
+    maxRequests: 20,
+    windowMs: 60 * 1000, // 20 requests per minute
+  },
+  // Social feed operations
+  social: {
+    maxRequests: 30,
+    windowMs: 60 * 1000, // 30 requests per minute
+  },
+  // Group join requests
+  "group-join": {
+    maxRequests: 10,
+    windowMs: 60 * 1000, // 10 requests per minute
+  },
+  // Group settings updates
+  "group-settings": {
+    maxRequests: 20,
+    windowMs: 60 * 1000, // 20 requests per minute
+  },
   // Generic mutation default
   default: {
     maxRequests: 30,

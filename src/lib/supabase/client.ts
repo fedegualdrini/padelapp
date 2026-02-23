@@ -18,3 +18,6 @@ export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 export function createSupabaseClient() {
   return createBrowserClient(supabaseUrl, supabaseAnonKey);
 }
+
+// Alias for compatibility
+export const createClient = createSupabaseClient;

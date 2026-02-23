@@ -4109,4 +4109,570 @@ export async function autoCloseEventsForMatch(
   return closedCount;
 }
 
+// ============================================================================
+// STITCH FEATURES DATA LAYER
+// ============================================================================
+
+// Type definitions for Stitch features
+type VenueRow = {
+  id: string;
+  group_id: string;
+  name: string;
+  slug: string;
+  address: string;
+  num_courts: number;
+  indoor_outdoor: 'indoor' | 'outdoor' | 'both';
+  surface_type: string;
+  hourly_rate_cents?: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  created_at: string;
+};
+
+export type CourtRow = {
+  id: string;
+  venue_id: string;
+  group_id: string;
+  name: string;
+  court_type: 'indoor' | 'outdoor' | null;
+  surface_type?: 'glass' | 'cement' | 'artificial_grass' | null;
+  hourly_rate_cents?: number | null;
+  is_active: boolean;
+};
+
+export type BookingRow = {
+  id: string;
+  venue_id: string;
+  court_id: string;
+  group_id: string;
+  booked_by?: string | null;
+  start_time: string;
+  end_time: string;
+  duration_minutes: number;
+  total_cents: number;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  is_public: boolean;
+  open_to_community: boolean;
+  created_at: string;
+  courts?: {
+    venue_id: string;
+    name: string;
+  } | null;
+  venues?: {
+    name: string;
+    slug: string;
+  } | null;
+};
+
+export type SocialPostRow = {
+  id: string;
+  group_id: string;
+  player_id?: string | null;
+  post_type: 'match_result' | 'announcement' | 'discussion' | 'booking';
+  content: string;
+  related_match_id?: string | null;
+  related_booking_id?: string | null;
+  likes_count: number;
+  comments_count: number;
+  created_at: string;
+  liked_by_current_user?: boolean;
+  players?: {
+    name: string;
+  } | null;
+};
+
+export type PublicGroupRow = {
+  id: string;
+  name: string;
+  slug: string;
+  is_public: boolean;
+  is_joinable: boolean;
+  description?: string | null;
+  cover_image_url?: string | null;
+  player_count: number;
+  average_skill_level?: string | null;
+  city?: string | null;
+  created_at: string;
+};
+
+// ----------------------------------------------------------------------------
+// VENUES
+// ----------------------------------------------------------------------------
+
+export async function getVenues(groupId?: string) {
+  if (isDemoMode()) {
+    return [];
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  let query = supabaseServer
+    .from('venues')
+    .select('id, name, slug, address, num_courts, indoor_outdoor, surface_type, group_id');
+
+  if (groupId) {
+    query = query.eq('group_id', groupId);
+  }
+
+  const { data, error } = await query.order('name', { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as VenueRow[];
+}
+
+export const getVenueBySlug = cache(async (slug: string, groupId?: string) => {
+  if (isDemoMode()) {
+    return null;
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  let query = supabaseServer
+    .from('venues')
+    .select('*')
+    .eq('slug', slug);
+
+  if (groupId) {
+    query = query.eq('group_id', groupId);
+  }
+
+  const { data, error } = await query.single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as VenueRow;
+});
+
+export async function getVenueCourts(venueId: string) {
+  if (isDemoMode()) {
+    return [];
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from('courts')
+    .select('*')
+    .eq('venue_id', venueId)
+    .eq('is_active', true)
+    .order('name', { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as CourtRow[];
+}
+
+export async function getCourtAvailability(
+  courtId: string,
+  startDate: Date,
+  endDate: Date
+) {
+  if (isDemoMode()) {
+    return [];
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from('bookings')
+    .select('start_time, end_time, status')
+    .eq('court_id', courtId)
+    .in('status', ['confirmed', 'pending'])
+    .gte('start_time', startDate.toISOString())
+    .lte('start_time', endDate.toISOString())
+    .order('start_time', { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data;
+}
+
+// ----------------------------------------------------------------------------
+// BOOKINGS
+// ----------------------------------------------------------------------------
+
+export async function createBooking(booking: {
+  venueId: string;
+  courtId: string;
+  groupId: string;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+  totalCents: number;
+  isPublic?: boolean;
+  openToCommunity?: boolean;
+  maxPlayers?: number;
+}) {
+  if (isDemoMode()) {
+    return { booking: null, error: 'Demo mode' };
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from('bookings')
+    .insert({
+      venue_id: booking.venueId,
+      court_id: booking.courtId,
+      group_id: booking.groupId,
+      start_time: booking.startTime,
+      end_time: booking.endTime,
+      duration_minutes: booking.durationMinutes,
+      total_cents: booking.totalCents,
+      status: 'confirmed',
+      is_public: booking.isPublic || false,
+      open_to_community: booking.openToCommunity || false,
+    })
+    .select('*, courts(name), venues(name, slug)')
+    .single();
+
+  if (error || !data) {
+    console.error('Error creating booking:', error);
+    return { booking: null, error: error?.message || 'Error creating booking' };
+  }
+
+  return { booking: data as BookingRow, error: null };
+}
+
+export async function getBookingById(bookingId: string) {
+  if (isDemoMode()) {
+    return null;
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from('bookings')
+    .select('*, courts(*), venues(*)')
+    .eq('id', bookingId)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as BookingRow;
+}
+
+export async function getGroupBookings(groupId: string) {
+  if (isDemoMode()) {
+    return [];
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from('bookings')
+    .select('*, courts(name), venues(name, slug)')
+    .eq('group_id', groupId)
+    .gte('start_time', new Date().toISOString())
+    .order('start_time', { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as BookingRow[];
+}
+
+// ----------------------------------------------------------------------------
+// SOCIAL FEED
+// ----------------------------------------------------------------------------
+
+export async function getSocialFeed(groupId: string, limit: number = 20) {
+  if (isDemoMode()) {
+    return [];
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from('social_posts')
+    .select('*, players(name)')
+    .eq('group_id', groupId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as SocialPostRow[];
+}
+
+export async function createPost(post: {
+  groupId: string;
+  playerId: string;
+  postType: 'match_result' | 'announcement' | 'discussion' | 'booking';
+  content: string;
+  relatedMatchId?: string;
+  relatedBookingId?: string;
+}) {
+  if (isDemoMode()) {
+    return null;
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from('social_posts')
+    .insert({
+      group_id: post.groupId,
+      player_id: post.playerId,
+      post_type: post.postType,
+      content: post.content,
+      related_match_id: post.relatedMatchId || null,
+      related_booking_id: post.relatedBookingId || null,
+      likes_count: 0,
+      comments_count: 0,
+    })
+    .select('*, players(name)')
+    .single();
+
+  if (error || !data) {
+    console.error('Error creating post:', error);
+    return null;
+  }
+
+  return data as SocialPostRow;
+}
+
+export async function likePost(postId: string, playerId: string) {
+  if (isDemoMode()) {
+    return { success: false, liked: false };
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+
+  // Check if already liked
+  const { data: existingLike } = await supabaseServer
+    .from('social_likes')
+    .select('*')
+    .eq('post_id', postId)
+    .eq('player_id', playerId)
+    .single();
+
+  if (existingLike) {
+    // Unlike
+    const { error: deleteError } = await supabaseServer
+      .from('social_likes')
+      .delete()
+      .eq('post_id', postId)
+      .eq('player_id', playerId);
+
+    if (deleteError) {
+      return { success: false, liked: false };
+    }
+
+    return { success: true, liked: false };
+  }
+
+  // Like
+  const { error: insertError } = await supabaseServer
+    .from('social_likes')
+    .insert({
+      post_id: postId,
+      player_id: playerId,
+    });
+
+  if (insertError) {
+    return { success: false, liked: false };
+  }
+
+  return { success: true, liked: true };
+}
+
+// ----------------------------------------------------------------------------
+// PUBLIC GROUPS DIRECTORY
+// ----------------------------------------------------------------------------
+
+export async function getPublicGroups(filters?: {
+  city?: string;
+  skillLevel?: string;
+  limit?: number;
+}) {
+  const supabaseServer = await getSupabaseServerClient();
+  let query = supabaseServer
+    .from('groups')
+    .select('id, name, slug, description, is_public, is_joinable, player_count, average_skill_level, city, created_at')
+    .eq('is_public', true)
+    .eq('is_joinable', true)
+    .order('player_count', { ascending: false });
+
+  if (filters?.city) {
+    query = query.eq('city', filters.city);
+  }
+
+  if (filters?.skillLevel) {
+    query = query.eq('average_skill_level', filters.skillLevel);
+  }
+
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as PublicGroupRow[];
+}
+
+export async function getSuggestedGroups(limit: number = 5) {
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from('groups')
+    .select('id, name, slug, city, player_count')
+    .eq('is_public', true)
+    .eq('is_joinable', true)
+    .order('player_count', { ascending: false })
+    .limit(limit);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as PublicGroupRow[];
+}
+
+export async function requestToJoinGroup(
+  groupId: string,
+  playerId: string,
+  message?: string
+) {
+  if (isDemoMode()) {
+    return { success: false };
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from('group_join_requests')
+    .insert({
+      group_id: groupId,
+      player_id: playerId,
+      status: 'pending',
+      message: message || null,
+    })
+    .select('id')
+    .single();
+
+  if (error || !data) {
+    console.error('Error creating join request:', error);
+    return { success: false };
+  }
+
+  return { success: true, requestId: data.id };
+}
+
+// ----------------------------------------------------------------------------
+// PLAYER PROFILES
+// ----------------------------------------------------------------------------
+
+export async function getPlayerProfileExtended(playerId: string) {
+  if (isDemoMode()) {
+    return null;
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { data, error } = await supabaseServer
+    .from('players')
+    .select('*, venues(name, slug)')
+    .eq('id', playerId)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data;
+}
+
+export async function cancelBooking(bookingId: string) {
+  if (isDemoMode()) {
+    return { error: 'Demo mode' };
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { error } = await supabaseServer
+    .from('bookings')
+    .update({ status: 'cancelled' })
+    .eq('id', bookingId);
+
+  if (error) {
+    console.error('Error cancelling booking:', error);
+    return { error: error.message };
+  }
+
+  return { error: null };
+}
+
+export async function unlikePost(postId: string, playerId: string) {
+  if (isDemoMode()) {
+    return { error: 'Demo mode' };
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { error } = await supabaseServer
+    .from('social_likes')
+    .delete()
+    .eq('post_id', postId)
+    .eq('player_id', playerId);
+
+  if (error) {
+    console.error('Error unliking post:', error);
+    return { error: error.message };
+  }
+
+  return { error: null };
+}
+
+export async function addComment(comment: {
+  postId: string;
+  playerId: string;
+  content: string;
+  parentCommentId?: string;
+}) {
+  if (isDemoMode()) {
+    return { error: 'Demo mode' };
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { error } = await supabaseServer
+    .from('social_comments')
+    .insert({
+      post_id: comment.postId,
+      player_id: comment.playerId,
+      content: comment.content,
+      parent_comment_id: comment.parentCommentId || null,
+    });
+
+  if (error) {
+    console.error('Error adding comment:', error);
+    return { error: error.message };
+  }
+
+  return { error: null };
+}
+
+export async function deleteComment(commentId: string) {
+  if (isDemoMode()) {
+    return { error: 'Demo mode' };
+  }
+
+  const supabaseServer = await getSupabaseServerClient();
+  const { error } = await supabaseServer
+    .from('social_comments')
+    .delete()
+    .eq('id', commentId);
+
+  if (error) {
+    console.error('Error deleting comment:', error);
+    return { error: error.message };
+  }
+
+  return { error: null };
+}
+
 
