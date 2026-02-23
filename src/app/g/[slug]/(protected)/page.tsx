@@ -3,12 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import MatchCard from "@/components/MatchCard";
 import NextMatchCardClient from "./NextMatchCardClient";
+import { SocialFeed } from "@/components/social/SocialFeed";
 import {
   getAttendanceSummary,
   getEloLeaderboard,
   getGroupBySlug,
   getPlayers,
   getRecentMatches,
+  getSocialFeed,
   getUpcomingOccurrences,
   getWeeklyEvents,
 } from "@/lib/data";
@@ -35,18 +37,17 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
   const { slug } = await params;
   const group = await getGroupBySlug(slug);
 
-  // Layout already verifies group exists and user is a member
   if (!group) {
     notFound();
   }
 
-  // Keep the dashboard focused on the weekly flow.
-  const [weeklyEvents, upcomingOccurrences, players, recentMatches, leaderboard] = await Promise.all([
+  const [weeklyEvents, upcomingOccurrences, players, recentMatches, leaderboard, socialPosts] = await Promise.all([
     getWeeklyEvents(group.id),
     getUpcomingOccurrences(group.id, 1),
     getPlayers(group.id),
     getRecentMatches(group.id, 3),
     getEloLeaderboard(group.id),
+    getSocialFeed(group.id, 5),
   ]);
 
   const upcomingSummaries = await getAttendanceSummary(group.id, upcomingOccurrences, weeklyEvents);
@@ -138,6 +139,13 @@ export default async function GroupDashboard({ params }: GroupPageProps) {
             <p className="mt-1">Asistencia → equipos → score → ranking. El resto está en Beta/Labs.</p>
           </div>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-[color:var(--card-border)] bg-[color:var(--card-glass)] p-4 sm:p-6 shadow-[0_18px_40px_rgba(0,0,0,0.08)] backdrop-blur">
+        <div className="flex items-center justify-between gap-2 mb-6">
+          <h3 className="font-display text-xl sm:text-2xl text-[var(--ink)]">Activity Feed</h3>
+        </div>
+        <SocialFeed groupId={group.id} initialPosts={socialPosts} currentUserId={undefined} />
       </section>
     </div>
   );

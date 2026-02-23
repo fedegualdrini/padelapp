@@ -1,44 +1,44 @@
 import type { Metadata } from "next";
-import { Fraunces, Space_Grotesk } from "next/font/google";
+import { Lexend } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import { ToastHandlerWrapper } from "@/components/ToastHandlerWrapper";
 import "./globals.css";
 
-const display = Fraunces({
+const lexend = Lexend({
   variable: "--font-display",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const sans = Space_Grotesk({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
+// Use same font for both display and body text
+const sans = lexend;
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://padel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Padel Tracker - Track Your Matches, Stats & ELO Rankings",
-    template: "%s | Padel Tracker",
+    default: "PadelApp - The Pulse of Padel",
+    template: "%s | PadelApp",
   },
   description:
-    "Multi-group padel tracker with group-scoped data, ELO rankings, match tracking, and passphrase-based access. Track your doubles matches, annual stats, and partnerships.",
+    "Connect with players, book championship-grade courts, and climb the global rankings. The complete ecosystem for padel players, clubs, and enthusiasts.",
   keywords: [
     "padel",
     "padel tennis",
-    "padel tracker",
-    "padel statistics",
-    "ELO ranking",
-    "doubles matches",
-    "padel scores",
     "padel app",
+    "padel community",
+    "court booking",
+    "padel venues",
+    "ELO ranking",
+    "padel tournaments",
+    "padel tracker",
     "sports tracking",
   ],
-  authors: [{ name: "Padel Tracker" }],
-  creator: "Padel Tracker",
-  publisher: "Padel Tracker",
+  authors: [{ name: "PadelApp" }],
+  creator: "PadelApp",
+  publisher: "PadelApp",
   formatDetection: {
     email: false,
     address: false,
@@ -48,26 +48,26 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_ES",
     url: siteUrl,
-    siteName: "Padel Tracker",
-    title: "Padel Tracker - Track Your Matches, Stats & ELO Rankings",
+    siteName: "PadelApp",
+    title: "PadelApp - The Pulse of Padel",
     description:
-      "Multi-group padel tracker with group-scoped data, ELO rankings, match tracking, and passphrase-based access. Track your doubles matches, annual stats, and partnerships.",
+      "Connect with players, book championship-grade courts, and climb the global rankings. All in one premium platform built for the sport.",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Padel Tracker - Track Your Padel Games",
+        alt: "PadelApp - The Pulse of Padel",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Padel Tracker - Track Your Matches, Stats & ELO Rankings",
+    title: "PadelApp - The Pulse of Padel",
     description:
-      "Multi-group padel tracker with ELO rankings, match tracking, and partnership stats.",
+      "Connect with players, book courts, and climb the global rankings. Join 50,000+ players worldwide.",
     images: ["/og-image.png"],
-    creator: "@padeltracker",
+    creator: "@padelapp",
   },
   robots: {
     index: true,
@@ -101,7 +101,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body className={`${display.variable} ${sans.variable} antialiased`}>
+      <body className={`${lexend.variable} ${sans.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system">
           <ToastHandlerWrapper />
           <div className="relative min-h-screen overflow-hidden bg-[var(--bg-base)] text-[var(--ink)]">
