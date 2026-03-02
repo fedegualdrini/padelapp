@@ -1449,6 +1449,35 @@ export async function getInviteMostPlayed(
   return { playerId: bestId, name: names.get(bestId) ?? "-", matches: bestCount };
 }
 
+const INACTIVITY_GRACE_DAYS = 14;
+const INACTIVITY_WEEKLY_PENALTY = 10;
+const INACTIVITY_ELO_FLOOR = 800;
+
+function applyInactivityDecayFromAnchor(rating: number, anchorDate?: string | null) {
+  if (!anchorDate) return rating;
+
+  const anchorMs = new Date(anchorDate).getTime();
+  if (Number.isNaN(anchorMs)) return rating;
+
+  const nowMs = Date.now();
+  const inactiveDays = Math.floor((nowMs - anchorMs) / (1000 * 60 * 60 * 24));
+  const decayDays = inactiveDays - INACTIVITY_GRACE_DAYS;
+
+  if (decayDays <= 0) return rating;
+
+  const inactiveWeeks = Math.floor(decayDays / 7);
+  if (inactiveWeeks <= 0) return rating;
+
+  return Math.max(INACTIVITY_ELO_FLOOR, rating - inactiveWeeks * INACTIVITY_WEEKLY_PENALTY);
+}
+
+function shouldApplyCurrentDecay(endDate?: string) {
+  if (!endDate) return true;
+  const end = new Date(`${endDate}T23:59:59.999Z`).getTime();
+  if (Number.isNaN(end)) return true;
+  return end >= Date.now();
+}
+
 export async function getEloLeaderboard(groupId: string, limit = 8) {
   if (groupId === DEMO_GROUP.id) {
     return [
@@ -1460,35 +1489,52 @@ export async function getEloLeaderboard(groupId: string, limit = 8) {
   }
 
   const supabaseServer = await getSupabaseServerClient();
-  const [players, ratingsResult] = await Promise.all([
+  const [players, ratingsResult, firstMatchResult] = await Promise.all([
     getPlayers(groupId),
     supabaseServer
       .from("elo_ratings")
-      .select("player_id, rating, created_at")
+      .select("player_id, rating, created_at, matches(played_at, group_id)")
+      .eq("matches.group_id", groupId)
+      .order("played_at", { foreignTable: "matches", ascending: false })
       .order("created_at", { ascending: false }),
+    supabaseServer
+      .from("matches")
+      .select("played_at")
+      .eq("group_id", groupId)
+      .order("played_at", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   if (ratingsResult.error || !ratingsResult.data) {
     return [];
   }
 
-  const playerById = new Map(players.map((player) => [player.id, player.name]));
-  const latestByPlayer = new Map<string, number>();
+  const latestByPlayer = new Map<string, { rating: number; lastPlayedAt: string | null }>();
 
-  const playerIds = new Set(players.map((player) => player.id));
-  ratingsResult.data.forEach((row) => {
-    if (!playerIds.has(row.player_id)) return;
+  (ratingsResult.data as unknown as EloRatingRow[]).forEach((row) => {
     if (!latestByPlayer.has(row.player_id)) {
-      latestByPlayer.set(row.player_id, row.rating);
+      latestByPlayer.set(row.player_id, {
+        rating: row.rating,
+        lastPlayedAt: row.matches?.played_at ?? null,
+      });
     }
   });
 
-  return Array.from(latestByPlayer.entries())
-    .map(([playerId, rating]) => ({
-      playerId,
-      name: playerById.get(playerId) ?? "-",
-      rating,
-    }))
+  const groupFirstMatchAt = firstMatchResult.data?.played_at ?? null;
+
+  return players
+    .map((player) => {
+      const latest = latestByPlayer.get(player.id);
+      const baseRating = latest?.rating ?? 1000;
+      const anchorDate = latest?.lastPlayedAt ?? groupFirstMatchAt;
+
+      return {
+        playerId: player.id,
+        name: player.name,
+        rating: applyInactivityDecayFromAnchor(baseRating, anchorDate),
+      };
+    })
     .sort((a, b) => b.rating - a.rating)
     .slice(0, limit);
 }
@@ -1584,11 +1630,18 @@ export async function getEloTimeline(
     query = query.lte("matches.played_at", `${endDate}T23:59:59.999Z`);
   }
 
-  const [players, ratingsResult] = await Promise.all([
+  const [players, ratingsResult, firstMatchResult] = await Promise.all([
     getPlayers(groupId),
     query
       .order("played_at", { foreignTable: "matches", ascending: true })
       .order("created_at", { ascending: true }),
+    supabaseServer
+      .from("matches")
+      .select("played_at")
+      .eq("group_id", groupId)
+      .order("played_at", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   const seriesByPlayer = new Map<string, EloTimelineSeries>();
@@ -1611,7 +1664,39 @@ export async function getEloTimeline(
     });
   }
 
-  return Array.from(seriesByPlayer.values());
+  const groupFirstMatchAt = firstMatchResult.data?.played_at ?? null;
+  const applyCurrentDecay = shouldApplyCurrentDecay(endDate);
+  const todayIso = new Date().toISOString();
+
+  return Array.from(seriesByPlayer.values()).map((series) => {
+    if (!applyCurrentDecay) {
+      return series;
+    }
+
+    if (series.points.length === 0) {
+      if (!groupFirstMatchAt) return series;
+
+      const decayed = applyInactivityDecayFromAnchor(1000, groupFirstMatchAt);
+      return {
+        ...series,
+        points: [
+          { date: groupFirstMatchAt, rating: 1000 },
+          { date: todayIso, rating: decayed },
+        ],
+      };
+    }
+
+    const lastPoint = series.points[series.points.length - 1];
+    const decayed = applyInactivityDecayFromAnchor(lastPoint.rating, lastPoint.date);
+    if (decayed === lastPoint.rating) {
+      return series;
+    }
+
+    return {
+      ...series,
+      points: [...series.points, { date: todayIso, rating: decayed }],
+    };
+  });
 }
 
 export async function getPlayerEloChange(
