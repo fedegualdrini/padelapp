@@ -198,7 +198,8 @@ export async function createMatch(
     0
   );
 
-  if (team1Wins < bestOf && team2Wins < bestOf) {
+  const winsNeeded = Math.floor(bestOf / 2) + 1;
+  if (team1Wins < winsNeeded && team2Wins < winsNeeded) {
     return { error: "El partido debe incluir el set ganador." };
   }
   if (setScores.length !== team1Wins + team2Wins) {
