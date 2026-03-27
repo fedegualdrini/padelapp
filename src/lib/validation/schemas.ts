@@ -70,7 +70,15 @@ export const sanitizeString = (value: string): string => {
 /**
  * UUID validation
  */
-export const uuidSchema = z.string().uuid("ID inválido");
+// Use a loose hex pattern instead of z.string().uuid() — Zod v4's .uuid()
+// requires version nibble 1-8 and rejects IDs like 00000000-0000-0000-0000-000000000001
+// which the production database uses for manually-seeded groups.
+export const uuidSchema = z
+  .string()
+  .regex(
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+    "ID inválido"
+  );
 
 /**
  * Date string validation (YYYY-MM-DD)
