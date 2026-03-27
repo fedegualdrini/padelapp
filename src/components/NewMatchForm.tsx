@@ -221,13 +221,16 @@ function NewMatchForm({
           </label>
           <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
             Cargado por
-            <input
-              type="text"
+            <select
               name="created_by"
-              placeholder="Tu nombre (ej: Fede?)"
-              autoComplete="off"
+              aria-label="Cargado por"
               className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2.5 sm:py-3 text-sm min-h-[44px]"
-            />
+            >
+              <option value="">¿Quién cargó?</option>
+              {players.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
           </label>
         </div>
       </section>

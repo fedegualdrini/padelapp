@@ -92,13 +92,15 @@ export default async function EditMatchPage({ params }: EditMatchPageProps) {
             </label>
             <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
               Editado por
-              <input
-                type="text"
+              <select
                 name="updated_by"
-                placeholder="Tu nombre"
                 defaultValue={match.createdBy}
+                aria-label="Editado por"
                 className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--input-bg)] px-3 py-2 text-sm"
-              />
+              >
+                <option value="">¿Quién editó?</option>
+                {playerOptions}
+              </select>
             </label>
           </div>
         </section>
