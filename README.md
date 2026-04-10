@@ -1,245 +1,443 @@
-# Padel App (Supabase)
+# 🎾 PadelApp
 
+A modern, full-featured web application for tracking padel matches, managing group rankings, and analyzing player and pair statistics — with group-scoped data isolation and ELO-based leaderboards.
+
+![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
 [![CI](https://github.com/fedegualdrini/padelapp/actions/workflows/ci.yml/badge.svg)](https://github.com/fedegualdrini/padelapp/actions/workflows/ci.yml)
+![Next.js](https://img.shields.io/badge/Next.js-16.0+-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4.0+-blue)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green)
 
-> Multi-group padel tracker with group-scoped data, ELO rankings, and passphrase-based access.
+## 🚀 Features
 
-## Quick Start
+### 🏆 **Core Match Tracking**
+- **Best-of-3/5 Format**: Full doubles match recording with set-by-set scores
+- **Player Management**: Create and manage player profiles within your group
+- **Match History**: Browse, filter, and edit past matches
+- **Public Sharing**: Share individual matches and rankings via public links with Open Graph cards
 
-```bash
-npm install
-npm run dev
+### 📊 **ELO Rankings & Analytics**
+- **ELO System**: Dynamic ELO ratings with margin-based calculations and weekly decay for inactive players
+- **Leaderboard**: Real-time group rankings with trend indicators
+- **Pair Statistics**: Partnership analytics showing win rates and chemistry between specific players
+- **Achievements**: Milestone-based achievement system to celebrate player accomplishments
+- **Challenges**: Leaderboard challenge system for head-to-head competition tracking
+
+### 👥 **Group Management**
+- **Multi-Group Support**: Create or join multiple independent groups — all data fully isolated per group
+- **Passphrase Access**: Secure group access via bcrypt-hashed passphrases (no email/password required)
+- **Guest Invites**: Token-based invite links for frictionless onboarding
+- **Anonymous Auth**: Supabase anonymous authentication — no account creation needed
+
+### 📅 **Events & Calendar**
+- **Event Scheduling**: Plan and manage padel sessions within your group
+- **Calendar View**: Monthly calendar with event listing and navigation
+- **Venue Management**: Rate and review courts, track venue details and amenities
+
+### 🎨 **Modern UI/UX**
+- **Responsive Design**: Mobile-first layout optimized for on-court use
+- **Dark/Light Themes**: Automatic theme switching with system preference detection
+- **Smooth Interactions**: Toast notifications, collapsible sections, and animated transitions
+- **Interactive Charts**: ELO progression charts powered by Lightweight Charts
+
+## 🛠️ Technology Stack
+
+### **Frontend Framework**
+- **Next.js 16**: App Router with Server Components and server actions
+- **React 19**: Modern React with hooks and functional components
+- **TypeScript**: Full type safety across the entire codebase
+
+### **Styling & UI**
+- **Tailwind CSS v4**: Utility-first CSS with custom CSS variables
+- **Lucide React**: Customizable icon library
+- **next-themes**: Seamless dark/light mode management
+- **Sonner**: Elegant toast notification system
+
+### **Backend & Auth**
+- **Supabase**: PostgreSQL database with Row Level Security (RLS)
+- **Supabase SSR**: Server-side rendering integration for secure data access
+- **Anonymous Auth**: Stateless anonymous sessions — no sign-up friction
+- **pgcrypto**: PostgreSQL extension for bcrypt passphrase hashing
+
+### **Data & State**
+- **SWR**: Stale-while-revalidate data fetching for client components
+- **Server Components**: Preferred data fetching pattern for SSR
+- **Materialized Views**: Pre-computed ELO and pair stats for fast queries
+
+### **Visualization & Charts**
+- **Lightweight Charts**: High-performance ELO trend charts
+
+### **Testing**
+- **Vitest**: Unit and integration testing
+- **Playwright**: End-to-end browser testing
+
+## 📁 Project Structure
+
+```
+src/
+├── app/
+│   ├── g/[slug]/                    # Group-scoped routes
+│   │   ├── join/                    # Passphrase join page
+│   │   ├── (protected)/             # Membership-required pages
+│   │   │   ├── matches/             # Match listing, creation, editing
+│   │   │   ├── players/             # Player profiles and stats
+│   │   │   ├── pairs/               # Pair statistics
+│   │   │   ├── partnerships/        # Partnership analytics
+│   │   │   ├── ranking/             # ELO leaderboard
+│   │   │   ├── achievements/        # Player achievements
+│   │   │   ├── challenges/          # Challenge leaderboards
+│   │   │   ├── events/              # Event management
+│   │   │   ├── calendar/            # Calendar view
+│   │   │   └── venues/              # Venue management and ratings
+│   │   ├── match-share/             # Public match share page
+│   │   └── ranking-share/           # Public ranking share page
+│   ├── invite/[token]/              # Guest invite link handler
+│   ├── rank/public/[token]/         # Public ranking view
+│   └── api/
+│       ├── og/                      # Open Graph image generation
+│       └── partnerships/            # Partnership analytics endpoints
+├── components/                      # Reusable UI components
+├── lib/
+│   ├── data.ts                      # Centralized data layer (all DB queries)
+│   ├── supabase/                    # Supabase client factories (server/browser)
+│   └── utils.ts                     # Shared utilities
+├── types/                           # TypeScript type definitions
+└── middleware.ts                     # Anonymous session enforcement
+supabase/
+├── migrations/                      # Ordered SQL migration files
+└── seed.sql                         # Development seed data
 ```
 
-## Project Overview
+## 🚀 Getting Started
 
-Padel App is a multi-group padel tracker built on Next.js (App Router) with Supabase.
-It uses anonymous auth with passphrase-based group access and strict RLS for data isolation.
+### **Prerequisites**
+- Node.js 18.0 or higher
+- npm or yarn package manager
+- Supabase CLI (`npm install -g supabase`)
+- A Supabase project (free tier works)
 
-Key characteristics:
-- Anonymous authentication (no email/password accounts)
-- Passphrase-based group access with bcrypt hashing
-- Row-Level Security (RLS) for data isolation between groups
-- Group-scoped routing pattern: `/g/[slug]/*`
+### **Installation**
 
-## Terminology
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/fedegualdrini/padelapp.git
+   cd padelapp
+   ```
 
-- **Pairs**: Two players playing together on the same team (preferred terminology)
-- **Partnerships**: Used interchangeably with "pairs" in some contexts (materialized views and APIs)
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-## Features
+3. **Set up environment variables**
+   ```bash
+   # Create your local environment file
+   cp .env.example .env.local
 
-- Group-scoped matches, players, pairs, stats, and ELO
-- Join flow at `/g/[slug]/join`
-- Public group listing on `/` (names and slugs only)
-- Materialized stats views and ELO recomputation helpers
-- Supabase SSR auth cookies via `@supabase/ssr`
-- Middleware ensures an anonymous session
+   # Edit .env.local and add your Supabase credentials
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   ```
 
-## Tech Stack
+4. **Set up the database**
+   ```bash
+   # Link to your Supabase project
+   supabase link --project-ref your-project-ref
 
-- Next.js 16 + React 19 + TypeScript
-- Supabase (Postgres, RLS, anonymous auth)
-- Tailwind CSS v4 + `next-themes`
+   # Apply all migrations and seed data
+   supabase db reset
+   ```
 
-## Local Development
+   Supabase setup checklist:
+   - Enable **Anonymous Auth** (Dashboard → Auth → Providers → Anonymous)
+   - Ensure `pgcrypto` is available (`create extension if not exists pgcrypto;`)
 
+5. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+6. **Open your browser**
+
+   Navigate to `http://localhost:3000`
+
+   > **Default seed group**: slug `padel`, passphrase `padel`
+
+### **Build for Production**
 ```bash
-npm run dev      # Dev server
-npm run build    # Production build
-npm start        # Production server
-npm run lint     # ESLint
+npm run build
+npm start
 ```
 
-## Database
+## 📖 Usage Guide
 
-Apply migrations:
+### **Creating & Joining Groups**
+
+1. **Create a group**: From the home page, enter a group name and set a passphrase
+2. **Join a group**: Enter the group slug and passphrase, or use an invite link
+3. **Share access**: Send the group slug + passphrase (or an invite link) to teammates
+
+### **Recording Matches**
+
+1. **Go to Matches** → **New Match**
+2. **Select players**: Choose 4 players across 2 teams
+3. **Enter set scores**: Input scores for each set (best-of-3 or best-of-5)
+4. **Save**: ELO ratings update automatically for all players
+
+### **Viewing Rankings**
+
+- **Leaderboard**: Navigate to the Ranking page for current ELO standings
+- **Trends**: Each player card shows ELO trend over recent matches
+- **Public link**: Share a read-only ranking view with non-members via a token link
+
+### **Player & Pair Analytics**
+
+- **Player profiles**: View individual match history, ELO progression chart, and achievements
+- **Pair stats**: Navigate to Pairs to see win rate and record for every player combination
+- **Partnerships**: Deep-dive into specific two-player partnership metrics and history
+- **Achievements**: Automatically awarded based on milestone thresholds (wins, streaks, etc.)
+
+### **Venues**
+
+1. **Go to Venues** within your group
+2. **Add a venue**: Create a venue with name, address, surface type, and amenities
+3. **Rate & review**: Submit multi-dimensional ratings (court quality, lighting, comfort, etc.)
+4. **Analytics**: View aggregated ratings and top-rated venues for your group
+
+## 🔧 Configuration
+
+### **Environment Variables**
+
+Create a `.env.local` file in the root directory:
+
+```env
+# Supabase (required)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
+```
+
+No other environment variables are required for core functionality.
+
+### **Database Management**
+
 ```bash
+# Apply all migrations (fresh setup or reset)
 supabase db reset
-```
 
-Apply pending migrations only:
-```bash
+# Apply pending migrations only
 supabase db push
+
+# Create a new migration
+supabase migration new your-migration-name
+
+# Refresh materialized views (ELO + stats)
+supabase db query --query "select refresh_stats_views();"
+
+# Recompute all ELO ratings
+supabase db query --query "select recompute_all_elo();"
 ```
 
-Seed data:
+## 🧪 Testing
+
+### **Run All Tests**
 ```bash
+npm test
+```
+
+### **Unit Tests**
+```bash
+npm run test:unit
+```
+
+### **End-to-End Tests**
+```bash
+npm run test:e2e
+```
+
+### **Type Checking**
+```bash
+npm run typecheck
+```
+
+### **Linting**
+```bash
+npm run lint
+```
+
+## 🚀 Deployment
+
+### **Deploy to Vercel**
+
+#### **Method 1: Vercel Dashboard (Recommended)**
+
+1. **Connect your GitHub repository**
+   - Go to [vercel.com](https://vercel.com) and log in
+   - Click **"New Project"**
+   - Import your GitHub repository
+
+2. **Set up Environment Variables**
+   - In your Vercel project dashboard, go to **Settings** → **Environment Variables**
+   - Add the following:
+     - **Name**: `NEXT_PUBLIC_SUPABASE_URL` | **Value**: your Supabase project URL
+     - **Name**: `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Value**: your Supabase anon key
+   - Select all environments (Production, Preview, Development)
+   - Click **Save**
+
+3. **Deploy**
+   - Vercel auto-detects Next.js and deploys with optimal settings
+   - Your app will be available at `https://your-project-name.vercel.app`
+
+#### **Method 2: Vercel CLI**
+
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Login to Vercel
+vercel login
+
+# Add environment variables
+vercel env add NEXT_PUBLIC_SUPABASE_URL
+vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+# Deploy to production
+vercel --prod
+```
+
+#### **Method 3: GitHub Integration (Auto-deploy)**
+
+1. **Push to GitHub**
+   ```bash
+   git add .
+   git commit -m "Initial deployment"
+   git push origin main
+   ```
+
+2. **Connect to Vercel**
+   - Go to [vercel.com](https://vercel.com) → **New Project**
+   - Select your GitHub repository
+   - Configure environment variables in the setup wizard
+
+3. **Auto-deploy**
+   - Every push to `main` triggers a production deployment
+   - Pull requests get automatic preview deployments
+
+## 🤝 Contributing
+
+### **Development Workflow**
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Add a migration if needed**: `supabase migration new feature-name`
+4. **Make changes** and commit: `git commit -m 'feat: add amazing feature'`
+5. **Push to branch**: `git push origin feature/amazing-feature`
+6. **Create Pull Request**
+
+### **Code Standards**
+
+- **TypeScript**: Strict mode enabled — no `any` types
+- **ESLint**: Run `npm run lint` before committing
+- **Conventional Commits**: Use `feat:`, `fix:`, `docs:`, `chore:` prefixes
+- **Server-first**: Prefer Server Components and server actions over client-side fetching
+- **RLS**: All new tables must have Row Level Security policies
+
+### **Testing Requirements**
+
+- **Unit Tests**: Cover ELO calculation logic and data utilities
+- **E2E Tests**: Cover critical flows (join group, create match, view rankings)
+
+## 📊 Data Model Overview
+
+### **Core Tables**
+- `groups` / `group_members` / `group_admins` — Group management and membership
+- `players` — Player profiles scoped to a group
+- `matches` / `match_teams` / `match_team_players` / `sets` / `set_scores` — Full match recording
+- `elo_ratings` — ELO history per player per match
+
+### **Stats & Views**
+- `mv_player_stats` — Materialized: player win rates
+- `mv_pair_stats` / `mv_pair_aggregates` — Materialized: pair match history and win rates
+- `materialized_partnerships` — Materialized: detailed partnership metrics
+
+### **Extended Features**
+- `achievement_definitions` / `achievements` — Achievement system
+- `weekly_challenges` / `player_weekly_progress` / `streaks` — Challenge system
+- `venues` / `venue_ratings` / `venue_analytics` — Venue management
+- `tournaments` / `tournament_participants` / `tournament_standings` — Tournament system
+- `rackets` / `match_rackets` — Racket performance tracking
+- `public_ranking_shares` — Token-based public ranking links
+
+## 🐛 Troubleshooting
+
+### **Common Issues**
+
+#### **"Invalid passphrase" when joining a group**
+- Double-check the group slug and passphrase (both are case-sensitive)
+- Confirm the group exists on the home page
+
+#### **ELO ratings not updating after a match**
+- Ensure all 4 players are selected and set scores are valid
+- Check Supabase logs for any RLS policy violations
+- Manually refresh: `select recompute_all_elo();`
+
+#### **Supabase auth errors in local dev**
+- Run `supabase db reset` to reset the local database
+- Ensure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` match your local Supabase instance
+- Confirm Anonymous Auth is enabled in the Supabase Dashboard
+
+#### **Build errors**
+```bash
+# Clear Next.js cache and rebuild
+rm -rf .next
+npm run build
+```
+
+#### **Database migration errors**
+```bash
+# Reset and reapply all migrations with seed data
 supabase db reset
+
+# Or check migration status
+supabase migration list
 ```
 
-Or manually:
-```bash
-supabase db query < supabase/seed.sql
-```
+## 📚 Additional Resources
 
-## Data Model Notes
+### **Documentation**
+- [Next.js App Router](https://nextjs.org/docs/app)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Tailwind CSS v4](https://tailwindcss.com/docs)
+- [SWR Data Fetching](https://swr.vercel.app/)
 
-### Core Tables
-- `groups` - Group profiles
-- `group_members` - Anonymous user to group membership
-- `group_admins` - Group administration
-- `players` - Player profiles within groups
+### **Tools**
+- [Supabase CLI](https://supabase.com/docs/guides/cli)
+- [Vercel CLI](https://vercel.com/docs/cli)
+- [Lucide Icons](https://lucide.dev/)
+- [Lightweight Charts](https://tradingview.github.io/lightweight-charts/)
 
-### Match System
-- `matches` - Match records with date, best_of format, MVP
-- `match_teams` - Teams per match (team 1 and 2)
-- `match_team_players` - Players assigned to teams
-- `sets` - Sets per match
-- `set_scores` - Scores per set (team1_games, team2_games)
-- `elo_ratings` - ELO ratings tracked per player per match
+## 📄 License
 
-### Stats & Analytics
-- `v_set_winners` - View: winner of each set
-- `v_match_team_set_wins` - View: set wins per team per match
-- `v_match_winners` - View: match winners
-- `v_player_match_results` - View: player wins/losses per match
-- `mv_player_stats` - Materialized view: player win rates
-- `mv_pair_stats` - Materialized view: pair match history
-- `mv_pair_aggregates` - Materialized view: pair win rates and totals
-- `materialized_partnerships` - Materialized view: detailed partnership metrics
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-### Achievement System
-- `achievement_definitions` - Achievement criteria and metadata
-- `achievements` - Unlocked achievements per player
+## 🙏 Acknowledgments
 
-### Weekly Challenges & Streaks
-- `weekly_challenges` - Weekly challenge targets per group
-- `player_weekly_progress` - Player progress on weekly challenges
-- `streaks` - Current and longest streak tracking
-- `badges` - Badge definitions
-- `player_badges` - Earned badges per player
-- `group_challenge_settings` - Group-specific challenge settings
+- **Supabase**: For the incredible open-source backend-as-a-service platform
+- **Vercel**: For seamless Next.js hosting and deployment
+- **Lucide**: For the beautiful, consistent icon library
+- **Tailwind CSS**: For the utility-first CSS framework that makes UI a joy
 
-### Venue Rating System
-- `venues` - Venue profiles (name, address, surface, amenities)
-- `venue_ratings` - Multi-dimensional ratings (court_quality, lighting, comfort, amenities, accessibility, atmosphere)
-- `venue_rating_helpful_votes` - Helpful votes on reviews
-- `venue_comments` - Comments on reviews
-- `venue_analytics` - Materialized view: venue statistics and analytics
+## 📞 Support
 
-### Tournament System
-- `tournaments` - Tournament definitions (format, status, scoring)
-- `tournament_participants` - Players in tournaments
-- `tournament_rounds` - Tournament rounds
-- `tournament_matches` - Matches within tournaments
-- `tournament_standings` - Tournament leaderboards
+### **Issues & Questions**
+- **GitHub Issues**: [Create an issue](https://github.com/fedegualdrini/padelapp/issues)
+- **Discussions**: [Join discussions](https://github.com/fedegualdrini/padelapp/discussions)
 
-### Racket Performance Tracker
-- `rackets` - Player racket inventory (brand, model, weight, balance)
-- `match_rackets` - Links matches to rackets used
+### **Feature Requests**
+- Open a GitHub Issue with the `enhancement` label
+- Share ideas in [GitHub Discussions](https://github.com/fedegualdrini/padelapp/discussions)
 
-### Attendance Planning
-- `attendance_planning` - Attendance tracking and planning
+---
 
-### Public Ranking Share
-- `public_ranking_shares` - Token-based ranking sharing
+**Made with ❤️ for padel players everywhere**
 
-### Audit & Tracking
-- `audit_log` - Change tracking for audit purposes
-
-### Helpers
-```sql
-select refresh_stats_views();        -- Refresh player/pair stats materialized views
-select recompute_all_elo();          -- Recalculate all ELO ratings
-```
-
-## Routes
-
-### Public Routes
-```
-/                           # Home: group listing + creation
-/matches                    # Public match listing
-/matches/new                # Create match (public)
-/matches/[id]               # View match details (public)
-/matches/[id]/edit          # Edit match (public)
-/players                    # Public player listing
-/pairs                      # Public pair statistics
-```
-
-### Group Routes (Require Membership)
-```
-/g/[slug]/                  # Group dashboard (requires membership)
-/g/[slug]/join              # Join group with passphrase
-/g/[slug]/ranking-share     # Public ranking share (token-based)
-/g/[slug]/ranking-share/[token]  # View shared ranking
-```
-
-### Protected Group Routes (Require Authentication + Membership)
-```
-/g/[slug]/achievements       # Achievement system and leaderboard
-/g/[slug]/calendar          # Calendar view for matches and events
-/g/[slug]/challenges         # Weekly challenges dashboard
-/g/[slug]/events            # Events management
-/g/[slug]/labs              # Experimental features / lab
-/g/[slug]/matches           # Match listing
-/g/[slug]/matches/new       # Create match
-/g/[slug]/matches/[id]      # View match details
-/g/[slug]/matches/[id]/edit # Edit match
-/g/[slug]/pairs             # Pair statistics (materialized view)
-/g/[slug]/partnerships      # Partnership statistics and analysis
-/g/[slug]/partnerships/[player1Id]           # View player partnerships
-/g/[slug]/partnerships/[player1Id]/[player2Id]  # View specific partnership details
-/g/[slug]/players           # Player listing
-/g/[slug]/players/[id]      # View player profile
-/g/[slug]/players/[id]/stats # Player statistics and performance
-/g/[slug]/players/[id]/rackets     # Player rackets management
-/g/[slug]/players/[id]/rackets/[racketId]  # View/edit racket details
-/g/[slug]/players/compare    # Compare multiple players
-/g/[slug]/ranking           # ELO ranking and leaderboard
-/g/[slug]/venues            # Venue listing and management
-/g/[slug]/venues/new        # Create new venue
-/g/[slug]/venues/[venueSlug]      # View venue details
-/g/[slug]/venues/[venueSlug]/rate  # Rate a venue
-```
-
-### API Routes
-```
-/api/groups                 # Group listing endpoint
-/api/groups/[groupId]       # Get group details
-/api/groups/[groupId]/skip-week  # Skip weekly challenge week
-/api/partnerships           # Partnership statistics endpoint
-/api/partnerships/player    # Get player partnerships
-/api/partnerships/[player1Id]  # Get partnerships for player
-/api/partnerships/[player1Id]/[player2Id]  # Get specific partnership
-/api/partnerships/player/best-partners  # Get best partnerships for player
-```
-
-## Environment
-
-Create `.env.local` in the repo root:
-```
-NEXT_PUBLIC_SUPABASE_URL=your-project-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-```
-
-Supabase setup checklist:
-- Enable Anonymous Auth (Dashboard -> Auth -> Providers -> Anonymous)
-- Ensure `pgcrypto` is available (`create extension if not exists pgcrypto;`)
-- Run migrations in order (or `supabase db reset`)
-
-## AI Agent Skills
-
-Repository skills live under `skills/` and are registered in `AGENTS.md`.
-
-| Skill | Description | File |
-|-------|-------------|------|
-| `nextjs-16` | App Router patterns for this repo | `skills/nextjs/SKILL.md` |
-| `react-19` | Client component and UI interaction patterns | `skills/react/SKILL.md` |
-| `supabase-rls` | Supabase auth, RLS, and data access conventions | `skills/supabase/SKILL.md` |
-| `tailwind-4` | Tailwind CSS v4 styling conventions | `skills/tailwind/SKILL.md` |
-| `skill-creator` | Create new skills following the Agent Skills spec | `skills/skill-creator/SKILL.md` |
-| `agent-usage-reporting` | Report agent + skills used at end of every response | `skills/agent-usage-reporting/SKILL.md` |
-| `skill-sync` | Sync skill metadata to AGENTS auto-invoke tables | `skills/skill-sync/SKILL.md` |
-
-### How skills are discovered
-1. The assistant checks `AGENTS.md` for the registered skills.
-2. It matches the task context (routing, UI, DB, styling, etc.) to a skill.
-3. It reads the matching `skills/{name}/SKILL.md` file(s) before editing code.
-4. If multiple contexts apply, it loads multiple skills (e.g., React + Tailwind).
-
-## Vercel
-
-Set these environment variables in Vercel (Production + Preview):
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
